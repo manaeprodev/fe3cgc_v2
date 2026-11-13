@@ -1,4 +1,4 @@
-# Conquête
+# Fire Emblem Three Crowns : Grand Conquests
 
 Jeu de conquête de territoires, en PWA mobile. Serveur Node sans dépendance (SQLite intégré), interface en JavaScript pur, sans étape de build.
 
@@ -11,6 +11,27 @@ node server.js
 Puis ouvrir http://localhost:3000 (port modifiable avec la variable `PORT`). Node 22.13 ou plus récent.
 
 Pour installer l'app sur un téléphone, le site doit être servi en **HTTPS** (obligatoire pour une PWA, sauf sur `localhost`).
+
+## Sécurité et mise en ligne
+
+Protections en place dans `server.js` :
+
+- **En-têtes de sécurité** sur toutes les réponses, dont une CSP : la page ne charge scripts, images et données que depuis ce serveur, et ne peut pas être affichée dans une iframe. Conséquence : pas de script en ligne ni de ressource venant d'un autre site (police, image, bibliothèque) sans modifier la constante `CSP`.
+- **Vérification de l'origine** : toute requête qui modifie des données est refusée si elle vient d'un autre site.
+- **Limites de débit par IP** : 600 requêtes par minute toutes routes confondues, 120 par minute sur l'API, 10 par 10 minutes sur la connexion et l'inscription (constante `LIMITS`).
+- **Blocage de compte** : après 5 mots de passe faux sur un même email, le compte est bloqué 15 minutes, d'où que viennent les essais (constantes `LOCK_FAILS`, `LOCK_MINUTES`).
+
+À régler au moment de la mise en ligne, par variables d'environnement :
+
+| Variable | Rôle |
+|---|---|
+| `TRUST_PROXY` | Nombre de proxys placés devant le serveur. Mettre `1` derrière un hébergeur ou un reverse proxy, sinon tous les joueurs partagent la même IP et se bloquent entre eux. Laisser à `0` en accès direct, sinon l'IP peut être falsifiée. |
+| `ALLOWED_ORIGINS` | Origines supplémentaires autorisées à appeler l'API, séparées par des virgules. Inutile si le jeu est servi par ce serveur. |
+| `PORT` | Port d'écoute (3000 par défaut). |
+
+Le serveur parle HTTP : il doit être placé derrière HTTPS (hébergeur ou reverse proxy). Il ajoute alors de lui-même l'en-tête HSTS et le cookie de session passe en `Secure`.
+
+Reste à faire avant une vraie ouverture au public : la vérification des adresses email, et faire constater par le serveur (et non par l'app) les actions qui donnent des récompenses de mission.
 
 ## Où mettre les images
 
@@ -26,6 +47,7 @@ Tout est dans `public/assets/`. Les fichiers actuels sont provisoires : remplace
 | Icônes d'interface | `public/assets/ui/` | `gold.svg` (pièces d'or), `renown.svg` (étoile), `bell.svg` (cloche), `missions.svg` (parchemin) | carré, SVG |
 
 - **Avatars** : tout fichier image déposé dans le dossier est proposé automatiquement à la création du personnage, par ordre alphabétique. Ils sont recadrés en carré à l'affichage (centrés).
+- **Avatars bloqués** : ils sont dans le même dossier, mais déclarés dans `game.json` sous `avatars.locked`. `{ "file": "shop-01.svg", "unlock": "gold", "price": 600 }` se débloque en l'achetant ; `{ "file": "mission-01.svg", "unlock": "mission" }` se gagne avec une mission dont la récompense contient `"avatar": "mission-01.svg"`. Un fichier non déclaré est libre. Les avatars provisoires bloqués s'appellent `mission-01.svg` à `mission-08.svg` et `shop-01.svg` à `shop-06.svg`.
 - **Autre format ou autre nom** (ex. logo en `.png`) : change le chemin dans `public/config/game.json`.
 
 ## Langues
@@ -103,6 +125,8 @@ Fichier SQLite `data/conquete.db`, créé au premier lancement.
 | `characters` | pseudo, anniversaire, classe, avatar, faction, or (`gold`), expérience (`xp`) |
 | `notifications` | notifications de chaque joueur, lues ou non |
 | `mission_progress` | missions accomplies et récompenses récupérées |
+| `unlocked_avatars` | avatars débloqués par chaque joueur (achat ou mission) |
+| `class_changes` | journal des changements de classe |
 | `player_events` | compteurs d'actions du joueur, utilisés par les missions |
 | `sessions` | sessions ouvertes (jeton haché, expiration à 30 jours, IP, navigateur) |
 | `login_events` | journal de chaque inscription, connexion (réussie ou non) et déconnexion |

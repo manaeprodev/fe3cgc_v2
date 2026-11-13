@@ -106,6 +106,9 @@ const MISSIONS = Array.isArray(config.missions) ? config.missions : [];
 // Un rang fixe la renommée minimale et le prix en or pour y accéder ; un rang sans prix est verrouillé.
 const TIERS = Array.isArray(config.classTiers) ? config.classTiers : [];
 const BASE_TIER = TIERS[0]?.id;
+// Avatars bloqués : déclarés dans config.avatars.locked ({ file, unlock: "mission" | "gold", price }).
+// Tout autre fichier du dossier assets/avatars est libre.
+const LOCKED_AVATARS = new Map((config.avatars?.locked || []).map((a) => [a.file, a]));
 const classById = (id) => config.classes.find((c) => c.id === id);
 const tierById = (id) => TIERS.find((t) => t.id === id);
 const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'event').map((m) => m.condition.event));
@@ -130,6 +133,15 @@ const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'eve
     to_class   TEXT NOT NULL,
     cost       INTEGER NOT NULL,
     created_at TEXT NOT NULL
+  )`);
+  db.exec('CREATE INDEX IF NOT EXISTS login_events_email ON login_events (email, id)');
+  // Avatars débloqués par un joueur (achat ou récompense de mission).
+  db.exec(`CREATE TABLE IF NOT EXISTS unlocked_avatars (
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    avatar     TEXT NOT NULL,
+    source     TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, avatar)
   )`);
   // Version 1 du schéma : les quatre classes d'origine deviennent les classes de base.
   if (db.prepare('PRAGMA user_version').get().user_version < 1) {
@@ -168,6 +180,14 @@ const q = {
   insertNotif: db.prepare("INSERT INTO notifications (user_id, title, body, type, params, created_at) VALUES (?, ?, '', ?, ?, ?)"),
   notifs: db.prepare('SELECT id, title, body, type, params, created_at, read_at IS NOT NULL AS read FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 50'),
   setLang: db.prepare('UPDATE users SET lang = ? WHERE id = ?'),
+  // Échecs de connexion récents sur un email, depuis sa dernière connexion réussie.
+  recentFails: db.prepare(`SELECT count(*) AS n FROM login_events
+    WHERE email = ? AND event = 'login' AND success = 0 AND created_at > ?
+      AND id > COALESCE((SELECT max(id) FROM login_events WHERE email = ? AND event = 'login' AND success = 1), 0)`),
+  ownedAvatars: db.prepare('SELECT avatar FROM unlocked_avatars WHERE user_id = ?'),
+  unlockAvatar: db.prepare('INSERT OR IGNORE INTO unlocked_avatars (user_id, avatar, source, created_at) VALUES (?, ?, ?, ?)'),
+  setAvatar: db.prepare('UPDATE characters SET avatar = ? WHERE user_id = ?'),
+  buyAvatar: db.prepare('UPDATE characters SET avatar = ?, gold = gold - ? WHERE user_id = ? AND gold >= ?'),
   changeClass: db.prepare('UPDATE characters SET class = ?, gold = gold - ? WHERE user_id = ? AND gold >= ?'),
   logClass: db.prepare('INSERT INTO class_changes (user_id, from_class, to_class, cost, created_at) VALUES (?, ?, ?, ?, ?)'),
   unread: db.prepare('SELECT count(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL'),
@@ -191,9 +211,67 @@ function verifyPassword(password, salt, expectedHex) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+// ---------------------------------------------------------------- Sécurité
+// TRUST_PROXY : nombre de proxys de confiance placés devant le serveur (0 = accès direct).
+// Derrière un hébergeur ou un reverse proxy, mettre 1 pour lire la vraie IP du joueur dans X-Forwarded-For.
+// À 0, cet en-tête est ignoré, car n'importe quel client peut l'inventer.
+const TRUST_PROXY = Math.max(0, parseInt(process.env.TRUST_PROXY || '0', 10) || 0);
+// ALLOWED_ORIGINS : origines supplémentaires autorisées à appeler l'API (séparées par des virgules).
+const ALLOWED_ORIGINS = new Set((process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean));
+// Requêtes autorisées par IP : toutes routes et API par minute, connexion et inscription par 10 minutes.
+const LIMITS = { all: 600, api: 120, auth: 10 };
+// Blocage d'un compte après trop d'échecs de connexion.
+const LOCK_FAILS = 5;
+const LOCK_MINUTES = 15;
+
+function clientIp(req) {
+  if (TRUST_PROXY > 0) {
+    const list = String(req.headers['x-forwarded-for'] || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const ip = list[list.length - TRUST_PROXY];
+    if (ip) return ip.slice(0, 64);
+  }
+  return req.socket.remoteAddress || '?';
+}
+
+const isHttps = (req) => !!req.socket.encrypted || (TRUST_PROXY > 0 && req.headers['x-forwarded-proto'] === 'https');
+
+// La page ne peut charger scripts, images et données que depuis ce serveur : un script injecté
+// ou hébergé ailleurs ne s'exécute pas. Elle ne peut pas non plus être affichée dans une iframe.
+const CSP = [
+  "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data:",
+  "connect-src 'self'", "font-src 'self'", "manifest-src 'self'", "worker-src 'self'",
+  "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'",
+].join('; ');
+
+function setSecurityHeaders(req, res) {
+  res.setHeader('Content-Security-Policy', CSP);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  if (isHttps(req)) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+}
+
+// Refuse les requêtes qui modifient des données si elles viennent d'un autre site.
+function checkOrigin(req) {
+  if (req.method === 'GET' || req.method === 'HEAD') return;
+  const origin = req.headers.origin;
+  if (origin) {
+    let host;
+    try { host = new URL(origin).host.toLowerCase(); } catch { throw new HttpError(403, 'bad_origin'); }
+    const own = String((TRUST_PROXY > 0 && req.headers['x-forwarded-host']) || req.headers.host || '').toLowerCase();
+    if (host !== own && !ALLOWED_ORIGINS.has(origin.toLowerCase())) throw new HttpError(403, 'bad_origin');
+    return;
+  }
+  const site = req.headers['sec-fetch-site'];
+  if (site && site !== 'same-origin' && site !== 'none') throw new HttpError(403, 'bad_origin');
+}
+
 function clientInfo(req) {
   return {
-    ip: req.socket.remoteAddress || '',
+    ip: clientIp(req),
     ua: String(req.headers['user-agent'] || '').slice(0, 300),
   };
 }
@@ -259,21 +337,27 @@ function readJson(req) {
   });
 }
 
-// Limite simple anti force brute : 10 tentatives par IP toutes les 10 minutes.
-const attempts = new Map();
-function rateLimit(req) {
-  const ip = req.socket.remoteAddress || '?';
+// Limite de débit par IP : au plus `max` requêtes par fenêtre de `windowMs`, par famille de routes.
+const buckets = new Map();
+function limit(req, name, max, windowMs) {
+  const key = `${name}:${clientIp(req)}`;
   const t = Date.now();
-  let a = attempts.get(ip);
-  if (!a || a.reset < t) { a = { count: 0, reset: t + 600_000 }; attempts.set(ip, a); }
-  a.count += 1;
-  if (a.count > 10) throw new HttpError(429, 'rate_limited');
+  let b = buckets.get(key);
+  if (!b || b.reset <= t) { b = { count: 0, reset: t + windowMs }; buckets.set(key, b); }
+  b.count += 1;
+  if (b.count > max) {
+    const e = new HttpError(429, 'rate_limited');
+    e.retryAfter = Math.ceil((b.reset - t) / 1000);
+    throw e;
+  }
 }
+// Connexion et inscription : limite plus stricte contre la force brute.
+const rateLimit = (req) => limit(req, 'auth', LIMITS.auth, 600_000);
 setInterval(() => {
   const t = Date.now();
-  for (const [ip, a] of attempts) if (a.reset < t) attempts.delete(ip);
-  q.purgeSessions.run(now());
-}, 600_000).unref();
+  for (const [key, b] of buckets) if (b.reset <= t) buckets.delete(key);
+}, 60_000).unref();
+setInterval(() => q.purgeSessions.run(now()), 600_000).unref();
 
 function listAvatars() {
   try {
@@ -281,6 +365,16 @@ function listAvatars() {
       .filter((f) => IMAGE_EXT.has(path.extname(f).toLowerCase()))
       .sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }));
   } catch { return []; }
+}
+
+// Avatars vus par un joueur : libres, achetables ou à gagner en mission, avec ceux qu'il possède.
+function avatarList(userId) {
+  const owned = new Set(userId ? q.ownedAvatars.all(userId).map((r) => r.avatar) : []);
+  return listAvatars().map((file) => {
+    const l = LOCKED_AVATARS.get(file);
+    if (!l) return { file, unlock: 'free', owned: true };
+    return { file, unlock: l.unlock === 'gold' ? 'gold' : 'mission', price: l.unlock === 'gold' ? l.price : undefined, owned: owned.has(file) };
+  });
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -351,7 +445,7 @@ function missionState(userId) {
       id: m.id,
       title: m.title,
       description: m.description || '',
-      rewards: { gold: m.rewards?.gold || 0, xp: m.rewards?.xp || 0 },
+      rewards: { gold: m.rewards?.gold || 0, xp: m.rewards?.xp || 0, avatar: m.rewards?.avatar || null },
       status: row ? (row.claimed_at ? 'claimed' : 'done') : 'active',
       current: row ? target : Math.min(current, target),
       target,
@@ -397,6 +491,14 @@ const routes = {
     const { email, password } = await readJson(req);
     const { ip, ua } = clientInfo(req);
     const mail = String(email || '').trim().toLowerCase().slice(0, 254);
+    // Compte bloqué : trop d'échecs récents sur cet email, quelle que soit l'IP d'où ils viennent.
+    // Pendant le blocage, même le bon mot de passe est refusé et rien n'est ajouté au journal.
+    const since = new Date(Date.now() - LOCK_MINUTES * 60_000).toISOString();
+    if (q.recentFails.get(mail, since, mail).n >= LOCK_FAILS) {
+      const e = new HttpError(429, 'account_locked');
+      e.retryAfter = LOCK_MINUTES * 60;
+      throw e;
+    }
     const user = q.userByEmail.get(mail);
     // On calcule toujours un hash pour ne pas révéler si l'email existe via le temps de réponse.
     const ok = verifyPassword(String(password || ''), user ? user.password_salt : 'x', user ? user.password_hash : '00');
@@ -428,7 +530,35 @@ const routes = {
     send(res, 200, mePayload(user));
   },
 
-  'GET /api/avatars': async (req, res) => send(res, 200, { avatars: listAvatars() }),
+  'GET /api/avatars': async (req, res) => send(res, 200, { avatars: avatarList(currentUser(req)?.id) }),
+
+  // Utilise un avatar libre ou déjà débloqué.
+  'POST /api/avatar': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    const { avatar } = await readJson(req);
+    if (!q.character.get(user.id)) throw new HttpError(409, 'no_character');
+    const a = avatarList(user.id).find((x) => x.file === avatar);
+    if (!a) throw new HttpError(400, 'invalid_avatar');
+    if (!a.owned) throw new HttpError(409, 'avatar_locked');
+    q.setAvatar.run(a.file, user.id);
+    send(res, 200, { ...mePayload(user), avatars: avatarList(user.id) });
+  },
+
+  // Achète un avatar vendu contre de l'or, et l'utilise aussitôt.
+  'POST /api/avatar/buy': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    const { avatar } = await readJson(req);
+    if (!q.character.get(user.id)) throw new HttpError(409, 'no_character');
+    const a = avatarList(user.id).find((x) => x.file === avatar);
+    if (!a) throw new HttpError(400, 'invalid_avatar');
+    if (a.unlock !== 'gold' || a.owned || !Number.isInteger(a.price) || a.price < 0) throw new HttpError(409, 'avatar_locked');
+    // L'or n'est débité que s'il y en a assez (vérifié dans la même requête).
+    if (q.buyAvatar.run(a.file, a.price, user.id, a.price).changes !== 1) throw new HttpError(409, 'not_enough_gold');
+    q.unlockAvatar.run(user.id, a.file, 'gold', now());
+    send(res, 200, { ...mePayload(user), avatars: avatarList(user.id) });
+  },
 
   'POST /api/character': async (req, res) => {
     const user = currentUser(req);
@@ -438,7 +568,7 @@ const routes = {
     if (typeof pseudo !== 'string' || !PSEUDO_RE.test(pseudo)) throw new HttpError(400, 'invalid_pseudo');
     if (!validBirthday(birthday)) throw new HttpError(400, 'invalid_birthday');
     if (classById(klass)?.tier !== BASE_TIER) throw new HttpError(400, 'invalid_class');
-    if (!listAvatars().includes(avatar)) throw new HttpError(400, 'invalid_avatar');
+    if (!listAvatars().includes(avatar) || LOCKED_AVATARS.has(avatar)) throw new HttpError(400, 'invalid_avatar');
     if (!config.factions.some((f) => f.id === faction)) throw new HttpError(400, 'invalid_faction');
     if (q.pseudoTaken.get(pseudo)) throw new HttpError(409, 'pseudo_taken');
     q.insertCharacter.run(user.id, pseudo, birthday, klass, avatar, faction, Number(PLAYER.startGold) || 0, now());
@@ -515,6 +645,11 @@ const routes = {
     // La mise à jour ne touche une ligne que si la mission est accomplie et pas encore récupérée.
     if (q.claimMission.run(now(), user.id, id).changes !== 1) throw new HttpError(409, 'reward_unavailable');
     grant(user.id, mission.rewards?.gold || 0, mission.rewards?.xp || 0);
+    // Une mission peut aussi débloquer un avatar (rewards.avatar).
+    const prize = mission.rewards?.avatar;
+    if (prize && LOCKED_AVATARS.has(prize) && q.unlockAvatar.run(user.id, prize, `mission:${mission.id}`, now()).changes === 1) {
+      notify(user.id, 'avatar_unlocked', { avatar: prize });
+    }
     const me = mePayload(user); // réévalue les missions (ex. palier de renommée atteint)
     send(res, 200, { ...me, missions: missionState(user.id) });
   },
@@ -569,20 +704,30 @@ function serveStatic(req, res, pathname) {
 
 // ---------------------------------------------------------------- Serveur
 const server = http.createServer(async (req, res) => {
-  const { pathname } = new URL(req.url, 'http://localhost');
-  if (pathname.startsWith('/api/')) {
-    const handler = routes[`${req.method} ${pathname}`];
-    try {
-      if (!handler) throw new HttpError(404, 'not_found');
-      await handler(req, res);
-    } catch (e) {
-      if (!(e instanceof HttpError)) console.error(e);
-      if (!res.headersSent) send(res, e.status || 500, { error: e instanceof HttpError ? e.message : 'server_error' });
+  setSecurityHeaders(req, res);
+  let pathname;
+  try { pathname = new URL(req.url, 'http://localhost').pathname; } catch { res.writeHead(400); return res.end(); }
+  try {
+    limit(req, 'all', LIMITS.all, 60_000);
+    if (!pathname.startsWith('/api/')) {
+      if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
+      return serveStatic(req, res, pathname);
     }
-    return;
+    limit(req, 'api', LIMITS.api, 60_000);
+    checkOrigin(req);
+    const handler = routes[`${req.method} ${pathname}`];
+    if (!handler) throw new HttpError(404, 'not_found');
+    await handler(req, res);
+  } catch (e) {
+    if (!(e instanceof HttpError)) console.error(e);
+    if (res.headersSent) return;
+    if (e.retryAfter) res.setHeader('Retry-After', String(e.retryAfter));
+    send(res, e.status || 500, { error: e instanceof HttpError ? e.message : 'server_error' });
   }
-  if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
-  serveStatic(req, res, pathname);
 });
 
-server.listen(PORT, () => console.log(`Conquête : http://localhost:${PORT}`));
+// Coupe les connexions qui traînent (requêtes envoyées au compte-gouttes).
+server.headersTimeout = 15_000;
+server.requestTimeout = 30_000;
+
+server.listen(PORT, () => console.log(`Three Crowns : http://localhost:${PORT}`));

@@ -200,6 +200,8 @@ function renderAuth() {
 function renderCharacter() {
   const d = state.draft;
   const today = new Date().toISOString().slice(0, 10);
+  // À la création, seuls les avatars libres sont proposés.
+  const freeAvatars = state.avatars.filter((a) => a.unlock === 'free').map((a) => a.file);
   app.innerHTML = `
     <div class="page">
       <div class="page-top"><div><p class="steps">${esc(t('char.step'))}</p><h1 class="page-title">${esc(t('char.title'))}</h1></div>${langPicker()}</div>
@@ -218,8 +220,8 @@ function renderCharacter() {
           </div>
         </div>
         <div class="field"><span>${esc(t('char.avatar'))}</span>
-          ${state.avatars.length ? `<div class="avatars">
-            ${state.avatars.map((a, i) => `
+          ${freeAvatars.length ? `<div class="avatars">
+            ${freeAvatars.map((a, i) => `
               <button type="button" class="avatar-btn ${d.avatar === a ? 'selected' : ''}" data-avatar="${esc(a)}" aria-pressed="${d.avatar === a}" aria-label="${esc(t('char.avatarLabel', { n: i + 1 }))}">
                 <img class="avatar" src="${avatarUrl(a)}" alt="">
               </button>`).join('')}
@@ -308,7 +310,7 @@ function renderFaction() {
 
 // ------------------------------------------------------------ Jeu
 // Onglets principaux : map, menu. Écrans secondaires : notifs, missions, rules.
-const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses };
+const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses, avatars: renderAvatars };
 
 function go(tab) {
   if (state.tab === 'map' || state.tab === 'menu') state.back = state.tab;
@@ -317,7 +319,7 @@ function go(tab) {
 }
 
 function renderGame() {
-  const menuSide = state.tab === 'menu' || state.tab === 'rules' || state.tab === 'classes';
+  const menuSide = ['menu', 'rules', 'classes', 'avatars'].includes(state.tab);
   app.innerHTML = `
     <header class="topbar" id="topbar"></header>
     <main class="view" id="view"></main>
@@ -343,7 +345,7 @@ function drawTopbar() {
     <div class="topbar-row">
       <img class="avatar" src="${avatarUrl(ch.avatar)}" alt="">
       <div class="who"><strong>${esc(ch.pseudo)}</strong>
-        <span class="muted small">${esc(className(ch.class))} · <span style="color:${esc(f.color)}">${esc(loc(f.name))}</span></span></div>
+        <span class="muted small">${classIcon(klass(ch.class))}${esc(className(ch.class))} · <span style="color:${esc(f.color)}">${esc(loc(f.name))}</span></span></div>
       ${langPicker()}
       <button type="button" class="icon-btn ${state.tab === 'notifs' ? 'active' : ''}" data-go="notifs"
         aria-label="${esc(unread ? t('top.notifsUnread', { n: unread }) : t('top.notifs'))}">
@@ -387,7 +389,7 @@ function panelHead(title) {
 function bindClose(view) {
   view.querySelector('[data-close]').addEventListener('click', () => {
     if (state.tab === 'classes' && state.classesFrom === 'rules') return go('rules');
-    go(state.tab === 'rules' || state.tab === 'classes' ? 'menu' : state.back || 'map');
+    go(['rules', 'classes', 'avatars'].includes(state.tab) ? 'menu' : state.back || 'map');
   });
 }
 
@@ -484,7 +486,10 @@ async function renderMenu() {
           <dt>${esc(t('menu.renown'))}</dt><dd>${esc(t('menu.renownValue', ch.renown))}</dd>
           <dt>${esc(t('menu.email'))}</dt><dd>${esc(state.me.user.email)}</dd>
         </dl>
-        <button class="btn ghost" type="button" data-classes>${esc(t('classes.change'))}</button>
+        <div class="row">
+          <button class="btn ghost" type="button" data-avatars>${esc(t('avatars.change'))}</button>
+          <button class="btn ghost" type="button" data-classes>${esc(t('classes.change'))}</button>
+        </div>
       </section>
 
       <section class="card">
@@ -516,6 +521,7 @@ async function renderMenu() {
       <button class="btn danger" type="button" data-logout>${esc(t('common.logout'))}</button>`;
     view.querySelector('[data-logout]').addEventListener('click', logout);
     view.querySelector('[data-rules]').addEventListener('click', () => go('rules'));
+    view.querySelector('[data-avatars]').addEventListener('click', () => go('avatars'));
     view.querySelector('[data-classes]').addEventListener('click', () => {
       state.classesFrom = 'menu';
       state.classSel = state.me.character.class;
@@ -582,6 +588,7 @@ async function renderMissions() {
   const rewardText = (rw) => [
     rw.gold ? `<span class="res"><img src="assets/ui/gold.svg" alt="${esc(t('res.gold'))}">+${fmtNum(rw.gold)}</span>` : '',
     rw.xp ? `<span class="res"><img src="assets/ui/renown.svg" alt="${esc(t('missions.xpAlt'))}">+${fmtNum(rw.xp)} xp</span>` : '',
+    rw.avatar ? `<span class="res"><img class="reward-avatar" src="${avatarUrl(rw.avatar)}" alt="">${esc(t('missions.avatarReward'))}</span>` : '',
   ].join('');
   const draw = (missions, error) => {
     const order = { done: 0, active: 1, claimed: 2 };
@@ -637,6 +644,84 @@ function renderRules() {
     go('classes');
   });
   track('rules_read');
+}
+
+// Choix de l'avatar : avatars disponibles, avatars à acheter, avatars à gagner en mission.
+async function renderAvatars() {
+  const view = document.getElementById('view');
+  view.className = 'view scroll';
+  const lock = '<svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zm2 0h6V7a3 3 0 0 0-6 0z" fill="currentColor"/></svg>';
+
+  const draw = (error) => {
+    const ch = state.me.character;
+    const tile = (a) => {
+      const current = a.file === ch.avatar;
+      const label = current ? t('avatars.currentLabel')
+        : a.owned ? t('avatars.useLabel')
+          : a.unlock === 'gold' ? t('avatars.buyLabel', { gold: fmtNum(a.price) }) : t('avatars.lockedLabel');
+      return `
+        <button type="button" class="avatar-btn ${current ? 'selected' : ''} ${a.owned ? '' : 'locked'} ${state.avatarBuy === a.file ? 'asking' : ''}"
+          data-avatar="${esc(a.file)}" aria-label="${esc(label)}" aria-pressed="${current}" ${!a.owned && a.unlock !== 'gold' ? 'disabled' : ''}>
+          <img class="avatar" src="${avatarUrl(a.file)}" alt="">
+          ${a.owned ? '' : lock}
+          ${!a.owned && a.unlock === 'gold' ? `<span class="price"><img src="assets/ui/gold.svg" alt="">${fmtNum(a.price)}</span>` : ''}
+        </button>`;
+    };
+    const section = (title, list, hint) => (list.length ? `
+      <section class="card"><h2>${esc(title)}</h2>
+        ${hint ? `<p class="muted small">${esc(hint)}</p>` : ''}
+        <div class="avatars">${list.map(tile).join('')}</div>
+      </section>` : '');
+    const asking = state.avatars.find((a) => a.file === state.avatarBuy);
+    view.innerHTML = panelHead(t('avatars.title'))
+      + (error ? `<p class="error" role="alert">${esc(error)}</p>` : '')
+      + section(t('avatars.mine'), state.avatars.filter((a) => a.owned))
+      + section(t('avatars.shop'), state.avatars.filter((a) => !a.owned && a.unlock === 'gold'))
+      + (asking ? `<div class="card confirm-buy"><p>${esc(t('avatars.buy', { gold: fmtNum(asking.price) }))}</p>
+          <div class="row"><button type="button" class="btn ghost" data-cancel>${esc(t('common.cancel'))}</button>
+          <button type="button" class="btn" data-buy>${esc(t('common.confirm'))}</button></div></div>` : '')
+      + section(t('avatars.missions'), state.avatars.filter((a) => !a.owned && a.unlock === 'mission'), t('avatars.missionHint'));
+    bindClose(view);
+
+    const send = async (path, avatar) => {
+      state.avatarBuy = null;
+      let err;
+      try {
+        const res = await api(path, { avatar });
+        state.avatars = res.avatars;
+        setMe(res);
+      } catch (e) {
+        if (e.status === 401) return sessionLost();
+        err = e.message;
+      }
+      if (state.tab === 'avatars' && view.isConnected) draw(err);
+    };
+    view.querySelectorAll('[data-avatar]').forEach((b) => b.addEventListener('click', () => {
+      const a = state.avatars.find((x) => x.file === b.dataset.avatar);
+      if (!a || a.file === ch.avatar) return;
+      if (a.owned) return send('/avatar', a.file);
+      // Avatar payant : on demande une confirmation avant de dépenser l'or.
+      state.avatarBuy = a.file;
+      draw();
+      view.querySelector('.confirm-buy')?.scrollIntoView({ block: 'nearest' });
+    }));
+    view.querySelector('[data-cancel]')?.addEventListener('click', () => { state.avatarBuy = null; draw(); });
+    view.querySelector('[data-buy]')?.addEventListener('click', (e) => { e.target.disabled = true; send('/avatar/buy', asking.file); });
+  };
+
+  state.avatarBuy = null;
+  view.innerHTML = panelHead(t('avatars.title')) + `<p class="muted">${esc(t('common.loading'))}</p>`;
+  bindClose(view);
+  try {
+    state.avatars = (await api('/avatars')).avatars;
+    if (state.tab === 'avatars' && view.isConnected) draw();
+  } catch (err) {
+    if (err.status === 401) return sessionLost();
+    if (state.tab === 'avatars' && view.isConnected) {
+      view.innerHTML = panelHead(t('avatars.title')) + `<p class="error">${esc(t('avatars.error'))}</p>`;
+      bindClose(view);
+    }
+  }
 }
 
 // Conditions d'accès à un rang de classes.

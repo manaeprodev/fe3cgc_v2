@@ -1,7 +1,7 @@
 {
   "title": {
-    "fr": "Conquête",
-    "en": "Conquest"
+    "fr": "Fire Emblem Three Crowns : Grand Conquests",
+    "en": "Fire Emblem Three Crowns : Grand Conquests"
   },
   "defaultLang": "fr",
   "languages": [
@@ -127,7 +127,8 @@
       },
       "rewards": {
         "gold": 200,
-        "xp": 0
+        "xp": 0,
+        "avatar": "mission-01.svg"
       }
     }
   ],
@@ -627,7 +628,8 @@
       "tier": "master",
       "requires": [
         "pegasus-knight",
-        "wyvern-rider"
+        "wyvern-rider",
+        "paladin"
       ],
       "name": {
         "fr": "Chevalier faucon",
@@ -708,7 +710,8 @@
       "id": "holy-knight",
       "tier": "master",
       "requires": [
-        "bishop"
+        "bishop",
+        "paladin"
       ],
       "name": {
         "fr": "Chevalier saint",
@@ -759,7 +762,8 @@
       "tier": "master",
       "requires": [
         "dark-mage",
-        "warlock"
+        "warlock",
+        "paladin"
       ],
       "name": {
         "fr": "Chevalier noir",
@@ -776,8 +780,8 @@
     {
       "id": "rouge",
       "name": {
-        "fr": "Faction Rouge",
-        "en": "Red Faction"
+        "fr": "Les Aigles de jais",
+        "en": "The Black Eagles"
       },
       "color": "#e5484d",
       "logo": "assets/factions/rouge.svg",
@@ -789,8 +793,8 @@
     {
       "id": "bleue",
       "name": {
-        "fr": "Faction Bleue",
-        "en": "Blue Faction"
+        "fr": "Les Lions de saphir",
+        "en": "The Blue Lions"
       },
       "color": "#3e8eff",
       "logo": "assets/factions/bleue.svg",
@@ -802,8 +806,8 @@
     {
       "id": "jaune",
       "name": {
-        "fr": "Faction Jaune",
-        "en": "Yellow Faction"
+        "fr": "Les Cerfs d'or",
+        "en": "The Golden Deer"
       },
       "color": "#f5c518",
       "logo": "assets/factions/jaune.svg",
@@ -815,8 +819,8 @@
     {
       "id": "violette",
       "name": {
-        "fr": "Faction Violette",
-        "en": "Purple Faction"
+        "fr": "Les Loups de cendre",
+        "en": "The Ashen Wolves"
       },
       "color": "#9d5cff",
       "logo": "assets/factions/violette.svg",
@@ -903,6 +907,72 @@
         },
         "x": 1360,
         "y": 540
+      }
+    ]
+  },
+  "avatars": {
+    "locked": [
+      {
+        "file": "mission-01.svg",
+        "unlock": "mission"
+      },
+      {
+        "file": "mission-02.svg",
+        "unlock": "mission"
+      },
+      {
+        "file": "mission-03.svg",
+        "unlock": "mission"
+      },
+      {
+        "file": "mission-04.svg",
+        "unlock": "mission"
+      },
+      {
+        "file": "mission-05.svg",
+        "unlock": "mission"
+      },
+      {
+        "file": "mission-06.svg",
+        "unlock": "mission"
+      },
+      {
+        "file": "mission-07.svg",
+        "unlock": "mission"
+      },
+      {
+        "file": "mission-08.svg",
+        "unlock": "mission"
+      },
+      {
+        "file": "shop-01.svg",
+        "unlock": "gold",
+        "price": 600
+      },
+      {
+        "file": "shop-02.svg",
+        "unlock": "gold",
+        "price": 600
+      },
+      {
+        "file": "shop-03.svg",
+        "unlock": "gold",
+        "price": 600
+      },
+      {
+        "file": "shop-04.svg",
+        "unlock": "gold",
+        "price": 900
+      },
+      {
+        "file": "shop-05.svg",
+        "unlock": "gold",
+        "price": 900
+      },
+      {
+        "file": "shop-06.svg",
+        "unlock": "gold",
+        "price": 1500
       }
     ]
   }

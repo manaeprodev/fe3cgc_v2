@@ -46,7 +46,15 @@ img { display: block; }
   gap: 18px;
 }
 .brand { text-align: center; padding: 24px 0 4px; }
-.brand h1 { font-size: 2rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.brand h1 {
+  font-size: clamp(1.2rem, 6vw, 1.6rem);
+  line-height: 1.25;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
 .brand p { color: var(--muted); }
 .page-title { font-size: 1.35rem; }
 .steps { color: var(--muted); font-size: .85rem; text-transform: uppercase; letter-spacing: .08em; }
@@ -116,6 +124,27 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
   background: var(--panel-2);
 }
 
+/* Avatars bloqués : cadenas, et prix pour ceux qui s'achètent */
+.avatar-btn { position: relative; color: var(--text); }
+.avatar-btn.locked .avatar { filter: grayscale(.5) brightness(.8); }
+.avatar-btn.asking { border-color: var(--accent); }
+.avatar-btn .lock { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; }
+.avatar-btn .price {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 0;
+  background: #000a;
+  font-size: .78rem;
+  font-weight: 600;
+}
+.avatar-btn .price img { width: 14px; height: 14px; }
+.avatar-btn:disabled { cursor: default; }
+.reward-avatar { border-radius: 6px; object-fit: cover; }
+
 /* ---------- Factions ---------- */
 .factions { display: flex; flex-direction: column; gap: 12px; }
 .faction-card {
@@ -137,6 +166,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 
 /* ---------- Classes : icônes pixel, dépliant des règles, arbre ---------- */
 .class-icon { width: 32px; height: 32px; flex: none; image-rendering: pixelated; }
+.topbar .who .class-icon { display: inline-block; width: 20px; height: 20px; margin-right: 4px; vertical-align: -5px; }
 .choice.with-icon { display: flex; align-items: center; gap: 10px; }
 .fold > summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
 .fold[open] > summary { margin-bottom: 4px; }

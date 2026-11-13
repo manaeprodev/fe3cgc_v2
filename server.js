@@ -16,6 +16,8 @@ const SESSION_DAYS = 30;
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif']);
 
 const config = JSON.parse(fs.readFileSync(path.join(PUBLIC_DIR, 'config', 'game.json'), 'utf8'));
+// Carte : image de fond, contour de chaque territoire et liste de ses voisins.
+config.map = JSON.parse(fs.readFileSync(path.join(PUBLIC_DIR, 'config', 'map.json'), 'utf8'));
 
 // ---------------------------------------------------------------- Base de données
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -152,6 +154,29 @@ const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'eve
     for (const [k, v] of Object.entries(old)) upd.run(v, `old:${k}`);
     db.exec('PRAGMA user_version = 1');
   }
+  // Version 2 : les notifications créées avant le multilingue étaient du texte français figé.
+  // On les convertit en type + paramètres pour qu'elles suivent la langue du joueur.
+  if (db.prepare('PRAGMA user_version').get().user_version < 2) {
+    const upd = db.prepare('UPDATE notifications SET type = ?, params = ? WHERE id = ?');
+    const factionOf = db.prepare('SELECT faction FROM characters WHERE user_id = ?');
+    const frTitle = (m) => (m.title && typeof m.title === 'object' ? m.title.fr : m.title);
+    for (const n of db.prepare('SELECT id, user_id, title, body FROM notifications WHERE type IS NULL').all()) {
+      let m;
+      let type = null;
+      let params = null;
+      if (n.title === 'Mission accomplie' && (m = /^« (.+) »/.exec(n.body))) {
+        const mission = MISSIONS.find((x) => frTitle(x) === m[1]);
+        if (mission) { type = 'mission_done'; params = { mission: mission.id }; }
+      } else if ((m = /^Renommée (\d+)$/.exec(n.title))) {
+        type = 'renown'; params = { level: Number(m[1]) };
+      } else if ((m = /^Bienvenue, (.+) !$/.exec(n.title))) {
+        type = 'welcome'; params = { pseudo: m[1], faction: factionOf.get(n.user_id)?.faction };
+      }
+      // Un texte non reconnu est laissé tel quel : il reste affiché en français.
+      if (type) upd.run(type, JSON.stringify(params), n.id);
+    }
+    db.exec('PRAGMA user_version = 2');
+  }
   // Les personnages créés avant les missions comptent aussi comme « créés ».
   db.exec("INSERT OR IGNORE INTO player_events (user_id, event, count) SELECT user_id, 'character_created', 1 FROM characters");
 }
@@ -160,6 +185,16 @@ const now = () => new Date().toISOString();
 
 const seedTerritory = db.prepare('INSERT OR IGNORE INTO territories (id, faction, updated_at) VALUES (?, NULL, ?)');
 for (const t of config.map.territories) seedTerritory.run(t.id, now());
+// Les territoires qui ne figurent plus sur la carte sont retirés de la base.
+{
+  const known = new Set(config.map.territories.map((t) => t.id));
+  const drop = db.prepare('DELETE FROM territories WHERE id = ?');
+  for (const row of db.prepare('SELECT id FROM territories').all()) if (!known.has(row.id)) drop.run(row.id);
+}
+// Deux territoires sont voisins si l'un des deux cite l'autre dans map.json.
+const NEIGHBORS = new Map(config.map.territories.map((t) => [t.id, new Set(t.neighbors || [])]));
+for (const t of config.map.territories) for (const n of t.neighbors || []) NEIGHBORS.get(n)?.add(t.id);
+const areNeighbors = (a, b) => !!NEIGHBORS.get(a)?.has(b);
 
 const q = {
   userByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
@@ -192,6 +227,7 @@ const q = {
   logClass: db.prepare('INSERT INTO class_changes (user_id, from_class, to_class, cost, created_at) VALUES (?, ?, ?, ?, ?)'),
   unread: db.prepare('SELECT count(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL'),
   markRead: db.prepare('UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL'),
+  clearNotifs: db.prepare('DELETE FROM notifications WHERE user_id = ?'),
   missionRows: db.prepare('SELECT mission_id, completed_at, claimed_at FROM mission_progress WHERE user_id = ?'),
   completeMission: db.prepare('INSERT OR IGNORE INTO mission_progress (user_id, mission_id, completed_at) VALUES (?, ?, ?)'),
   claimMission: db.prepare('UPDATE mission_progress SET claimed_at = ? WHERE user_id = ? AND mission_id = ? AND claimed_at IS NULL'),
@@ -629,6 +665,15 @@ const routes = {
     send(res, 200, mePayload(user));
   },
 
+  // Efface toutes les notifications du joueur.
+  'POST /api/notifications/clear': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    await readJson(req);
+    q.clearNotifs.run(user.id);
+    send(res, 200, mePayload(user));
+  },
+
   'GET /api/missions': async (req, res) => {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
@@ -667,7 +712,10 @@ const routes = {
     if (!currentUser(req)) throw new HttpError(401, 'unauthorized');
     const owners = new Map(q.territories.all().map((t) => [t.id, t.faction]));
     send(res, 200, {
-      territories: config.map.territories.map((t) => ({ ...t, faction: owners.get(t.id) || null })),
+      // Les contours sont déjà dans map.json : on ne renvoie ici que l'état du jeu.
+      territories: config.map.territories.map((t) => ({
+        id: t.id, name: t.name, neighbors: [...(NEIGHBORS.get(t.id) || [])], faction: owners.get(t.id) || null,
+      })),
     });
   },
 };

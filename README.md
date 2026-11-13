@@ -39,7 +39,7 @@ Tout est dans `public/assets/`. Les fichiers actuels sont provisoires : remplace
 
 | Quoi | Emplacement | Nom | Format conseillé |
 |---|---|---|---|
-| Carte | `public/assets/map/` | `map.svg` | SVG rectangulaire, `viewBox="0 0 1600 900"` |
+| Fond de carte | `public/assets/map/` | `fodlan.jpg` | image 1800 × 1350 (mêmes proportions que les contours) |
 | Logos de faction | `public/assets/factions/` | `rouge.svg`, `bleue.svg`, `jaune.svg`, `violette.svg` | carré, SVG ou PNG 256 px |
 | Avatars | `public/assets/avatars/` | noms libres | PNG, JPG, WEBP ou SVG, n'importe quelles proportions |
 | Icône de l'app | `public/assets/icons/` | `icon-192.png`, `icon-512.png`, `icon.svg` | carré |
@@ -67,14 +67,26 @@ Le serveur ne renvoie aucun texte : il renvoie des codes d'erreur (clés `error.
 
 - `factions` : nom, couleur, logo et **courte description** de chaque faction. `"secret": true` cache la faction derrière le bouton secret.
 - `classes` : classes de départ (identifiant, nom, description).
-- `map.width` / `map.height` : dimensions du `viewBox` de la carte. À modifier si ta carte n'est pas en 1600 × 900.
-- `map.territories` : liste des territoires, avec `id`, `name` et les coordonnées `x`, `y` exprimées dans le repère du `viewBox` de la carte.
+- La carte n'est pas dans ce fichier mais dans `public/config/map.json`, voir ci-dessous.
 
 - `player` : or de départ (`startGold`), xp nécessaire pour la renommée 1 (`renownBaseXp`) et multiplicateur par niveau (`renownGrowth`, 1.1 = +10 %).
 - `rules` : sections des règles du jeu (`title`, `text`), affichées par le bouton « Règles du jeu » du menu.
 - `missions` : liste des missions, voir ci-dessous.
 
 Redémarre le serveur après une modification de ce fichier.
+
+### Carte : `public/config/map.json`
+
+- `image`, `width`, `height` : fond de carte et dimensions du repère (1800 × 1350).
+- `territories` : un territoire par ligne, avec
+  - `id` et `name` (une chaîne, ou `{ "fr": "…", "en": "…" }`) ;
+  - `path` : le contour, repris tel quel du fichier Inkscape d'origine (attribut `d` du tracé) ;
+  - `x`, `y` : le centre du territoire ;
+  - `neighbors` : les `id` des territoires voisins. Il suffit qu'un des deux cite l'autre pour qu'ils soient voisins.
+
+Les voisins ont été calculés à partir des contours (frontière commune d'au moins 14 px) : ils se corrigent à la main dans ce fichier, par exemple pour relier une île par la mer. L'état du jeu (quelle faction contrôle quel territoire) est en base, table `territories` ; un territoire retiré de `map.json` est retiré de la base au redémarrage.
+
+Dans l'app, la carte est un SVG : chaque territoire est cliquable, coloré selon sa faction, et sa sélection met ses voisins en évidence. Le serveur expose `areNeighbors(a, b)` pour les futures règles d'attaque.
 
 ### Classes
 

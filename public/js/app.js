@@ -382,9 +382,9 @@ async function track(event) {
   try { setMe(await api('/events', { event })); } catch (err) { if (err.status === 401) sessionLost(); }
 }
 
-function panelHead(title) {
+function panelHead(title, extra = '') {
   return `<div class="panel-head"><h1 class="page-title">${esc(title)}</h1>
-    <button type="button" class="btn ghost compact" data-close>${esc(t('common.close'))}</button></div>`;
+    <div class="panel-actions">${extra}<button type="button" class="btn ghost compact" data-close>${esc(t('common.close'))}</button></div></div>`;
 }
 function bindClose(view) {
   view.querySelector('[data-close]').addEventListener('click', () => {
@@ -401,7 +401,10 @@ async function renderMap() {
     <div class="map-wrap">
       <div class="map-scroll">
         <div class="map-inner" style="aspect-ratio:${m.width}/${m.height}">
-          <img src="${esc(m.image)}" alt="${esc(t('map.alt'))}" draggable="false">
+          <svg class="map" viewBox="0 0 ${m.width} ${m.height}" role="group" aria-label="${esc(t('map.alt'))}">
+            <image href="${esc(m.image)}" width="${m.width}" height="${m.height}" preserveAspectRatio="none"/>
+            ${m.territories.map((tr) => `<path class="terr" data-id="${esc(tr.id)}" d="${esc(tr.path)}" tabindex="0" role="button" aria-label="${esc(loc(tr.name))}"/>`).join('')}
+          </svg>
         </div>
       </div>
       <div class="zoom">
@@ -409,51 +412,82 @@ async function renderMap() {
         <button type="button" data-zoom="-1" aria-label="${esc(t('map.zoomOut'))}">−</button>
       </div>
     </div>
-    <section class="info" aria-live="polite"></section>`;
+    <section class="info map-info" aria-live="polite"></section>`;
 
   const inner = view.querySelector('.map-inner');
+  const scroller = view.querySelector('.map-scroll');
+  const svg = view.querySelector('svg.map');
   const applyZoom = () => { inner.style.width = state.zoom * 100 + '%'; };
   applyZoom();
+  // Le zoom garde au centre de l'écran le point qui s'y trouvait.
   view.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', () => {
-    state.zoom = Math.min(4, Math.max(1, state.zoom + Number(b.dataset.zoom) * 0.5));
+    const cx = (scroller.scrollLeft + scroller.clientWidth / 2) / scroller.scrollWidth;
+    const cy = (scroller.scrollTop + scroller.clientHeight / 2) / scroller.scrollHeight;
+    state.zoom = Math.min(6, Math.max(1, state.zoom + Number(b.dataset.zoom) * 0.5));
     applyZoom();
+    scroller.scrollLeft = cx * scroller.scrollWidth - scroller.clientWidth / 2;
+    scroller.scrollTop = cy * scroller.scrollHeight - scroller.clientHeight / 2;
   }));
 
+  const shape = (id) => m.territories.find((x) => x.id === id);
+  const ownerOf = (id) => state.territories.find((x) => x.id === id)?.faction || null;
+  // Voisins : ceux que le territoire cite dans map.json, et ceux qui le citent.
+  const neighborsOf = (id) => m.territories
+    .filter((x) => x.id !== id && ((shape(id)?.neighbors || []).includes(x.id) || (x.neighbors || []).includes(id)))
+    .map((x) => x.id);
+
   const drawInfo = () => {
-    const tr = state.territories.find((x) => x.id === state.selected);
-    const owner = tr && tr.faction ? faction(tr.faction) : null;
-    view.querySelector('.info').innerHTML = tr
-      ? `<h3>${esc(loc(tr.name))}</h3>
-         <p class="muted small">${esc(t('map.coords', tr))} · ${owner
+    const tr = shape(state.selected);
+    if (!tr) { view.querySelector('.info').innerHTML = `<p class="muted">${esc(t('map.hint'))}</p>`; return; }
+    const owner = ownerOf(tr.id) ? faction(ownerOf(tr.id)) : null;
+    const near = neighborsOf(tr.id);
+    view.querySelector('.info').innerHTML = `
+      <h3>${esc(loc(tr.name))}</h3>
+      <p class="muted small">${owner
     ? `${esc(t('map.owned'))} <span style="color:${esc(owner.color)}">${esc(loc(owner.name))}</span>`
-    : esc(t('map.neutral'))}</p>`
-      : `<p class="muted">${esc(t('map.hint'))}</p>`;
+    : esc(t('map.neutral'))}</p>
+      <p class="muted small">${esc(near.length ? t('map.neighbors') : t('map.noNeighbors'))}</p>
+      ${near.length ? `<div class="chips">${near.map((id) => {
+    const o = ownerOf(id) ? faction(ownerOf(id)) : null;
+    return `<button type="button" class="chip" data-goto="${esc(id)}"><span class="dot" style="--c:${esc(o ? o.color : '#6b7287')}"></span>${esc(loc(shape(id).name))}</button>`;
+  }).join('')}</div>` : ''}`;
+    view.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => select(b.dataset.goto, true)));
   };
-  const drawMarkers = () => {
-    inner.querySelectorAll('.marker').forEach((n) => n.remove());
-    for (const tr of state.territories) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'marker' + (tr.id === state.selected ? ' selected' : '');
-      b.style.left = (tr.x / m.width) * 100 + '%';
-      b.style.top = (tr.y / m.height) * 100 + '%';
-      if (tr.faction) b.style.setProperty('--c', faction(tr.faction).color);
-      b.setAttribute('aria-label', loc(tr.name));
-      b.addEventListener('click', () => {
-        state.selected = tr.id;
-        drawMarkers();
-        drawInfo();
-        if (!state.viewedTerritory) { state.viewedTerritory = true; track('territory_viewed'); }
-      });
-      inner.appendChild(b);
-    }
+  // Colore chaque territoire selon sa faction, et met en évidence le territoire choisi et ses voisins.
+  const paint = () => {
+    const near = new Set(state.selected ? neighborsOf(state.selected) : []);
+    svg.querySelectorAll('.terr').forEach((p) => {
+      const o = ownerOf(p.dataset.id);
+      p.style.fill = o ? faction(o).color : '';
+      p.classList.toggle('owned', !!o);
+      p.classList.toggle('selected', p.dataset.id === state.selected);
+      p.classList.toggle('neighbor', near.has(p.dataset.id));
+    });
+    // Le territoire choisi passe au-dessus des autres pour que son contour reste entier.
+    const sel = svg.querySelector('.terr.selected');
+    if (sel) svg.appendChild(sel);
   };
-  drawMarkers();
+  const select = (id, reveal) => {
+    state.selected = id;
+    paint();
+    drawInfo();
+    if (reveal) svg.querySelector('.terr.selected')?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+    if (!state.viewedTerritory) { state.viewedTerritory = true; track('territory_viewed'); }
+  };
+  svg.addEventListener('click', (e) => {
+    const p = e.target.closest('.terr');
+    if (p) select(p.dataset.id);
+  });
+  svg.addEventListener('keydown', (e) => {
+    const p = e.target.closest('.terr');
+    if (p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(p.dataset.id); }
+  });
+  paint();
   drawInfo();
 
   try {
     state.territories = (await api('/map')).territories;
-    if (state.tab === 'map' && inner.isConnected) { drawMarkers(); drawInfo(); }
+    if (state.tab === 'map' && inner.isConnected) { paint(); drawInfo(); }
   } catch (err) {
     if (err.status === 401) return sessionLost();
   }
@@ -562,7 +596,8 @@ async function renderNotifs() {
   }
   if (state.tab !== 'notifs' || !view.isConnected) return;
   const when = (iso) => new Date(iso).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-  view.innerHTML = panelHead(t('notifs.title')) + (list === null
+  const clearBtn = list && list.length ? `<button type="button" class="btn ghost compact" data-clear>${esc(t('notifs.clear'))}</button>` : '';
+  view.innerHTML = panelHead(t('notifs.title'), clearBtn) + (list === null
     ? `<p class="error">${esc(t('notifs.error'))}</p>`
     : list.length
       ? list.map((n) => {
@@ -576,6 +611,15 @@ async function renderNotifs() {
       }).join('')
       : `<p class="muted">${esc(t('notifs.empty'))}</p>`);
   bindClose(view);
+  view.querySelector('[data-clear]')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try { setMe(await api('/notifications/clear', {})); } catch (err) {
+      if (err.status === 401) return sessionLost();
+      e.target.disabled = false;
+      return;
+    }
+    if (state.tab === 'notifs') renderNotifs();
+  });
   // Les notifications affichées passent en « lues ».
   if (list && list.some((n) => !n.read)) {
     try { setMe(await api('/notifications/read', {})); } catch { /* sera réessayé à la prochaine ouverture */ }
@@ -891,10 +935,12 @@ function sessionLost() {
 // ------------------------------------------------------------ Démarrage
 async function start() {
   try {
-    const [config, avatars] = await Promise.all([
+    const [config, map, avatars] = await Promise.all([
       fetch('config/game.json').then((r) => r.json()),
+      fetch('config/map.json').then((r) => r.json()),
       fetch('/api/avatars').then((r) => r.json()).catch(() => ({ avatars: [] })),
     ]);
+    config.map = map;
     state.config = config;
     state.avatars = avatars.avatars || [];
     fallbackDict = await loadDict(config.defaultLang);

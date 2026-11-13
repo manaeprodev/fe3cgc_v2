@@ -290,6 +290,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 
 /* ---------- Écrans secondaires : notifications, missions, règles ---------- */
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.panel-actions { display: flex; gap: 8px; flex: none; }
 .btn.compact { padding: 8px 14px; font-size: .9rem; }
 .notif.unread { border-left: 3px solid var(--accent); }
 .notif-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
@@ -318,7 +319,36 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 .map-wrap { position: relative; flex: 1; min-height: 0; background: #0c0e14; }
 .map-scroll { position: absolute; inset: 0; overflow: auto; display: flex; }
 .map-inner { position: relative; flex: none; margin: auto; }
-.map-inner > img { width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+.map-inner > svg { display: block; width: 100%; height: 100%; user-select: none; }
+/* Territoires : transparents s'ils sont neutres, teintés de la couleur de leur faction sinon. */
+.terr {
+  fill: transparent;
+  fill-opacity: .45;
+  stroke: #fff;
+  stroke-opacity: .25;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+  outline: none;
+}
+.terr:focus-visible { stroke: var(--accent); stroke-opacity: 1; stroke-width: 2.5; }
+.terr.neighbor { stroke: var(--accent); stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 5 4; }
+.terr.selected { fill: #fff; fill-opacity: .28; stroke: #fff; stroke-opacity: 1; stroke-width: 3; stroke-dasharray: none; }
+.terr.selected.owned { fill-opacity: .65; }
+/* Hauteur fixe : la carte garde la même taille quel que soit le nombre de voisins affichés. */
+.map-info { flex: none; height: 172px; display: flex; flex-direction: column; overflow: hidden; }
+.chips { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; margin-top: 6px; flex: 1; min-height: 0; overflow-y: auto; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-2);
+  font-size: .82rem;
+}
+.chip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
 .marker {
   position: absolute;
   width: 26px;

@@ -266,7 +266,8 @@ function renderCharacter() {
 // ------------------------------------------------------------ Choix de la faction (étape 2)
 function renderFaction() {
   const d = state.draft;
-  const visible = state.config.factions.filter((f) => !f.secret || state.secretShown);
+  // Les factions non jouables ne sont pas proposées ; la faction secrète n'apparaît qu'après le bouton caché.
+  const visible = state.config.factions.filter((f) => !f.npc && (!f.secret || state.secretShown));
   app.innerHTML = `
     <div class="page">
       <div class="page-top"><div><p class="steps">${esc(t('faction.step'))}</p><h1 class="page-title">${esc(t('faction.title'))}</h1></div>${langPicker()}</div>

@@ -65,7 +65,7 @@ Le serveur ne renvoie aucun texte : il renvoie des codes d'erreur (clés `error.
 
 - `languages`, `defaultLang` : langues proposées et langue par défaut.
 
-- `factions` : nom, couleur, logo et **courte description** de chaque faction. `"secret": true` cache la faction derrière le bouton secret.
+- `factions` : nom, couleur, logo et **courte description** de chaque faction. `"secret": true` cache la faction derrière le bouton secret. `"npc": true` en fait une faction non jouable : elle peut contrôler des territoires mais aucun joueur ne peut la rejoindre (l'Église de Seiros, logo `eglise.svg`).
 - `classes` : classes de départ (identifiant, nom, description).
 - La carte n'est pas dans ce fichier mais dans `public/config/map.json`, voir ci-dessous.
 
@@ -80,6 +80,7 @@ Redémarre le serveur après une modification de ce fichier.
 - `image`, `width`, `height` : fond de carte et dimensions du repère (1800 × 1350).
 - `territories` : un territoire par ligne, avec
   - `id` et `name` (une chaîne, ou `{ "fr": "…", "en": "…" }`) ;
+  - `faction` : la faction qui contrôle le territoire au départ (`null` = neutre). Elle n'est appliquée qu'à la création du territoire en base ; ensuite c'est la base qui fait foi ;
   - `path` : le contour, repris tel quel du fichier Inkscape d'origine (attribut `d` du tracé) ;
   - `x`, `y` : le centre du territoire ;
   - `neighbors` : les `id` des territoires voisins. Il suffit qu'un des deux cite l'autre pour qu'ils soient voisins.

@@ -323,7 +323,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 /* Territoires : transparents s'ils sont neutres, teintés de la couleur de leur faction sinon. */
 .terr {
   fill: transparent;
-  fill-opacity: .45;
+  fill-opacity: .22;   /* filtre léger : le fond de carte reste bien visible */
   stroke: #fff;
   stroke-opacity: .25;
   stroke-width: 1;
@@ -334,7 +334,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 .terr:focus-visible { stroke: var(--accent); stroke-opacity: 1; stroke-width: 2.5; }
 .terr.neighbor { stroke: var(--accent); stroke-opacity: 1; stroke-width: 2; stroke-dasharray: 5 4; }
 .terr.selected { fill: #fff; fill-opacity: .28; stroke: #fff; stroke-opacity: 1; stroke-width: 3; stroke-dasharray: none; }
-.terr.selected.owned { fill-opacity: .65; }
+.terr.selected.owned { fill-opacity: .45; }
 /* Hauteur fixe : la carte garde la même taille quel que soit le nombre de voisins affichés. */
 .map-info { flex: none; height: 172px; display: flex; flex-direction: column; overflow: hidden; }
 .chips { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; margin-top: 6px; flex: 1; min-height: 0; overflow-y: auto; }

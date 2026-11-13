@@ -829,6 +829,20 @@
         "en": "Short description of the secret faction to be written here."
       },
       "secret": true
+    },
+    {
+      "id": "eglise",
+      "name": {
+        "fr": "L'Église de Seiros",
+        "en": "The Church of Seiros"
+      },
+      "color": "#ffffff",
+      "logo": "assets/factions/eglise.svg",
+      "description": {
+        "fr": "Faction non jouable. Elle tient Garreg-Mach et le défend seule.",
+        "en": "Non-playable faction. It holds Garreg-Mach and defends it alone."
+      },
+      "npc": true
     }
   ],
   "avatars": {

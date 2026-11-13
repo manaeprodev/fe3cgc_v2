@@ -183,8 +183,16 @@ const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'eve
 
 const now = () => new Date().toISOString();
 
-const seedTerritory = db.prepare('INSERT OR IGNORE INTO territories (id, faction, updated_at) VALUES (?, NULL, ?)');
-for (const t of config.map.territories) seedTerritory.run(t.id, now());
+// Chaque territoire démarre sous la faction indiquée dans map.json (champ "faction", null = neutre).
+const startFaction = (t) => (config.factions.some((f) => f.id === t.faction) ? t.faction : null);
+const seedTerritory = db.prepare('INSERT OR IGNORE INTO territories (id, faction, updated_at) VALUES (?, ?, ?)');
+for (const t of config.map.territories) seedTerritory.run(t.id, startFaction(t), now());
+// Version 3 : les territoires créés avant la répartition de départ étaient tous neutres ; on leur applique.
+if (db.prepare('PRAGMA user_version').get().user_version < 3) {
+  const give = db.prepare('UPDATE territories SET faction = ?, updated_at = ? WHERE id = ? AND faction IS NULL');
+  for (const t of config.map.territories) if (startFaction(t)) give.run(startFaction(t), now(), t.id);
+  db.exec('PRAGMA user_version = 3');
+}
 // Les territoires qui ne figurent plus sur la carte sont retirés de la base.
 {
   const known = new Set(config.map.territories.map((t) => t.id));
@@ -605,7 +613,8 @@ const routes = {
     if (!validBirthday(birthday)) throw new HttpError(400, 'invalid_birthday');
     if (classById(klass)?.tier !== BASE_TIER) throw new HttpError(400, 'invalid_class');
     if (!listAvatars().includes(avatar) || LOCKED_AVATARS.has(avatar)) throw new HttpError(400, 'invalid_avatar');
-    if (!config.factions.some((f) => f.id === faction)) throw new HttpError(400, 'invalid_faction');
+    // Une faction non jouable ("npc": true) ne peut pas être rejointe.
+    if (!config.factions.some((f) => f.id === faction && !f.npc)) throw new HttpError(400, 'invalid_faction');
     if (q.pseudoTaken.get(pseudo)) throw new HttpError(409, 'pseudo_taken');
     q.insertCharacter.run(user.id, pseudo, birthday, klass, avatar, faction, Number(PLAYER.startGold) || 0, now());
     q.bumpEvent.run(user.id, 'character_created');

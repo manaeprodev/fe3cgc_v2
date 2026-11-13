@@ -75,6 +75,24 @@ const avatarUrl = (file) => 'assets/avatars/' + encodeURIComponent(file);
 const faction = (id) => state.config.factions.find((f) => f.id === id);
 const klass = (id) => state.config.classes.find((c) => c.id === id);
 const className = (id) => loc(klass(id)?.name) || id;
+const classIcon = (c) => `<img class="class-icon" src="${esc(c?.icon || 'assets/classes/' + (c?.id || '') + '.svg')}" alt="">`;
+// Rangs de classes qui contiennent au moins une classe (un rang vide, ex. légendaire, reste caché).
+const classTiers = () => (state.config.classTiers || []).filter((tr) => state.config.classes.some((c) => c.tier === tr.id));
+const tierOf = (c) => (state.config.classTiers || []).find((tr) => tr.id === c.tier);
+const baseTierId = () => state.config.classTiers?.[0]?.id;
+const requiresText = (c) => (c.requires || []).map(className).join(t('classes.or'));
+
+// Le joueur peut-il prendre cette classe ? Renvoie { ok } ou { ok: false, why } (mêmes règles que le serveur).
+function classAccess(c) {
+  const ch = state.me.character;
+  const tier = tierOf(c);
+  if (c.id === ch.class) return { ok: false, current: true };
+  if (!tier || !Number.isInteger(tier.cost) || !Number.isInteger(tier.renown)) return { ok: false, why: t('classes.locked') };
+  if (c.tier !== baseTierId() && !(c.requires || []).includes(ch.class)) return { ok: false, why: t('classes.needPath', { list: requiresText(c) }) };
+  if (ch.renown.level < tier.renown) return { ok: false, why: t('classes.needRenown', { renown: tier.renown }) };
+  if (ch.gold < tier.cost) return { ok: false, why: t('classes.needGold', { gold: fmtNum(tier.cost - ch.gold) }) };
+  return { ok: true };
+}
 const fmtDate = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
 const fmtNum = (n) => Number(n).toLocaleString(locale());
 
@@ -193,9 +211,9 @@ function renderCharacter() {
           <input type="date" name="birthday" min="1900-01-01" max="${today}" value="${esc(d.birthday)}" required></label>
         <div class="field"><span>${esc(t('char.class'))}</span>
           <div class="choices">
-            ${state.config.classes.map((c) => `
-              <button type="button" class="choice ${d.class === c.id ? 'selected' : ''}" data-class="${esc(c.id)}" aria-pressed="${d.class === c.id}">
-                <strong>${esc(loc(c.name))}</strong><small>${esc(loc(c.description))}</small>
+            ${state.config.classes.filter((c) => c.tier === baseTierId()).map((c) => `
+              <button type="button" class="choice with-icon ${d.class === c.id ? 'selected' : ''}" data-class="${esc(c.id)}" aria-pressed="${d.class === c.id}">
+                ${classIcon(c)}<span><strong>${esc(loc(c.name))}</strong><small>${esc(loc(c.description))}</small></span>
               </button>`).join('')}
           </div>
         </div>
@@ -290,7 +308,7 @@ function renderFaction() {
 
 // ------------------------------------------------------------ Jeu
 // Onglets principaux : map, menu. Écrans secondaires : notifs, missions, rules.
-const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules };
+const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses };
 
 function go(tab) {
   if (state.tab === 'map' || state.tab === 'menu') state.back = state.tab;
@@ -299,7 +317,7 @@ function go(tab) {
 }
 
 function renderGame() {
-  const menuSide = state.tab === 'menu' || state.tab === 'rules';
+  const menuSide = state.tab === 'menu' || state.tab === 'rules' || state.tab === 'classes';
   app.innerHTML = `
     <header class="topbar" id="topbar"></header>
     <main class="view" id="view"></main>
@@ -367,7 +385,10 @@ function panelHead(title) {
     <button type="button" class="btn ghost compact" data-close>${esc(t('common.close'))}</button></div>`;
 }
 function bindClose(view) {
-  view.querySelector('[data-close]').addEventListener('click', () => go(state.tab === 'rules' ? 'menu' : state.back || 'map'));
+  view.querySelector('[data-close]').addEventListener('click', () => {
+    if (state.tab === 'classes' && state.classesFrom === 'rules') return go('rules');
+    go(state.tab === 'rules' || state.tab === 'classes' ? 'menu' : state.back || 'map');
+  });
 }
 
 async function renderMap() {
@@ -463,6 +484,7 @@ async function renderMenu() {
           <dt>${esc(t('menu.renown'))}</dt><dd>${esc(t('menu.renownValue', ch.renown))}</dd>
           <dt>${esc(t('menu.email'))}</dt><dd>${esc(state.me.user.email)}</dd>
         </dl>
+        <button class="btn ghost" type="button" data-classes>${esc(t('classes.change'))}</button>
       </section>
 
       <section class="card">
@@ -494,6 +516,11 @@ async function renderMenu() {
       <button class="btn danger" type="button" data-logout>${esc(t('common.logout'))}</button>`;
     view.querySelector('[data-logout]').addEventListener('click', logout);
     view.querySelector('[data-rules]').addEventListener('click', () => go('rules'));
+    view.querySelector('[data-classes]').addEventListener('click', () => {
+      state.classesFrom = 'menu';
+      state.classSel = state.me.character.class;
+      go('classes');
+    });
   };
 
   draw();
@@ -513,6 +540,7 @@ function notifText(n) {
   const p = { ...n.params };
   if (p.mission) p.mission = loc((state.config.missions || []).find((m) => m.id === p.mission)?.title) || p.mission;
   if (p.faction) p.faction = loc(faction(p.faction)?.name) || p.faction;
+  if (p.class) p.class = className(p.class);
   return { title: t(`notif.${n.type}.title`, p), body: t(`notif.${n.type}.body`, p) };
 }
 
@@ -601,9 +629,153 @@ function renderRules() {
   const rules = state.config.rules || [];
   view.innerHTML = panelHead(t('rules.title')) + (rules.length
     ? rules.map((r) => `<section class="card"><h2>${esc(loc(r.title))}</h2><p class="rule-text">${esc(loc(r.text))}</p></section>`).join('')
-    : `<p class="muted">${esc(t('rules.empty'))}</p>`);
+    : `<p class="muted">${esc(t('rules.empty'))}</p>`) + classesFold();
   bindClose(view);
+  view.querySelector('[data-tree]').addEventListener('click', () => {
+    state.classesFrom = 'rules';
+    state.classSel = state.me.character.class;
+    go('classes');
+  });
   track('rules_read');
+}
+
+// Conditions d'accès à un rang de classes.
+function tierCondition(tier) {
+  if (!Number.isInteger(tier.cost) || !Number.isInteger(tier.renown)) return t('classes.locked');
+  const p = { renown: tier.renown, gold: fmtNum(tier.cost) };
+  return tier.id === baseTierId() ? t('classes.baseCond', p) : t('classes.cond', p);
+}
+
+// Dépliant des règles : liste des classes par rang, avec description et prérequis.
+function classesFold() {
+  return `
+    <details class="card fold">
+      <summary>${esc(t('classes.title'))}</summary>
+      <p class="muted small">${esc(t('classes.intro'))}</p>
+      <button type="button" class="btn ghost compact" data-tree>${esc(t('classes.tree'))}</button>
+      ${classTiers().map((tier) => `
+        <h3 class="tier-title">${esc(loc(tier.name))}</h3>
+        <p class="muted small">${esc(tierCondition(tier))}</p>
+        <ul class="class-list">
+          ${state.config.classes.filter((c) => c.tier === tier.id).map((c) => `
+            <li>${classIcon(c)}<div><strong>${esc(loc(c.name))}</strong>
+              ${loc(c.description) ? `<span class="muted small">${esc(loc(c.description))}</span>` : ''}
+              ${(c.requires || []).length ? `<span class="muted small">${esc(t('classes.requires', { list: requiresText(c) }))}</span>` : ''}</div></li>`).join('')}
+        </ul>`).join('')}
+    </details>`;
+}
+
+// Arbre des classes : un rang par colonne, un trait par prérequis.
+// Toucher une classe met en évidence tous les chemins qui y mènent et affiche ses conditions.
+function renderClasses() {
+  const view = document.getElementById('view');
+  view.className = 'view';
+  const classes = state.config.classes;
+  const tiers = classTiers();
+  const COL = 90, ROW = 66, NW = 80, NH = 58;
+  const rows = Math.max(...tiers.map((tier) => classes.filter((c) => c.tier === tier.id).length));
+  const H = rows * ROW;
+  const pos = {};
+  tiers.forEach((tier, col) => {
+    const list = classes.filter((c) => c.tier === tier.id);
+    list.forEach((c, i) => { pos[c.id] = { x: col * COL + (COL - NW) / 2, y: (i + 0.5) * (H / list.length) - NH / 2 }; });
+  });
+  const edges = [];
+  for (const c of classes) for (const req of c.requires || []) if (pos[c.id] && pos[req]) edges.push({ from: req, to: c.id });
+
+  // Classes situées sur un chemin menant à la classe choisie.
+  const pathTo = (id) => {
+    const seen = new Set();
+    const walk = (x) => { if (seen.has(x)) return; seen.add(x); for (const req of klass(x)?.requires || []) walk(req); };
+    walk(id);
+    return seen;
+  };
+
+  const draw = (error) => {
+    const ch = state.me.character;
+    if (!pos[state.classSel]) state.classSel = ch.class;
+    const sel = klass(state.classSel);
+    const lit = pathTo(sel.id);
+    const access = classAccess(sel);
+    const tier = tierOf(sel);
+    view.innerHTML = `
+      <div class="panel-head pad">${`<h1 class="page-title">${esc(t('classes.tree'))}</h1>
+        <button type="button" class="btn ghost compact" data-close>${esc(t('common.close'))}</button>`}</div>
+      <div class="tree-scroll">
+        <div class="tree-heads" style="width:${tiers.length * COL}px">
+          ${tiers.map((tr) => `<span style="width:${COL}px">${esc(loc(tr.name))}</span>`).join('')}
+        </div>
+        <div class="tree" style="width:${tiers.length * COL}px;height:${H}px">
+          <svg width="${tiers.length * COL}" height="${H}" aria-hidden="true">
+            ${edges.map((e) => {
+    const a = pos[e.from], b = pos[e.to];
+    const x1 = a.x + NW, y1 = a.y + NH / 2, x2 = b.x, y2 = b.y + NH / 2, mx = (x1 + x2) / 2;
+    const on = lit.has(e.to) && lit.has(e.from);
+    return `<path class="${on ? 'on' : ''}" d="M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}"/>`;
+  }).join('')}
+          </svg>
+          ${classes.filter((c) => pos[c.id]).map((c) => `
+            <button type="button" data-node="${esc(c.id)}" aria-pressed="${c.id === sel.id}"
+              class="node ${lit.has(c.id) ? 'on' : ''} ${c.id === sel.id ? 'selected' : ''} ${c.id === ch.class ? 'current' : ''}"
+              style="left:${pos[c.id].x}px;top:${pos[c.id].y}px;width:${NW}px;height:${NH}px">
+              ${classIcon(c)}<span>${esc(loc(c.name))}</span>
+            </button>`).join('')}
+        </div>
+      </div>
+      <section class="info class-info" aria-live="polite">
+        <div class="class-head">${classIcon(sel)}
+          <div><h3>${esc(loc(sel.name))}</h3><span class="muted small">${esc(loc(tier?.name))}${loc(sel.description) ? ' · ' + esc(loc(sel.description)) : ''}</span></div></div>
+        ${(sel.requires || []).length ? `<p class="muted small">${esc(t('classes.requires', { list: requiresText(sel) }))}</p>` : ''}
+        <p class="muted small">${esc(tier ? tierCondition(tier) : '')}</p>
+        ${error ? `<p class="error" role="alert">${esc(error)}</p>` : ''}
+        ${access.current ? `<p class="current-note">${esc(t('classes.current'))}</p>`
+    : !access.ok ? `<p class="why">${esc(access.why)}</p>`
+      : state.classConfirm === sel.id
+        ? `<p class="small">${esc(t('classes.confirm', { name: loc(sel.name), gold: fmtNum(tier.cost) }))}</p>
+           <div class="row"><button type="button" class="btn ghost" data-cancel>${esc(t('common.cancel'))}</button>
+           <button type="button" class="btn" data-become>${esc(t('common.confirm'))}</button></div>`
+        : `<button type="button" class="btn" data-ask>${esc(t('classes.become', { name: loc(sel.name), gold: fmtNum(tier.cost) }))}</button>`}
+      </section>`;
+    bindClose(view);
+    const scroller = view.querySelector('.tree-scroll');
+    view.querySelectorAll('[data-node]').forEach((b) => b.addEventListener('click', () => {
+      const keep = { x: scroller.scrollLeft, y: scroller.scrollTop };
+      state.classSel = b.dataset.node;
+      state.classConfirm = null;
+      redraw(keep);
+    }));
+    // Le changement coûte de l'or : on demande une confirmation avant de l'envoyer.
+    view.querySelectorAll('[data-ask], [data-cancel]').forEach((b) => b.addEventListener('click', () => {
+      state.classConfirm = b.hasAttribute('data-ask') ? sel.id : null;
+      redraw({ x: scroller.scrollLeft, y: scroller.scrollTop });
+    }));
+    const become = view.querySelector('[data-become]');
+    if (become) become.addEventListener('click', async () => {
+      become.disabled = true;
+      state.classConfirm = null;
+      const keep = { x: scroller.scrollLeft, y: scroller.scrollTop };
+      let err;
+      try { setMe(await api('/class', { class: sel.id })); } catch (e) {
+        if (e.status === 401) return sessionLost();
+        err = e.message;
+      }
+      if (state.tab !== 'classes' || !view.isConnected) return;
+      redraw(keep, err);
+    });
+  };
+  // Redessine en gardant la position de défilement de l'arbre.
+  const redraw = (keep, error) => {
+    draw(error);
+    const s = view.querySelector('.tree-scroll');
+    s.scrollLeft = keep.x;
+    s.scrollTop = keep.y;
+  };
+
+  state.classConfirm = null;
+  draw();
+  // Amène la classe choisie dans la zone visible.
+  const node = view.querySelector('.node.selected');
+  if (node) node.scrollIntoView({ block: 'center', inline: 'center' });
 }
 
 // ------------------------------------------------------------ Session

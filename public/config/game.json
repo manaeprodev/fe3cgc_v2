@@ -1,87 +1,784 @@
 {
-  "title": { "fr": "Conquête", "en": "Conquest" },
+  "title": {
+    "fr": "Conquête",
+    "en": "Conquest"
+  },
   "defaultLang": "fr",
   "languages": [
-    { "code": "fr", "name": "Français", "locale": "fr-FR" },
-    { "code": "en", "name": "English", "locale": "en-GB" }
-  ],
-  "player": { "startGold": 500, "renownBaseXp": 100, "renownGrowth": 1.1 },
-  "rules": [
     {
-      "title": { "fr": "But du jeu", "en": "Goal of the game" },
-      "text": { "fr": "Texte des règles à écrire ici.", "en": "Rules text to be written here." }
+      "code": "fr",
+      "name": "Français",
+      "locale": "fr-FR"
     },
     {
-      "title": { "fr": "Ressources", "en": "Resources" },
+      "code": "en",
+      "name": "English",
+      "locale": "en-GB"
+    }
+  ],
+  "player": {
+    "startGold": 500,
+    "renownBaseXp": 100,
+    "renownGrowth": 1.1
+  },
+  "rules": [
+    {
+      "title": {
+        "fr": "But du jeu",
+        "en": "Goal of the game"
+      },
+      "text": {
+        "fr": "Texte des règles à écrire ici.",
+        "en": "Rules text to be written here."
+      }
+    },
+    {
+      "title": {
+        "fr": "Ressources",
+        "en": "Resources"
+      },
       "text": {
         "fr": "L'or sert à financer tes actions. La renommée est ton niveau : elle monte en gagnant de l'expérience.",
         "en": "Gold pays for your actions. Renown is your level: it rises as you earn experience."
       }
     },
     {
-      "title": { "fr": "Territoires", "en": "Territories" },
-      "text": { "fr": "Texte des règles à écrire ici.", "en": "Rules text to be written here." }
+      "title": {
+        "fr": "Territoires",
+        "en": "Territories"
+      },
+      "text": {
+        "fr": "Texte des règles à écrire ici.",
+        "en": "Rules text to be written here."
+      }
     }
   ],
   "missions": [
     {
       "id": "bienvenue",
-      "title": { "fr": "Choisir son camp", "en": "Pick a side" },
-      "description": { "fr": "Crée ton personnage et rejoins une faction.", "en": "Create your character and join a faction." },
-      "condition": { "type": "event", "event": "character_created" },
-      "rewards": { "gold": 0, "xp": 50 }
+      "title": {
+        "fr": "Choisir son camp",
+        "en": "Pick a side"
+      },
+      "description": {
+        "fr": "Crée ton personnage et rejoins une faction.",
+        "en": "Create your character and join a faction."
+      },
+      "condition": {
+        "type": "event",
+        "event": "character_created"
+      },
+      "rewards": {
+        "gold": 0,
+        "xp": 50
+      }
     },
     {
       "id": "regles",
-      "title": { "fr": "Connaître les règles", "en": "Know the rules" },
-      "description": { "fr": "Ouvre les règles du jeu depuis le menu.", "en": "Open the game rules from the menu." },
-      "condition": { "type": "event", "event": "rules_read" },
-      "rewards": { "gold": 100, "xp": 50 }
+      "title": {
+        "fr": "Connaître les règles",
+        "en": "Know the rules"
+      },
+      "description": {
+        "fr": "Ouvre les règles du jeu depuis le menu.",
+        "en": "Open the game rules from the menu."
+      },
+      "condition": {
+        "type": "event",
+        "event": "rules_read"
+      },
+      "rewards": {
+        "gold": 100,
+        "xp": 50
+      }
     },
     {
       "id": "explorer",
-      "title": { "fr": "Premier repérage", "en": "First scouting" },
+      "title": {
+        "fr": "Premier repérage",
+        "en": "First scouting"
+      },
       "description": {
         "fr": "Touche un territoire sur la carte pour voir ses informations.",
         "en": "Tap a territory on the map to see its details."
       },
-      "condition": { "type": "event", "event": "territory_viewed" },
-      "rewards": { "gold": 50, "xp": 30 }
+      "condition": {
+        "type": "event",
+        "event": "territory_viewed"
+      },
+      "rewards": {
+        "gold": 50,
+        "xp": 30
+      }
     },
     {
       "id": "renommee-1",
-      "title": { "fr": "Se faire un nom", "en": "Make a name for yourself" },
-      "description": { "fr": "Atteins le niveau 1 de renommée.", "en": "Reach renown level 1." },
-      "condition": { "type": "renown", "level": 1 },
-      "rewards": { "gold": 200, "xp": 0 }
+      "title": {
+        "fr": "Se faire un nom",
+        "en": "Make a name for yourself"
+      },
+      "description": {
+        "fr": "Atteins le niveau 1 de renommée.",
+        "en": "Reach renown level 1."
+      },
+      "condition": {
+        "type": "renown",
+        "level": 1
+      },
+      "rewards": {
+        "gold": 200,
+        "xp": 0
+      }
+    }
+  ],
+  "classTiers": [
+    {
+      "id": "base",
+      "name": {
+        "fr": "Classes de base",
+        "en": "Base classes"
+      },
+      "renown": 1,
+      "cost": 400
+    },
+    {
+      "id": "intermediate",
+      "name": {
+        "fr": "Classes intermédiaires",
+        "en": "Intermediate classes"
+      },
+      "renown": 8,
+      "cost": 15000
+    },
+    {
+      "id": "advanced",
+      "name": {
+        "fr": "Classes avancées",
+        "en": "Advanced classes"
+      },
+      "renown": 18,
+      "cost": 50000
+    },
+    {
+      "id": "master",
+      "name": {
+        "fr": "Classes de Maître",
+        "en": "Master classes"
+      },
+      "renown": 30,
+      "cost": 100000
+    },
+    {
+      "id": "legendary",
+      "name": {
+        "fr": "Classes légendaires",
+        "en": "Legendary classes"
+      },
+      "renown": null,
+      "cost": null
     }
   ],
   "classes": [
     {
-      "id": "guerrier",
-      "name": { "fr": "Guerrier", "en": "Warrior" },
-      "description": { "fr": "Force brute et combat rapproché.", "en": "Raw strength and close combat." }
+      "id": "myrmidon",
+      "tier": "base",
+      "requires": [],
+      "name": {
+        "fr": "Bretteur",
+        "en": "Myrmidon"
+      },
+      "description": {
+        "fr": "Offensif",
+        "en": "Offensive"
+      },
+      "icon": "assets/classes/myrmidon.svg"
     },
     {
-      "id": "eclaireur",
-      "name": { "fr": "Éclaireur", "en": "Scout" },
-      "description": { "fr": "Rapide, discret, voit plus loin.", "en": "Fast, stealthy, sees further." }
+      "id": "soldier",
+      "tier": "base",
+      "requires": [],
+      "name": {
+        "fr": "Soldat",
+        "en": "Soldier"
+      },
+      "description": {
+        "fr": "Défensif",
+        "en": "Defensive"
+      },
+      "icon": "assets/classes/soldier.svg"
+    },
+    {
+      "id": "fighter",
+      "tier": "base",
+      "requires": [],
+      "name": {
+        "fr": "Combattant",
+        "en": "Fighter"
+      },
+      "description": {
+        "fr": "Adaptable",
+        "en": "Adaptable"
+      },
+      "icon": "assets/classes/fighter.svg"
+    },
+    {
+      "id": "monk",
+      "tier": "base",
+      "requires": [],
+      "name": {
+        "fr": "Moine",
+        "en": "Monk"
+      },
+      "description": {
+        "fr": "Soutien",
+        "en": "Support"
+      },
+      "icon": "assets/classes/monk.svg"
+    },
+    {
+      "id": "thief",
+      "tier": "intermediate",
+      "requires": [
+        "myrmidon"
+      ],
+      "name": {
+        "fr": "Voleur",
+        "en": "Thief"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/thief.svg"
+    },
+    {
+      "id": "mercenary",
+      "tier": "intermediate",
+      "requires": [
+        "myrmidon"
+      ],
+      "name": {
+        "fr": "Mercenaire",
+        "en": "Mercenary"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/mercenary.svg"
+    },
+    {
+      "id": "pegasus-knight",
+      "tier": "intermediate",
+      "requires": [
+        "soldier"
+      ],
+      "name": {
+        "fr": "Chevalier pégase",
+        "en": "Pegasus Knight"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/pegasus-knight.svg"
+    },
+    {
+      "id": "cavalier",
+      "tier": "intermediate",
+      "requires": [
+        "soldier"
+      ],
+      "name": {
+        "fr": "Cavalier",
+        "en": "Cavalier"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/cavalier.svg"
+    },
+    {
+      "id": "armored-knight",
+      "tier": "intermediate",
+      "requires": [
+        "soldier"
+      ],
+      "name": {
+        "fr": "Chevalier en armure",
+        "en": "Armored Knight"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/armored-knight.svg"
+    },
+    {
+      "id": "brigand",
+      "tier": "intermediate",
+      "requires": [
+        "fighter"
+      ],
+      "name": {
+        "fr": "Brigand",
+        "en": "Brigand"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/brigand.svg"
+    },
+    {
+      "id": "archer",
+      "tier": "intermediate",
+      "requires": [
+        "fighter"
+      ],
+      "name": {
+        "fr": "Archer",
+        "en": "Archer"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/archer.svg"
+    },
+    {
+      "id": "brawler",
+      "tier": "intermediate",
+      "requires": [
+        "fighter"
+      ],
+      "name": {
+        "fr": "Pugiliste",
+        "en": "Brawler"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/brawler.svg"
+    },
+    {
+      "id": "priest",
+      "tier": "intermediate",
+      "requires": [
+        "monk"
+      ],
+      "name": {
+        "fr": "Prêtre",
+        "en": "Priest"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/priest.svg"
     },
     {
       "id": "mage",
-      "name": { "fr": "Mage", "en": "Mage" },
-      "description": { "fr": "Maîtrise des arcanes et du soutien.", "en": "Master of arcana and support." }
+      "tier": "intermediate",
+      "requires": [
+        "monk"
+      ],
+      "name": {
+        "fr": "Mage",
+        "en": "Mage"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/mage.svg"
     },
     {
-      "id": "batisseur",
-      "name": { "fr": "Bâtisseur", "en": "Builder" },
-      "description": { "fr": "Fortifie et développe les territoires.", "en": "Fortifies and develops territories." }
+      "id": "assassin",
+      "tier": "advanced",
+      "requires": [
+        "thief"
+      ],
+      "name": {
+        "fr": "Assassin",
+        "en": "Assassin"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/assassin.svg"
+    },
+    {
+      "id": "swordsmaster",
+      "tier": "advanced",
+      "requires": [
+        "mercenary"
+      ],
+      "name": {
+        "fr": "Maître épéiste",
+        "en": "Swordsmaster"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/swordsmaster.svg"
+    },
+    {
+      "id": "paladin",
+      "tier": "advanced",
+      "requires": [
+        "pegasus-knight",
+        "cavalier"
+      ],
+      "name": {
+        "fr": "Paladin",
+        "en": "Paladin"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/paladin.svg"
+    },
+    {
+      "id": "wyvern-rider",
+      "tier": "advanced",
+      "requires": [
+        "brigand",
+        "pegasus-knight"
+      ],
+      "name": {
+        "fr": "Cavalier wyverne",
+        "en": "Wyvern Rider"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/wyvern-rider.svg"
+    },
+    {
+      "id": "fortress-knight",
+      "tier": "advanced",
+      "requires": [
+        "armored-knight"
+      ],
+      "name": {
+        "fr": "Chevalier forteresse",
+        "en": "Fortress Knight"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/fortress-knight.svg"
+    },
+    {
+      "id": "warrior",
+      "tier": "advanced",
+      "requires": [
+        "brigand"
+      ],
+      "name": {
+        "fr": "Guerrier",
+        "en": "Warrior"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/warrior.svg"
+    },
+    {
+      "id": "sniper",
+      "tier": "advanced",
+      "requires": [
+        "archer"
+      ],
+      "name": {
+        "fr": "Tireur d'élite",
+        "en": "Sniper"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/sniper.svg"
+    },
+    {
+      "id": "grappler",
+      "tier": "advanced",
+      "requires": [
+        "brawler"
+      ],
+      "name": {
+        "fr": "Lutteur",
+        "en": "Grappler"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/grappler.svg"
+    },
+    {
+      "id": "bishop",
+      "tier": "advanced",
+      "requires": [
+        "priest"
+      ],
+      "name": {
+        "fr": "Évêque",
+        "en": "Bishop"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/bishop.svg"
+    },
+    {
+      "id": "dark-mage",
+      "tier": "advanced",
+      "requires": [
+        "mage"
+      ],
+      "name": {
+        "fr": "Mage noir",
+        "en": "Dark Mage"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/dark-mage.svg"
+    },
+    {
+      "id": "warlock",
+      "tier": "advanced",
+      "requires": [
+        "mage"
+      ],
+      "name": {
+        "fr": "Sorcier",
+        "en": "Warlock"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/warlock.svg"
+    },
+    {
+      "id": "trickster",
+      "tier": "master",
+      "requires": [
+        "assassin"
+      ],
+      "name": {
+        "fr": "Filou",
+        "en": "Trickster"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/trickster.svg"
+    },
+    {
+      "id": "dancer",
+      "tier": "master",
+      "requires": [
+        "assassin",
+        "swordsmaster"
+      ],
+      "name": {
+        "fr": "Danseur",
+        "en": "Dancer"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/dancer.svg"
+    },
+    {
+      "id": "mortal-savant",
+      "tier": "master",
+      "requires": [
+        "swordsmaster"
+      ],
+      "name": {
+        "fr": "Érudit mortel",
+        "en": "Mortal Savant"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/mortal-savant.svg"
+    },
+    {
+      "id": "falcon-knight",
+      "tier": "master",
+      "requires": [
+        "pegasus-knight",
+        "wyvern-rider"
+      ],
+      "name": {
+        "fr": "Chevalier faucon",
+        "en": "Falcon Knight"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/falcon-knight.svg"
+    },
+    {
+      "id": "wyvern-knight",
+      "tier": "master",
+      "requires": [
+        "pegasus-knight",
+        "wyvern-rider"
+      ],
+      "name": {
+        "fr": "Chevalier wyverne",
+        "en": "Wyvern Knight"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/wyvern-knight.svg"
+    },
+    {
+      "id": "great-knight",
+      "tier": "master",
+      "requires": [
+        "fortress-knight"
+      ],
+      "name": {
+        "fr": "Grand chevalier",
+        "en": "Great Knight"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/great-knight.svg"
+    },
+    {
+      "id": "bow-knight",
+      "tier": "master",
+      "requires": [
+        "sniper"
+      ],
+      "name": {
+        "fr": "Chevalier archer",
+        "en": "Bow Knight"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/bow-knight.svg"
+    },
+    {
+      "id": "war-master",
+      "tier": "master",
+      "requires": [
+        "grappler"
+      ],
+      "name": {
+        "fr": "Maître de guerre",
+        "en": "War Master"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/war-master.svg"
+    },
+    {
+      "id": "holy-knight",
+      "tier": "master",
+      "requires": [
+        "bishop"
+      ],
+      "name": {
+        "fr": "Chevalier saint",
+        "en": "Holy Knight"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/holy-knight.svg"
+    },
+    {
+      "id": "gremory",
+      "tier": "master",
+      "requires": [
+        "warlock",
+        "bishop",
+        "dark-mage"
+      ],
+      "name": {
+        "fr": "Gremory",
+        "en": "Gremory"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/gremory.svg"
+    },
+    {
+      "id": "dark-bishop",
+      "tier": "master",
+      "requires": [
+        "dark-mage"
+      ],
+      "name": {
+        "fr": "Évêque noir",
+        "en": "Dark Bishop"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/dark-bishop.svg"
+    },
+    {
+      "id": "dark-knight",
+      "tier": "master",
+      "requires": [
+        "dark-mage",
+        "warlock"
+      ],
+      "name": {
+        "fr": "Chevalier noir",
+        "en": "Dark Knight"
+      },
+      "description": {
+        "fr": "",
+        "en": ""
+      },
+      "icon": "assets/classes/dark-knight.svg"
     }
   ],
   "factions": [
     {
       "id": "rouge",
-      "name": { "fr": "Faction Rouge", "en": "Red Faction" },
+      "name": {
+        "fr": "Faction Rouge",
+        "en": "Red Faction"
+      },
       "color": "#e5484d",
       "logo": "assets/factions/rouge.svg",
       "description": {
@@ -91,7 +788,10 @@
     },
     {
       "id": "bleue",
-      "name": { "fr": "Faction Bleue", "en": "Blue Faction" },
+      "name": {
+        "fr": "Faction Bleue",
+        "en": "Blue Faction"
+      },
       "color": "#3e8eff",
       "logo": "assets/factions/bleue.svg",
       "description": {
@@ -101,7 +801,10 @@
     },
     {
       "id": "jaune",
-      "name": { "fr": "Faction Jaune", "en": "Yellow Faction" },
+      "name": {
+        "fr": "Faction Jaune",
+        "en": "Yellow Faction"
+      },
       "color": "#f5c518",
       "logo": "assets/factions/jaune.svg",
       "description": {
@@ -111,7 +814,10 @@
     },
     {
       "id": "violette",
-      "name": { "fr": "Faction Violette", "en": "Purple Faction" },
+      "name": {
+        "fr": "Faction Violette",
+        "en": "Purple Faction"
+      },
       "color": "#9d5cff",
       "logo": "assets/factions/violette.svg",
       "description": {
@@ -126,14 +832,78 @@
     "width": 1600,
     "height": 900,
     "territories": [
-      { "id": "t1", "name": { "fr": "Territoire 1", "en": "Territory 1" }, "x": 260, "y": 220 },
-      { "id": "t2", "name": { "fr": "Territoire 2", "en": "Territory 2" }, "x": 560, "y": 170 },
-      { "id": "t3", "name": { "fr": "Territoire 3", "en": "Territory 3" }, "x": 880, "y": 240 },
-      { "id": "t4", "name": { "fr": "Territoire 4", "en": "Territory 4" }, "x": 1240, "y": 200 },
-      { "id": "t5", "name": { "fr": "Territoire 5", "en": "Territory 5" }, "x": 330, "y": 560 },
-      { "id": "t6", "name": { "fr": "Territoire 6", "en": "Territory 6" }, "x": 700, "y": 520 },
-      { "id": "t7", "name": { "fr": "Territoire 7", "en": "Territory 7" }, "x": 1040, "y": 620 },
-      { "id": "t8", "name": { "fr": "Territoire 8", "en": "Territory 8" }, "x": 1360, "y": 540 }
+      {
+        "id": "t1",
+        "name": {
+          "fr": "Territoire 1",
+          "en": "Territory 1"
+        },
+        "x": 260,
+        "y": 220
+      },
+      {
+        "id": "t2",
+        "name": {
+          "fr": "Territoire 2",
+          "en": "Territory 2"
+        },
+        "x": 560,
+        "y": 170
+      },
+      {
+        "id": "t3",
+        "name": {
+          "fr": "Territoire 3",
+          "en": "Territory 3"
+        },
+        "x": 880,
+        "y": 240
+      },
+      {
+        "id": "t4",
+        "name": {
+          "fr": "Territoire 4",
+          "en": "Territory 4"
+        },
+        "x": 1240,
+        "y": 200
+      },
+      {
+        "id": "t5",
+        "name": {
+          "fr": "Territoire 5",
+          "en": "Territory 5"
+        },
+        "x": 330,
+        "y": 560
+      },
+      {
+        "id": "t6",
+        "name": {
+          "fr": "Territoire 6",
+          "en": "Territory 6"
+        },
+        "x": 700,
+        "y": 520
+      },
+      {
+        "id": "t7",
+        "name": {
+          "fr": "Territoire 7",
+          "en": "Territory 7"
+        },
+        "x": 1040,
+        "y": 620
+      },
+      {
+        "id": "t8",
+        "name": {
+          "fr": "Territoire 8",
+          "en": "Territory 8"
+        },
+        "x": 1360,
+        "y": 540
+      }
     ]
   }
 }

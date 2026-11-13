@@ -2,12 +2,10 @@
   "app.tagline": "Pick your side. Take the map.",
   "app.loadError": "Unable to load the game. Check your connection.",
   "lang.label": "Language",
-
   "common.loading": "Loading…",
   "common.logout": "Log out",
   "common.close": "Close",
   "common.back": "Back",
-
   "auth.login": "Log in",
   "auth.register": "Create account",
   "auth.email": "Email",
@@ -17,7 +15,6 @@
   "auth.submitLogin": "Log in",
   "auth.submitRegister": "Create my account",
   "auth.fillAll": "Fill in every field.",
-
   "char.step": "Step 1 of 2",
   "char.title": "Character creation",
   "char.notice": "This information will be used in the game and visible to other players.",
@@ -31,15 +28,12 @@
   "char.needBirthday": "Enter your date of birth.",
   "char.pickClass": "Pick a starting class.",
   "char.pickAvatar": "Pick a profile picture.",
-
   "faction.step": "Step 2 of 2",
   "faction.title": "Choose your faction",
   "faction.join": "Join",
   "faction.final": "This choice is final.",
-
   "tab.map": "Map",
   "tab.menu": "Menu",
-
   "top.notifs": "Notifications",
   "top.notifsUnread": "Notifications ({n} unread)",
   "top.missions": "Missions",
@@ -48,7 +42,6 @@
   "res.renown": "Renown",
   "res.xpProgress": "Experience towards the next level",
   "res.xp": "{xp} / {needed} xp",
-
   "map.alt": "World map",
   "map.zoomIn": "Zoom in",
   "map.zoomOut": "Zoom out",
@@ -56,7 +49,6 @@
   "map.coords": "Coordinates {x}, {y}",
   "map.owned": "Controlled by",
   "map.neutral": "Neutral territory",
-
   "menu.rules": "Game rules",
   "menu.character": "My character",
   "menu.class": "Class",
@@ -69,29 +61,24 @@
   "menu.territories": "Controlled territories",
   "menu.players": "Players ({n})",
   "menu.playerRenown": "Renown {level}",
-
   "notifs.title": "Notifications",
   "notifs.new": "New",
   "notifs.empty": "No notifications yet.",
   "notifs.error": "Unable to load notifications.",
-
   "missions.title": "Missions",
   "missions.claimed": "Completed",
   "missions.claim": "Claim",
   "missions.empty": "No missions yet.",
   "missions.error": "Unable to load missions.",
   "missions.xpAlt": "Renown experience",
-
   "rules.title": "Game rules",
   "rules.empty": "The rules are coming soon.",
-
   "notif.welcome.title": "Welcome, {pseudo}!",
   "notif.welcome.body": "You joined {faction}. Check your missions to get started.",
   "notif.mission_done.title": "Mission complete",
   "notif.mission_done.body": "“{mission}”: your reward is waiting in the missions.",
   "notif.renown.title": "Renown {level}",
   "notif.renown.body": "Your renown rises to level {level}.",
-
   "error.generic": "Something went wrong. Try again.",
   "error.network": "Network error. Try again.",
   "error.server_error": "Internal server error.",
@@ -113,5 +100,30 @@
   "error.invalid_faction": "Invalid faction.",
   "error.pseudo_taken": "This nickname is already taken.",
   "error.mission_unknown": "Unknown mission.",
-  "error.reward_unavailable": "Reward unavailable."
+  "error.reward_unavailable": "Reward unavailable.",
+  "common.cancel": "Cancel",
+  "common.confirm": "Confirm",
+  "classes.title": "Classes",
+  "classes.tree": "Class tree",
+  "classes.change": "Change class",
+  "classes.intro": "Every player starts with a base class, then progresses by following the requirements. You change class from your profile.",
+  "classes.or": " or ",
+  "classes.requires": "Requires: {list}",
+  "classes.cond": "Renown {renown} and {gold} gold to unlock.",
+  "classes.baseCond": "Starting class. Return to it at any time: renown {renown} and {gold} gold.",
+  "classes.locked": "Coming soon.",
+  "classes.current": "This is your current class.",
+  "classes.become": "Become {name} (−{gold} gold)",
+  "classes.confirm": "Become {name} for {gold} gold?",
+  "classes.needPath": "You must first be {list}.",
+  "classes.needRenown": "Renown {renown} required.",
+  "classes.needGold": "You are {gold} gold short.",
+  "notif.class_changed.title": "New class",
+  "notif.class_changed.body": "You are now {class}.",
+  "error.no_character": "Create your character first.",
+  "error.class_same": "This is already your class.",
+  "error.class_path": "Your current class does not lead to this class.",
+  "error.class_renown": "Your renown is too low.",
+  "error.class_gold": "You do not have enough gold.",
+  "error.invalid_lang": "Unknown language."
 }

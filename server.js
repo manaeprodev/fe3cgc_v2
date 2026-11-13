@@ -102,6 +102,12 @@ db.exec(`
 // Réglages du joueur (surchargeables dans config/game.json, clé "player").
 const PLAYER = { startGold: 500, renownBaseXp: 100, renownGrowth: 1.1, ...(config.player || {}) };
 const MISSIONS = Array.isArray(config.missions) ? config.missions : [];
+// Classes : chaque classe appartient à un rang (classTiers), le premier rang étant celui des classes de base.
+// Un rang fixe la renommée minimale et le prix en or pour y accéder ; un rang sans prix est verrouillé.
+const TIERS = Array.isArray(config.classTiers) ? config.classTiers : [];
+const BASE_TIER = TIERS[0]?.id;
+const classById = (id) => config.classes.find((c) => c.id === id);
+const tierById = (id) => TIERS.find((t) => t.id === id);
 const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'event').map((m) => m.condition.event));
 
 // Migration : ressources du joueur (or, et xp dont découle la renommée).
@@ -116,6 +122,24 @@ const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'eve
   // Langue choisie par le joueur (servira aussi aux futurs emails).
   const ucols = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name);
   if (!ucols.includes('lang')) db.exec('ALTER TABLE users ADD COLUMN lang TEXT');
+  // Journal des changements de classe.
+  db.exec(`CREATE TABLE IF NOT EXISTS class_changes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    from_class TEXT NOT NULL,
+    to_class   TEXT NOT NULL,
+    cost       INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  )`);
+  // Version 1 du schéma : les quatre classes d'origine deviennent les classes de base.
+  if (db.prepare('PRAGMA user_version').get().user_version < 1) {
+    const old = { guerrier: 'fighter', eclaireur: 'myrmidon', mage: 'monk', batisseur: 'soldier' };
+    const upd = db.prepare('UPDATE characters SET class = ? WHERE class = ?');
+    // « mage » existe aussi dans le nouvel arbre : on convertit en une passe, via des noms temporaires.
+    for (const k of Object.keys(old)) upd.run(`old:${k}`, k);
+    for (const [k, v] of Object.entries(old)) upd.run(v, `old:${k}`);
+    db.exec('PRAGMA user_version = 1');
+  }
   // Les personnages créés avant les missions comptent aussi comme « créés ».
   db.exec("INSERT OR IGNORE INTO player_events (user_id, event, count) SELECT user_id, 'character_created', 1 FROM characters");
 }
@@ -144,6 +168,8 @@ const q = {
   insertNotif: db.prepare("INSERT INTO notifications (user_id, title, body, type, params, created_at) VALUES (?, ?, '', ?, ?, ?)"),
   notifs: db.prepare('SELECT id, title, body, type, params, created_at, read_at IS NOT NULL AS read FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 50'),
   setLang: db.prepare('UPDATE users SET lang = ? WHERE id = ?'),
+  changeClass: db.prepare('UPDATE characters SET class = ?, gold = gold - ? WHERE user_id = ? AND gold >= ?'),
+  logClass: db.prepare('INSERT INTO class_changes (user_id, from_class, to_class, cost, created_at) VALUES (?, ?, ?, ?, ?)'),
   unread: db.prepare('SELECT count(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL'),
   markRead: db.prepare('UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL'),
   missionRows: db.prepare('SELECT mission_id, completed_at, claimed_at FROM mission_progress WHERE user_id = ?'),
@@ -411,7 +437,7 @@ const routes = {
     const { pseudo, birthday, class: klass, avatar, faction } = await readJson(req);
     if (typeof pseudo !== 'string' || !PSEUDO_RE.test(pseudo)) throw new HttpError(400, 'invalid_pseudo');
     if (!validBirthday(birthday)) throw new HttpError(400, 'invalid_birthday');
-    if (!config.classes.some((c) => c.id === klass)) throw new HttpError(400, 'invalid_class');
+    if (classById(klass)?.tier !== BASE_TIER) throw new HttpError(400, 'invalid_class');
     if (!listAvatars().includes(avatar)) throw new HttpError(400, 'invalid_avatar');
     if (!config.factions.some((f) => f.id === faction)) throw new HttpError(400, 'invalid_faction');
     if (q.pseudoTaken.get(pseudo)) throw new HttpError(409, 'pseudo_taken');
@@ -430,6 +456,29 @@ const routes = {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
     send(res, 200, { notifications: q.notifs.all(user.id).map((n) => ({ ...n, params: parseParams(n.params), read: !!n.read })) });
+  },
+
+  // Changement de classe.
+  // - Vers une classe de base : possible depuis n'importe quelle classe.
+  // - Vers une autre classe : la classe actuelle doit faire partie des prérequis de la classe visée.
+  // Dans les deux cas, la renommée minimale et le prix sont ceux du rang de la classe visée.
+  'POST /api/class': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    const { class: target } = await readJson(req);
+    const ch = q.character.get(user.id);
+    if (!ch) throw new HttpError(409, 'no_character');
+    const cls = classById(target);
+    const tier = cls && tierById(cls.tier);
+    if (!cls || !tier || !Number.isInteger(tier.cost) || !Number.isInteger(tier.renown)) throw new HttpError(400, 'invalid_class');
+    if (cls.id === ch.class) throw new HttpError(409, 'class_same');
+    if (cls.tier !== BASE_TIER && !(cls.requires || []).includes(ch.class)) throw new HttpError(409, 'class_path');
+    if (renown(ch.xp).level < tier.renown) throw new HttpError(409, 'class_renown');
+    // L'or n'est débité que s'il y en a assez (vérifié dans la même requête).
+    if (q.changeClass.run(cls.id, tier.cost, user.id, tier.cost).changes !== 1) throw new HttpError(409, 'class_gold');
+    q.logClass.run(user.id, ch.class, cls.id, tier.cost, now());
+    notify(user.id, 'class_changed', { class: cls.id });
+    send(res, 200, mePayload(user));
   },
 
   // Mémorise la langue choisie par le joueur.

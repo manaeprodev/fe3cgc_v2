@@ -22,6 +22,7 @@ Tout est dans `public/assets/`. Les fichiers actuels sont provisoires : remplace
 | Logos de faction | `public/assets/factions/` | `rouge.svg`, `bleue.svg`, `jaune.svg`, `violette.svg` | carré, SVG ou PNG 256 px |
 | Avatars | `public/assets/avatars/` | noms libres | PNG, JPG, WEBP ou SVG, n'importe quelles proportions |
 | Icône de l'app | `public/assets/icons/` | `icon-192.png`, `icon-512.png`, `icon.svg` | carré |
+| Icônes de classe | `public/assets/classes/` | l'identifiant de la classe : `myrmidon.svg`, `pegasus-knight.svg`… | carré, pixel art (affiché sans lissage) |
 | Icônes d'interface | `public/assets/ui/` | `gold.svg` (pièces d'or), `renown.svg` (étoile), `bell.svg` (cloche), `missions.svg` (parchemin) | carré, SVG |
 
 - **Avatars** : tout fichier image déposé dans le dossier est proposé automatiquement à la création du personnage, par ordre alphabétique. Ils sont recadrés en carré à l'affichage (centrés).
@@ -52,6 +53,19 @@ Le serveur ne renvoie aucun texte : il renvoie des codes d'erreur (clés `error.
 - `missions` : liste des missions, voir ci-dessous.
 
 Redémarre le serveur après une modification de ce fichier.
+
+### Classes
+
+- `classTiers` : les rangs, dans l'ordre (base, intermédiaire, avancée, maître, légendaire). Chaque rang fixe la renommée minimale (`renown`) et le prix en or (`cost`) pour prendre une classe de ce rang. Un rang sans prix (`null`) est verrouillé, et un rang sans classe n'est pas affiché : c'est le cas du rang légendaire pour l'instant.
+- `classes` : chaque classe a un `id`, un rang (`tier`), ses prérequis (`requires`, une seule des classes listées suffit), un nom, une description et une icône.
+
+Règles appliquées par le serveur (`POST /api/class`) :
+
+- à la création du personnage, seules les classes du premier rang sont proposées ;
+- pour prendre une classe, la classe actuelle doit figurer dans ses prérequis, et le joueur doit avoir la renommée et l'or du rang visé (un Pegasus Knight peut donc passer directement Falcon Knight au tarif des classes de Maître) ;
+- on peut revenir à n'importe quelle classe de base depuis n'importe quelle classe, au tarif du premier rang (renommée 1, 400 or).
+
+Pour ajouter des classes légendaires : renseigner `renown` et `cost` du rang `legendary`, puis ajouter les classes avec `"tier": "legendary"` et leurs prérequis. Elles apparaîtront dans l'arbre et dans les règles sans autre changement. Chaque changement de classe est enregistré dans la table `class_changes`.
 
 ### Renommée
 

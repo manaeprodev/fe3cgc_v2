@@ -2,12 +2,10 @@
   "app.tagline": "Choisis ton camp. Prends la carte.",
   "app.loadError": "Impossible de charger le jeu. Vérifie ta connexion.",
   "lang.label": "Langue",
-
   "common.loading": "Chargement…",
   "common.logout": "Se déconnecter",
   "common.close": "Fermer",
   "common.back": "Retour",
-
   "auth.login": "Connexion",
   "auth.register": "Créer un compte",
   "auth.email": "Email",
@@ -17,7 +15,6 @@
   "auth.submitLogin": "Se connecter",
   "auth.submitRegister": "Créer mon compte",
   "auth.fillAll": "Remplis tous les champs.",
-
   "char.step": "Étape 1 sur 2",
   "char.title": "Création du personnage",
   "char.notice": "Ces informations seront utilisées dans le jeu et visibles par les autres joueurs.",
@@ -31,15 +28,12 @@
   "char.needBirthday": "Indique ta date d'anniversaire.",
   "char.pickClass": "Choisis une classe de départ.",
   "char.pickAvatar": "Choisis une photo de profil.",
-
   "faction.step": "Étape 2 sur 2",
   "faction.title": "Choisis ta faction",
   "faction.join": "Rejoindre",
   "faction.final": "Ce choix est définitif.",
-
   "tab.map": "Carte",
   "tab.menu": "Menu",
-
   "top.notifs": "Notifications",
   "top.notifsUnread": "Notifications ({n} non lues)",
   "top.missions": "Missions",
@@ -48,7 +42,6 @@
   "res.renown": "Renommée",
   "res.xpProgress": "Expérience vers le niveau suivant",
   "res.xp": "{xp} / {needed} xp",
-
   "map.alt": "Carte du monde",
   "map.zoomIn": "Zoomer",
   "map.zoomOut": "Dézoomer",
@@ -56,7 +49,6 @@
   "map.coords": "Coordonnées {x}, {y}",
   "map.owned": "Contrôlé par",
   "map.neutral": "Territoire neutre",
-
   "menu.rules": "Règles du jeu",
   "menu.character": "Mon personnage",
   "menu.class": "Classe",
@@ -69,29 +61,24 @@
   "menu.territories": "Territoires contrôlés",
   "menu.players": "Joueurs ({n})",
   "menu.playerRenown": "Renommée {level}",
-
   "notifs.title": "Notifications",
   "notifs.new": "Nouveau",
   "notifs.empty": "Aucune notification pour le moment.",
   "notifs.error": "Impossible de charger les notifications.",
-
   "missions.title": "Missions",
   "missions.claimed": "Terminée",
   "missions.claim": "Récupérer",
   "missions.empty": "Aucune mission pour le moment.",
   "missions.error": "Impossible de charger les missions.",
   "missions.xpAlt": "Expérience de renommée",
-
   "rules.title": "Règles du jeu",
   "rules.empty": "Les règles arrivent bientôt.",
-
   "notif.welcome.title": "Bienvenue, {pseudo} !",
   "notif.welcome.body": "Tu rejoins {faction}. Consulte tes missions pour bien démarrer.",
   "notif.mission_done.title": "Mission accomplie",
   "notif.mission_done.body": "« {mission} » : ta récompense t'attend dans les missions.",
   "notif.renown.title": "Renommée {level}",
   "notif.renown.body": "Ta renommée passe au niveau {level}.",
-
   "error.generic": "Une erreur est survenue. Réessaie.",
   "error.network": "Erreur réseau. Réessaie.",
   "error.server_error": "Erreur interne du serveur.",
@@ -113,5 +100,30 @@
   "error.invalid_faction": "Faction invalide.",
   "error.pseudo_taken": "Ce pseudo est déjà pris.",
   "error.mission_unknown": "Mission inconnue.",
-  "error.reward_unavailable": "Récompense indisponible."
+  "error.reward_unavailable": "Récompense indisponible.",
+  "common.cancel": "Annuler",
+  "common.confirm": "Confirmer",
+  "classes.title": "Classes",
+  "classes.tree": "Arbre des classes",
+  "classes.change": "Changer de classe",
+  "classes.intro": "Chaque joueur commence par une classe de base, puis progresse en suivant les prérequis. Changer de classe se fait depuis le profil.",
+  "classes.or": " ou ",
+  "classes.requires": "Requiert : {list}",
+  "classes.cond": "Renommée {renown} et {gold} or pour y accéder.",
+  "classes.baseCond": "Classe de départ. Y revenir à tout moment : renommée {renown} et {gold} or.",
+  "classes.locked": "Bientôt disponible.",
+  "classes.current": "C'est ta classe actuelle.",
+  "classes.become": "Devenir {name} (−{gold} or)",
+  "classes.confirm": "Devenir {name} pour {gold} or ?",
+  "classes.needPath": "Tu dois d'abord être {list}.",
+  "classes.needRenown": "Renommée {renown} requise.",
+  "classes.needGold": "Il te manque {gold} or.",
+  "notif.class_changed.title": "Nouvelle classe",
+  "notif.class_changed.body": "Tu es maintenant {class}.",
+  "error.no_character": "Crée d'abord ton personnage.",
+  "error.class_same": "C'est déjà ta classe.",
+  "error.class_path": "Ta classe actuelle ne mène pas à cette classe.",
+  "error.class_renown": "Ta renommée est insuffisante.",
+  "error.class_gold": "Tu n'as pas assez d'or.",
+  "error.invalid_lang": "Langue inconnue."
 }

@@ -1,0 +1,139 @@
+{
+  "title": { "fr": "Conquête", "en": "Conquest" },
+  "defaultLang": "fr",
+  "languages": [
+    { "code": "fr", "name": "Français", "locale": "fr-FR" },
+    { "code": "en", "name": "English", "locale": "en-GB" }
+  ],
+  "player": { "startGold": 500, "renownBaseXp": 100, "renownGrowth": 1.1 },
+  "rules": [
+    {
+      "title": { "fr": "But du jeu", "en": "Goal of the game" },
+      "text": { "fr": "Texte des règles à écrire ici.", "en": "Rules text to be written here." }
+    },
+    {
+      "title": { "fr": "Ressources", "en": "Resources" },
+      "text": {
+        "fr": "L'or sert à financer tes actions. La renommée est ton niveau : elle monte en gagnant de l'expérience.",
+        "en": "Gold pays for your actions. Renown is your level: it rises as you earn experience."
+      }
+    },
+    {
+      "title": { "fr": "Territoires", "en": "Territories" },
+      "text": { "fr": "Texte des règles à écrire ici.", "en": "Rules text to be written here." }
+    }
+  ],
+  "missions": [
+    {
+      "id": "bienvenue",
+      "title": { "fr": "Choisir son camp", "en": "Pick a side" },
+      "description": { "fr": "Crée ton personnage et rejoins une faction.", "en": "Create your character and join a faction." },
+      "condition": { "type": "event", "event": "character_created" },
+      "rewards": { "gold": 0, "xp": 50 }
+    },
+    {
+      "id": "regles",
+      "title": { "fr": "Connaître les règles", "en": "Know the rules" },
+      "description": { "fr": "Ouvre les règles du jeu depuis le menu.", "en": "Open the game rules from the menu." },
+      "condition": { "type": "event", "event": "rules_read" },
+      "rewards": { "gold": 100, "xp": 50 }
+    },
+    {
+      "id": "explorer",
+      "title": { "fr": "Premier repérage", "en": "First scouting" },
+      "description": {
+        "fr": "Touche un territoire sur la carte pour voir ses informations.",
+        "en": "Tap a territory on the map to see its details."
+      },
+      "condition": { "type": "event", "event": "territory_viewed" },
+      "rewards": { "gold": 50, "xp": 30 }
+    },
+    {
+      "id": "renommee-1",
+      "title": { "fr": "Se faire un nom", "en": "Make a name for yourself" },
+      "description": { "fr": "Atteins le niveau 1 de renommée.", "en": "Reach renown level 1." },
+      "condition": { "type": "renown", "level": 1 },
+      "rewards": { "gold": 200, "xp": 0 }
+    }
+  ],
+  "classes": [
+    {
+      "id": "guerrier",
+      "name": { "fr": "Guerrier", "en": "Warrior" },
+      "description": { "fr": "Force brute et combat rapproché.", "en": "Raw strength and close combat." }
+    },
+    {
+      "id": "eclaireur",
+      "name": { "fr": "Éclaireur", "en": "Scout" },
+      "description": { "fr": "Rapide, discret, voit plus loin.", "en": "Fast, stealthy, sees further." }
+    },
+    {
+      "id": "mage",
+      "name": { "fr": "Mage", "en": "Mage" },
+      "description": { "fr": "Maîtrise des arcanes et du soutien.", "en": "Master of arcana and support." }
+    },
+    {
+      "id": "batisseur",
+      "name": { "fr": "Bâtisseur", "en": "Builder" },
+      "description": { "fr": "Fortifie et développe les territoires.", "en": "Fortifies and develops territories." }
+    }
+  ],
+  "factions": [
+    {
+      "id": "rouge",
+      "name": { "fr": "Faction Rouge", "en": "Red Faction" },
+      "color": "#e5484d",
+      "logo": "assets/factions/rouge.svg",
+      "description": {
+        "fr": "Courte description de la faction rouge à écrire ici.",
+        "en": "Short description of the red faction to be written here."
+      }
+    },
+    {
+      "id": "bleue",
+      "name": { "fr": "Faction Bleue", "en": "Blue Faction" },
+      "color": "#3e8eff",
+      "logo": "assets/factions/bleue.svg",
+      "description": {
+        "fr": "Courte description de la faction bleue à écrire ici.",
+        "en": "Short description of the blue faction to be written here."
+      }
+    },
+    {
+      "id": "jaune",
+      "name": { "fr": "Faction Jaune", "en": "Yellow Faction" },
+      "color": "#f5c518",
+      "logo": "assets/factions/jaune.svg",
+      "description": {
+        "fr": "Courte description de la faction jaune à écrire ici.",
+        "en": "Short description of the yellow faction to be written here."
+      }
+    },
+    {
+      "id": "violette",
+      "name": { "fr": "Faction Violette", "en": "Purple Faction" },
+      "color": "#9d5cff",
+      "logo": "assets/factions/violette.svg",
+      "description": {
+        "fr": "Courte description de la faction secrète à écrire ici.",
+        "en": "Short description of the secret faction to be written here."
+      },
+      "secret": true
+    }
+  ],
+  "map": {
+    "image": "assets/map/map.svg",
+    "width": 1600,
+    "height": 900,
+    "territories": [
+      { "id": "t1", "name": { "fr": "Territoire 1", "en": "Territory 1" }, "x": 260, "y": 220 },
+      { "id": "t2", "name": { "fr": "Territoire 2", "en": "Territory 2" }, "x": 560, "y": 170 },
+      { "id": "t3", "name": { "fr": "Territoire 3", "en": "Territory 3" }, "x": 880, "y": 240 },
+      { "id": "t4", "name": { "fr": "Territoire 4", "en": "Territory 4" }, "x": 1240, "y": 200 },
+      { "id": "t5", "name": { "fr": "Territoire 5", "en": "Territory 5" }, "x": 330, "y": 560 },
+      { "id": "t6", "name": { "fr": "Territoire 6", "en": "Territory 6" }, "x": 700, "y": 520 },
+      { "id": "t7", "name": { "fr": "Territoire 7", "en": "Territory 7" }, "x": 1040, "y": 620 },
+      { "id": "t8", "name": { "fr": "Territoire 8", "en": "Territory 8" }, "x": 1360, "y": 540 }
+    ]
+  }
+}

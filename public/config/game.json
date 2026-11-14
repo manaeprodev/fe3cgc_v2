@@ -3,6 +3,11 @@
     "fr": "Fire Emblem Three Crowns : Grand Conquests",
     "en": "Fire Emblem Three Crowns : Grand Conquests"
   },
+  "brand": {
+    "top": "Fire Emblem",
+    "main": "Three Crowns",
+    "sub": "Grand Conquests"
+  },
   "defaultLang": "fr",
   "languages": [
     {
@@ -28,8 +33,8 @@
         "en": "Goal of the game"
       },
       "text": {
-        "fr": "Texte des règles à écrire ici.",
-        "en": "Rules text to be written here."
+        "fr": "Choisis une faction et aide-la à conquérir la carte, territoire après territoire.\n\nLe jeu se déroule en campagnes. Ta faction remporte la campagne si elle tient tous les territoires (hors territoires annexes) ou si elle est la dernière encore en jeu.\n\nÀ la fin d'une campagne, chaque faction marque des points selon ses résultats, la carte revient à son état de départ et une nouvelle campagne commence.\n\nTon personnage, lui, garde tout d'une campagne à l'autre : son or, sa renommée, sa classe et ses avatars.",
+        "en": "Pick a faction and help it conquer the map, one territory at a time.\n\nThe game is played in campaigns. Your faction wins the campaign if it holds every territory (annex territories aside) or if it is the last one still in play.\n\nAt the end of a campaign, each faction scores points for its results, the map returns to its starting state and a new campaign begins.\n\nYour character keeps everything from one campaign to the next: gold, renown, class and avatars."
       }
     },
     {
@@ -38,8 +43,8 @@
         "en": "Resources"
       },
       "text": {
-        "fr": "L'or sert à financer tes actions. La renommée est ton niveau : elle monte en gagnant de l'expérience.",
-        "en": "Gold pays for your actions. Renown is your level: it rises as you earn experience."
+        "fr": "Actions : tu en gagnes 1 toutes les 10 minutes, jusqu'à 6 en réserve. Se déplacer, attaquer, défendre et récolter coûtent chacun 1 action.\n\nOr : tu en gagnes en récoltant sur un territoire allié, en remportant des batailles, en accomplissant des missions et avec le bonus de régularité. Il sert à changer de classe, à acheter des avatars, à payer des renforts en bataille et à revenir en jeu après être tombé.\n\nRenommée : c'est ton niveau. Elle monte avec l'expérience gagnée en jouant : 100 points pour le niveau 1, puis 10 % de plus à chaque niveau. Elle ouvre l'accès aux classes supérieures et rend chacune de tes actions de combat plus forte.",
+        "en": "Actions: you gain 1 every 10 minutes, up to 6 in reserve. Moving, attacking, defending and gathering each cost 1 action.\n\nGold: you earn it by gathering on an allied territory, winning battles, completing missions and through the regularity bonus. It pays for class changes, avatars, reinforcements in battle and your return after falling.\n\nRenown: this is your level. It rises with the experience you earn by playing: 100 points for level 1, then 10% more for each level. It unlocks higher classes and makes each of your combat actions stronger."
       }
     },
     {
@@ -48,8 +53,18 @@
         "en": "Territories"
       },
       "text": {
-        "fr": "Texte des règles à écrire ici.",
-        "en": "Rules text to be written here."
+        "fr": "La carte compte 59 territoires. Chacun est teinté de la couleur de la faction qui le contrôle ; un territoire sans couleur est neutre.\n\nTouche un territoire pour voir qui le contrôle, les joueurs présents, la bataille en cours et ses voisins. On ne se déplace que d'un territoire à un voisin.\n\nCertains territoires comptent plus que d'autres : les capitales (Hresvelg, Blaiddyd, Riegan) et surtout Garreg-Mach. Ils sont mieux défendus et rapportent davantage.\n\nGarreg-Mach est tenu par l'Église de Seiros, une faction non jouable qui se défend seule et qui est très difficile à faire tomber.\n\nLes territoires annexes, en bordure de carte, peuvent être conquis mais ne comptent pas pour remporter la campagne.\n\nLes Serpents des Ténèbres n'ont pas de joueurs : leurs mini-boss surgissent au hasard pour attaquer un territoire. S'ils l'emportent, il faut le reprendre.",
+        "en": "The map has 59 territories. Each is tinted with the colour of the faction controlling it; a territory with no colour is neutral.\n\nTap a territory to see who controls it, the players there, any battle under way and its neighbours. You can only move from a territory to a neighbour.\n\nSome territories matter more than others: the capitals (Hresvelg, Blaiddyd, Riegan) and above all Garreg-Mach. They are better defended and more rewarding.\n\nGarreg-Mach is held by the Church of Seiros, a non-playable faction that defends itself and is very hard to bring down.\n\nAnnex territories, on the edges of the map, can be conquered but do not count towards winning the campaign.\n\nThose Who Slither in the Dark have no players: their mini-bosses appear at random to attack a territory. If they win, it has to be retaken."
+      }
+    },
+    {
+      "title": {
+        "fr": "Campagne",
+        "en": "Campaign"
+      },
+      "text": {
+        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 6 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 tours pour se replier sur un territoire allié, sinon ils tombent.\n\nUn joueur tombé peut revenir : en payant 100 or, en sacrifiant un niveau de renommée, ou en demandant à un allié de payer pour lui. Il réapparaît dans la capitale de sa faction, ou sur un de ses territoires au hasard si elle est tombée.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager des mercenaires en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nLa campagne se termine quand une faction tient tous les territoires (hors territoires annexes) ou qu'il ne reste qu'une faction en jeu. Les factions reçoivent alors des points, les trois meilleurs joueurs une récompense, puis une nouvelle campagne commence.",
+        "en": "You gain 1 action every 10 minutes, up to 6 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 turns to retreat to an allied territory, otherwise they fall.\n\nA fallen player can come back: by paying 100 gold, by sacrificing one renown level, or by asking an ally to pay. They reappear in their faction's capital, or on one of its territories at random if the capital has fallen.\n\nWith no action left, you can still weigh on a battle with your gold: hire mercenaries when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nThe campaign ends when one faction holds every territory (annex territories aside) or when only one faction is still in play. Factions then receive points, the top three players a reward, and a new campaign begins."
       }
     }
   ],
@@ -843,6 +858,21 @@
         "en": "Non-playable faction. It holds Garreg-Mach and defends it alone."
       },
       "npc": true
+    },
+    {
+      "id": "serpents",
+      "name": {
+        "fr": "Les Serpents des Ténèbres",
+        "en": "Those Who Slither in the Dark"
+      },
+      "color": "#1f9e8f",
+      "logo": "assets/factions/serpents.svg",
+      "description": {
+        "fr": "Faction ennemie, non jouable. Ses mini-boss surgissent au hasard pour attaquer les territoires.",
+        "en": "Enemy faction, non-playable. Its mini-bosses appear at random to attack territories."
+      },
+      "npc": true,
+      "enemy": true
     }
   ],
   "avatars": {
@@ -908,6 +938,162 @@
         "file": "shop-06.svg",
         "unlock": "gold",
         "price": 1500
+      }
+    ]
+  },
+  "campaign": {
+    "turnMinutes": 10,
+    "maxActions": 6,
+    "startActions": 6,
+    "battleTurns": 6,
+    "retreatTurns": 6,
+    "capitals": {
+      "rouge": "hresvelg",
+      "bleue": "blaiddyd",
+      "jaune": "riegan"
+    },
+    "homeBases": {
+      "violette": "garreg-mach"
+    },
+    "annex": [
+      "sreng",
+      "almyra",
+      "brigid",
+      "dagda",
+      "albinea",
+      "morfis",
+      "mach"
+    ],
+    "gather": {
+      "gold": 40,
+      "xp": 10
+    },
+    "attackRewards": {
+      "gold": 150,
+      "xp": 60
+    },
+    "defenseRewards": {
+      "gold": 60,
+      "xp": 25
+    },
+    "baseDefense": 2,
+    "npcDefense": {
+      "eglise": 12,
+      "serpents": 2
+    },
+    "tierPower": {
+      "base": 1,
+      "intermediate": 1.5,
+      "advanced": 2.2,
+      "master": 3,
+      "legendary": 4
+    },
+    "renownPower": 0.05,
+    "minChance": 0.05,
+    "maxChance": 0.95,
+    "boss": {
+      "faction": "serpents",
+      "chancePerTurn": 0.1,
+      "max": 1,
+      "power": 3
+    },
+    "points": {
+      "win": 100,
+      "territory": 10,
+      "survivor": 5,
+      "loserTerritory": 2,
+      "loserSurvivor": 3
+    },
+    "cadenceGold": 10,
+    "hire": {
+      "gold": 300,
+      "power": 1.5,
+      "perBattle": 2
+    },
+    "revive": {
+      "gold": 100
+    },
+    "ranking": {
+      "combat": 10,
+      "victory": 30,
+      "gather": 2,
+      "rewards": [
+        1000,
+        600,
+        300
+      ]
+    },
+    "underdogs": {
+      "violette": {
+        "neverOut": true,
+        "autoRetreat": true,
+        "freeRevive": true,
+        "outnumberedMax": 3,
+        "rewardMultiplier": 2,
+        "pointsMultiplier": 3
+      }
+    }
+  },
+  "daily": {
+    "streakBonus": 0.1,
+    "maxStreak": 7,
+    "missions": [
+      {
+        "id": "recolte",
+        "title": {
+          "fr": "Récolte du jour",
+          "en": "Daily harvest"
+        },
+        "description": {
+          "fr": "Récolte 3 fois sur un territoire allié.",
+          "en": "Gather 3 times on an allied territory."
+        },
+        "condition": {
+          "event": "gather",
+          "count": 3
+        },
+        "rewards": {
+          "gold": 60,
+          "xp": 20
+        }
+      },
+      {
+        "id": "combat",
+        "title": {
+          "fr": "Au front",
+          "en": "To the front"
+        },
+        "description": {
+          "fr": "Fais 2 actions Attaquer ou Défendre.",
+          "en": "Take 2 Attack or Defend actions."
+        },
+        "condition": {
+          "event": "combat",
+          "count": 2
+        },
+        "rewards": {
+          "gold": 80,
+          "xp": 30
+        }
+      },
+      {
+        "id": "marche",
+        "title": {
+          "fr": "En marche",
+          "en": "On the march"
+        },
+        "description": {
+          "fr": "Déplace-toi 3 fois.",
+          "en": "Move 3 times."
+        },
+        "condition": {
+          "event": "move",
+          "count": 3
+        },
+        "rewards": {
+          "gold": 40,
+          "xp": 10
+        }
       }
     ]
   }

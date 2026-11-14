@@ -141,13 +141,29 @@ async function signedIn(me) {
   else if (me.user.lang !== state.lang) api('/lang', { lang: state.lang }).catch(() => {});
 }
 
+// Titre du jeu sur l'écran d'accueil : trois couronnes, puis le titre sur trois niveaux
+// (config "brand" : top, main, sub ; à défaut, le titre complet sur une ligne).
+function brandBlock() {
+  const b = state.config.brand;
+  const crown = (x, s) => `<path transform="translate(${x} ${s === 1 ? 0 : 6}) scale(${s})" d="M2 22L0 6l8 7 6-13 6 13 8-7-2 16z"/>`;
+  return `
+    <div class="brand">
+      <svg class="crowns" viewBox="0 0 96 26" aria-hidden="true">${crown(4, 0.72)}${crown(34, 1)}${crown(71.800, 0.72)}</svg>
+      <h1 aria-label="${esc(loc(state.config.title))}">${b
+    ? `<span class="brand-top">${esc(loc(b.top))}</span><span class="brand-main">${esc(loc(b.main))}</span>
+         <span class="brand-sub"><i></i>${esc(loc(b.sub))}<i></i></span>`
+    : `<span class="brand-main">${esc(loc(state.config.title))}</span>`}</h1>
+      <p class="tagline">${esc(t('app.tagline'))}</p>
+    </div>`;
+}
+
 // ------------------------------------------------------------ Connexion / inscription
 function renderAuth() {
   const login = state.authTab === 'login';
   app.innerHTML = `
     <div class="page">
       <div class="page-top">${langPicker()}</div>
-      <div class="brand"><h1>${esc(loc(state.config.title))}</h1><p>${esc(t('app.tagline'))}</p></div>
+      ${brandBlock()}
       <div class="tabs">
         <button type="button" data-tab="login" class="${login ? 'active' : ''}">${esc(t('auth.login'))}</button>
         <button type="button" data-tab="register" class="${login ? '' : 'active'}">${esc(t('auth.register'))}</button>
@@ -311,10 +327,10 @@ function renderFaction() {
 
 // ------------------------------------------------------------ Jeu
 // Onglets principaux : map, menu. Écrans secondaires : notifs, missions, rules.
-const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses, avatars: renderAvatars };
+const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses, avatars: renderAvatars, journal: renderJournal };
 
 function go(tab) {
-  if (state.tab === 'map' || state.tab === 'menu') state.back = state.tab;
+  if (['map', 'menu', 'journal'].includes(state.tab)) state.back = state.tab;
   state.tab = tab;
   renderGame();
 }
@@ -326,6 +342,7 @@ function renderGame() {
     <main class="view" id="view"></main>
     <nav class="tabbar">
       <button type="button" data-tab="map" class="${state.tab === 'map' ? 'active' : ''}">${esc(t('tab.map'))}</button>
+      <button type="button" data-tab="journal" class="${state.tab === 'journal' ? 'active' : ''}">${esc(t('tab.journal'))}</button>
       <button type="button" data-tab="menu" class="${menuSide ? 'active' : ''}">${esc(t('tab.menu'))}</button>
     </nav>`;
   app.querySelectorAll('.tabbar [data-tab]').forEach((b) => b.addEventListener('click', () => go(b.dataset.tab)));
@@ -333,7 +350,44 @@ function renderGame() {
   (VIEWS[state.tab] || renderMap)();
 }
 
-// Bandeau du haut : joueur, langue, cloche, parchemin, puis ressources (or et renommée).
+// ------------------------------------------------------------ Temps de jeu
+// Les échéances (prochaine action, fin de bataille, délai de repli) sont données à l'heure du serveur.
+let clockOffset = 0;
+const serverNow = () => Date.now() + clockOffset;
+function syncClock(src) { if (src && src.now) clockOffset = src.now - Date.now(); }
+function fmtLeft(ms) {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return h ? `${h} h ${String(m).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`;
+}
+// Phrase traduite contenant un compte à rebours vivant à la place de {time}.
+function withTimer(key, params, until) {
+  return esc(t(key, { ...params, time: '\u0001' })).replace('\u0001', `<span data-until="${until}">${fmtLeft(until - serverNow())}</span>`);
+}
+// État de la carte reçu du serveur (territoires, batailles, joueur, campagne, points).
+function setMap(map) {
+  state.map = map;
+  state.territories = map.territories;
+  syncClock(map);
+  if (state.me && map.player) state.me.player = map.player;
+}
+let mapView = null; // fonctions de l'écran Carte ouvert, pour le rafraîchir sans tout redessiner
+// Chaque seconde : met à jour les comptes à rebours ; à l'échéance, redemande l'état au serveur.
+let refreshDue = 0;
+function tickTimers() {
+  let expired = false;
+  document.querySelectorAll('[data-until]').forEach((el) => {
+    const left = Number(el.dataset.until) - serverNow();
+    el.textContent = fmtLeft(left);
+    if (left <= 0) expired = true;
+  });
+  if (expired && Date.now() > refreshDue && state.me && state.me.character) {
+    refreshDue = Date.now() + 3000;
+    if (state.tab === 'map' && mapView) mapView.reload(); else refreshMe();
+  }
+}
+
+// Bandeau du haut : joueur, langue, cloche, parchemin, puis ressources (or, actions et renommée).
 function drawTopbar() {
   const bar = document.getElementById('topbar');
   if (!bar) return;
@@ -342,6 +396,7 @@ function drawTopbar() {
   const r = ch.renown;
   const badge = (n) => (n > 0 ? `<span class="badge">${n > 99 ? '99+' : n}</span>` : '');
   const { unread, claimable } = state.me;
+  const pl = state.me.player;
   bar.innerHTML = `
     <div class="topbar-row">
       <img class="avatar" src="${avatarUrl(ch.avatar)}" alt="">
@@ -357,6 +412,9 @@ function drawTopbar() {
     </div>
     <div class="resources">
       <span class="res" title="${esc(t('res.gold'))}"><img src="assets/ui/gold.svg" alt="${esc(t('res.gold'))}"><strong>${fmtNum(ch.gold)}</strong></span>
+      ${pl ? `<span class="res" title="${esc(pl.nextActionAt ? t('res.actionsNext', { time: fmtLeft(pl.nextActionAt - serverNow()) }) : t('res.actionsFull'))}">
+        <img src="assets/ui/action.svg" alt="${esc(t('res.actions'))}"><strong>${pl.actions}</strong><small class="muted">/ ${pl.maxActions}</small>
+        ${pl.nextActionAt ? `<small class="muted timer" data-until="${pl.nextActionAt}">${fmtLeft(pl.nextActionAt - serverNow())}</small>` : ''}</span>` : ''}
       <span class="res grow" title="${esc(t('res.renown'))}"><img src="assets/ui/renown.svg" alt="${esc(t('res.renown'))}"><strong>${r.level}</strong>
         <span class="xpbar" role="progressbar" aria-valuemin="0" aria-valuemax="${r.needed}" aria-valuenow="${r.xp}"
           aria-label="${esc(t('res.xpProgress'))}"><i style="width:${(r.xp / r.needed) * 100}%"></i></span>
@@ -368,7 +426,8 @@ function drawTopbar() {
 
 // Met à jour le joueur (ressources, pastilles) à partir d'une réponse de l'API.
 function setMe(me) {
-  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable };
+  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable, player: me.player };
+  syncClock(me.player);
   // On ne redessine pas le bandeau pendant que le joueur manipule le sélecteur de langue.
   if (!document.activeElement || !document.activeElement.matches('#topbar [data-lang]')) drawTopbar();
 }
@@ -431,28 +490,113 @@ async function renderMap() {
   }));
 
   const shape = (id) => m.territories.find((x) => x.id === id);
-  const ownerOf = (id) => state.territories.find((x) => x.id === id)?.faction || null;
+  const live = (id) => state.territories.find((x) => x.id === id) || {};
+  const ownerOf = (id) => live(id).faction || null;
   // Voisins : ceux que le territoire cite dans map.json, et ceux qui le citent.
   const neighborsOf = (id) => m.territories
     .filter((x) => x.id !== id && ((shape(id)?.neighbors || []).includes(x.id) || (x.neighbors || []).includes(id)))
     .map((x) => x.id);
+  const me = () => state.me.player || {};
+  const myFaction = () => state.me.character.faction;
+  // Mêmes règles que le serveur : un territoire « allié » est à ma faction ou est sa base ;
+  // on n'entre ailleurs que si la cible touche un territoire allié.
+  const isHome = (id) => ownerOf(id) === myFaction() || (state.map?.homeBases || {})[myFaction()] === id;
+  const canEnter = (id) => isHome(id) || neighborsOf(id).some(isHome);
+  let actionError = '';
+  let actionNote = '';
 
+  // Repères dessinés par-dessus la carte : ma position et les batailles en cours.
+  const markers = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  markers.setAttribute('class', 'markers');
+  svg.appendChild(markers);
+  const drawMarkers = () => {
+    const u = m.width / (inner.getBoundingClientRect().width || m.width); // unités de carte par pixel d'écran
+    const parts = [];
+    for (const st of state.territories) {
+      const s = shape(st.id);
+      if (!s || !st.battle) continue;
+      const k = 4 * u;
+      parts.push(`<g class="battle-mark" transform="translate(${s.x} ${s.y - 16 * u})">
+        <circle r="${9 * u}" fill="${esc(faction(st.battle.attacker)?.color || '#e5484d')}" stroke="#fff" stroke-width="${1.5 * u}"/>
+        <path d="M${-k} ${-k}L${k} ${k}M${k} ${-k}L${-k} ${k}" stroke="#fff" stroke-width="${2 * u}" stroke-linecap="round"/></g>`);
+    }
+    const p = me();
+    const s = p.territory && shape(p.territory);
+    if (s && p.status !== 'dead') {
+      parts.push(`<g transform="translate(${s.x} ${s.y})"><circle r="${8 * u}" fill="${esc(faction(myFaction()).color)}" stroke="#fff" stroke-width="${3 * u}"/>
+        <circle r="${2.5 * u}" fill="#fff"/></g>`);
+    }
+    markers.innerHTML = parts.join('');
+  };
+
+  // Les actions secondaires (renforts payés, appel à l'aide, retours alternatifs) ont un bouton discret.
+  const QUIET = new Set(['hire', 'rally', 'revive-renown', 'revive-ask']);
+  const btn = (act, label, disabled) => `<button type="button" class="btn compact ${QUIET.has(act) ? 'ghost' : ''}" data-act="${act}" ${disabled ? 'disabled' : ''}>${esc(label)}</button>`;
+  const bindActs = (box) => box.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', () => {
+    box.querySelectorAll('[data-act]').forEach((x) => { x.disabled = true; });
+    doAct(el.dataset.act);
+  }));
   const drawInfo = () => {
+    const box = view.querySelector('.info');
     const tr = shape(state.selected);
-    if (!tr) { view.querySelector('.info').innerHTML = `<p class="muted">${esc(t('map.hint'))}</p>`; return; }
-    const owner = ownerOf(tr.id) ? faction(ownerOf(tr.id)) : null;
+    const p = me();
+    const costs = state.map?.costs || {};
+    const mine = state.me.character;
+    // Tombé : trois façons de revenir (or, niveau de renommée, aide d'un allié), sauf si la faction est hors jeu.
+    const banner = p.status === 'dead'
+      ? (p.factionOut ? `<p class="banner">${esc(t('camp.out'))}</p>` : `<p class="banner">${esc(t('camp.dead'))}</p>
+          <div class="row act-row">${btn('revive-gold', costs.revive ? t('camp.reviveGold', { gold: fmtNum(costs.revive) }) : t('camp.reviveFree'), mine.gold < costs.revive)}
+            ${btn('revive-renown', t('camp.reviveRenown'), mine.renown.level < 1)}
+            ${btn('revive-ask', t(p.reviveAsked ? 'camp.reviveAsked' : 'camp.reviveAsk'), p.reviveAsked)}</div>`)
+      : p.status === 'retreating' ? `<p class="banner">${withTimer('camp.retreating', {}, p.retreatUntil)}</p>` : '';
+    if (!tr) { box.innerHTML = banner + `<p class="muted">${esc(t('map.hint'))}</p>`; bindActs(box); return; }
+    const st = live(tr.id);
+    const owner = st.faction ? faction(st.faction) : null;
     const near = neighborsOf(tr.id);
-    view.querySelector('.info').innerHTML = `
-      <h3>${esc(loc(tr.name))}</h3>
+    const b = st.battle;
+    const here = p.territory === tr.id;
+    const noAct = !(p.actions > 0);
+    const tags = [st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : ''].filter(Boolean);
+    const present = Object.entries(st.players || {}).map(([f, n]) => `<span class="who-here" title="${esc(loc(faction(f)?.name))}">
+      <span class="dot" style="--c:${esc(faction(f)?.color || '#888')}"></span>${n}</span>`).join('');
+
+    // Ce que je peux faire ici : agir sur mon territoire, m'y déplacer s'il est voisin, ou m'y replier.
+    let actions = '';
+    if (p.status === 'retreating') {
+      if (isHome(tr.id)) actions = btn('retreat', t('camp.retreat'), false);
+    } else if (p.status === 'alive') {
+      if (here && st.faction === myFaction()) actions = btn('defend', t('camp.defend'), noAct) + btn('gather', t('camp.gather'), noAct || !!b);
+      else if (here) actions = btn('attack', t('camp.attack'), noAct || (b && b.attacker !== myFaction()));
+      else if (near.includes(p.territory)) {
+        actions = canEnter(tr.id) ? btn('move', t('camp.move'), noAct) : `<p class="muted small">${esc(t('camp.cantEnter'))}</p>`;
+      }
+      if (here) {
+        // Sans dépenser d'action : payer un renfort (fortification chez soi, mercenaires dans une attaque de sa faction)…
+        const home = st.faction === myFaction();
+        if (home || (b && b.attacker === myFaction())) {
+          const hired = b ? b.hired : st.garrisonHired;
+          actions += btn('hire', t(home ? 'camp.hireDefense' : 'camp.hireAttack', { gold: fmtNum(costs.hire) }), hired >= costs.hireMax || mine.gold < costs.hire);
+        }
+        // … et appeler sa faction à l'aide, une fois par bataille.
+        if (b && (b.attacker === myFaction() || b.defender === myFaction())) actions += btn('rally', t(b.rallied ? 'camp.rallied' : 'camp.rally'), b.rallied);
+      }
+    }
+    box.innerHTML = `${banner}
+      <div class="terr-head"><h3>${esc(loc(tr.name))}</h3>${here ? `<span class="pill">${esc(t('camp.you'))}</span>` : ''}</div>
       <p class="muted small">${owner
     ? `${esc(t('map.owned'))} <span style="color:${esc(owner.color)}">${esc(loc(owner.name))}</span>`
-    : esc(t('map.neutral'))}</p>
-      <p class="muted small">${esc(near.length ? t('map.neighbors') : t('map.noNeighbors'))}</p>
+    : esc(t('map.neutral'))}${tags.length ? ' · ' + esc(tags.join(' · ')) : ''}${present ? ` · ${present}` : ''}</p>
+      ${b ? `<p class="small battle-line">${withTimer('camp.battle', { attacker: loc(faction(b.attacker)?.name), chance: b.chance }, b.endsAt)}
+        · ${esc(t('camp.forces', { attackers: b.attackers, defenders: b.defenders }))}</p>` : ''}
+      ${actionError ? `<p class="error" role="alert">${esc(actionError)}</p>` : ''}
+      ${actionNote ? `<p class="small note">${esc(actionNote)}</p>` : ''}
+      ${actions ? `<div class="row act-row">${actions}</div>` : ''}
       ${near.length ? `<div class="chips">${near.map((id) => {
     const o = ownerOf(id) ? faction(ownerOf(id)) : null;
     return `<button type="button" class="chip" data-goto="${esc(id)}"><span class="dot" style="--c:${esc(o ? o.color : '#6b7287')}"></span>${esc(loc(shape(id).name))}</button>`;
-  }).join('')}</div>` : ''}`;
-    view.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => select(b.dataset.goto, true)));
+  }).join('')}</div>` : `<p class="muted small">${esc(t('map.noNeighbors'))}</p>`}`;
+    box.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => select(el.dataset.goto, true)));
+    bindActs(box);
   };
   // Colore chaque territoire selon sa faction, et met en évidence le territoire choisi et ses voisins.
   const paint = () => {
@@ -464,17 +608,57 @@ async function renderMap() {
       p.classList.toggle('selected', p.dataset.id === state.selected);
       p.classList.toggle('neighbor', near.has(p.dataset.id));
     });
-    // Le territoire choisi passe au-dessus des autres pour que son contour reste entier.
+    // Le territoire choisi passe au-dessus des autres pour que son contour reste entier ; les repères restent tout en haut.
     const sel = svg.querySelector('.terr.selected');
     if (sel) svg.appendChild(sel);
+    svg.appendChild(markers);
   };
+  const refresh = () => { paint(); drawMarkers(); drawInfo(); };
   const select = (id, reveal) => {
     state.selected = id;
+    actionError = '';
+    actionNote = '';
     paint();
     drawInfo();
     if (reveal) svg.querySelector('.terr.selected')?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
     if (!state.viewedTerritory) { state.viewedTerritory = true; track('territory_viewed'); }
   };
+  // Envoie une action de campagne ; le serveur renvoie le joueur et la carte à jour.
+  const doAct = async (act) => {
+    const [path, body] = act === 'move' ? ['/move', { to: state.selected }]
+      : act === 'retreat' ? ['/retreat', { to: state.selected }]
+        : act === 'rally' ? ['/rally', {}]
+          : act.startsWith('revive-') ? ['/revive', { mode: act.slice(7) }] : ['/act', { action: act }];
+    actionError = '';
+    actionNote = '';
+    try {
+      const res = await api(path, body);
+      setMe(res);
+      setMap(res.map);
+      if (res.bonus) actionNote = t('camp.bonus', { gold: res.bonus });
+      // De retour en jeu : la carte se place sur le territoire où l'on réapparaît.
+      if (act.startsWith('revive-') && res.player.status === 'alive') state.selected = res.player.territory;
+    } catch (err) {
+      if (err.status === 401) return sessionLost();
+      actionError = err.message;
+    }
+    if (state.tab === 'map' && inner.isConnected) refresh();
+  };
+  const reload = async () => {
+    try {
+      setMap(await api('/map'));
+    } catch (err) {
+      if (err.status === 401) sessionLost();
+      return;
+    }
+    if (state.tab !== 'map' || !inner.isConnected) return;
+    drawTopbar();
+    // À l'ouverture, le territoire où je me trouve est sélectionné.
+    if (!shape(state.selected) && me().territory) state.selected = me().territory;
+    refresh();
+  };
+  mapView = { reload };
+
   svg.addEventListener('click', (e) => {
     const p = e.target.closest('.terr');
     if (p) select(p.dataset.id);
@@ -483,15 +667,9 @@ async function renderMap() {
     const p = e.target.closest('.terr');
     if (p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(p.dataset.id); }
   });
-  paint();
-  drawInfo();
-
-  try {
-    state.territories = (await api('/map')).territories;
-    if (state.tab === 'map' && inner.isConnected) { paint(); drawInfo(); }
-  } catch (err) {
-    if (err.status === 401) return sessionLost();
-  }
+  view.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', drawMarkers));
+  refresh();
+  await reload();
 }
 
 async function renderMenu() {
@@ -503,7 +681,12 @@ async function renderMenu() {
     const f = faction(ch.faction);
     const counts = Object.fromEntries(state.config.factions.map((x) => [x.id, 0]));
     for (const tr of state.territories) if (tr.faction) counts[tr.faction] += 1;
-    const shownFactions = state.config.factions.filter((x) => !x.secret || x.id === ch.faction || counts[x.id] > 0
+    const points = state.map?.points || {};
+    const rk = state.map?.ranking;
+    const pk = state.map?.perks;
+    const playable = state.config.factions.filter((x) => !x.npc && (!x.secret || x.id === ch.faction || points[x.id] > 0));
+    // Factions non jouables ou secrète : affichées seulement si elles tiennent un territoire ou ont des joueurs.
+    const shownFactions = state.config.factions.filter((x) => (!x.secret && !x.npc) || x.id === ch.faction || counts[x.id] > 0
       || state.players.some((p) => p.faction === x.id));
     view.innerHTML = `
       <button class="btn ghost" type="button" data-rules>${esc(t('menu.rules'))}</button>
@@ -533,7 +716,33 @@ async function renderMenu() {
           <img class="faction-logo" src="${esc(f.logo)}" alt="">
           <div><strong style="color:${esc(f.color)}">${esc(loc(f.name))}</strong><p class="muted small">${esc(loc(f.description))}</p></div>
         </div>
+        ${pk ? `<ul class="perks">
+          ${pk.outnumberedMax ? `<li>${esc(t('perk.outnumbered', { n: fmtNum(pk.powerBonus), max: pk.outnumberedMax }))}</li>` : ''}
+          ${pk.neverOut ? `<li>${esc(t('perk.neverOut'))}</li>` : ''}
+          ${pk.autoRetreat ? `<li>${esc(t('perk.autoRetreat'))}</li>` : ''}
+          ${pk.freeRevive ? `<li>${esc(t('perk.freeRevive'))}</li>` : ''}
+          ${pk.rewardMultiplier > 1 ? `<li>${esc(t('perk.rewards', { n: pk.rewardMultiplier }))}</li>` : ''}
+          ${pk.pointsMultiplier > 1 ? `<li>${esc(t('perk.points', { n: pk.pointsMultiplier }))}</li>` : ''}
+        </ul>` : ''}
       </section>
+
+      <section class="card">
+        <h2>${esc(t('camp.title'))}</h2>
+        ${state.map ? `<p><strong>${esc(t('camp.number', { n: state.map.campaign.id }))}</strong></p>` : ''}
+        <p class="muted small">${esc(t('camp.points'))} — ${esc(t('camp.pointsHint'))}</p>
+        ${[...playable].sort((a, b) => (points[b.id] || 0) - (points[a.id] || 0)).map((x) => `
+          <div class="score" style="--c:${esc(x.color)}"><span class="dot"></span>${esc(loc(x.name))}<span class="n">${esc(t('camp.pts', { n: fmtNum(points[x.id] || 0) }))}</span></div>`).join('')}
+      </section>
+
+      ${rk ? `<section class="card">
+        <h2>${esc(t('camp.ranking'))}</h2>
+        <p class="muted small">${esc(t('camp.rankingHint', { rewards: rk.rewards.map(fmtNum).join(' / ') }))}</p>
+        ${rk.top.map((r) => `<div class="player rank ${r.me ? 'me' : ''}">
+            <img class="avatar" src="${avatarUrl(r.avatar)}" alt="">
+            <div><strong>${r.rank}. ${esc(r.pseudo)}</strong><small style="color:${esc(faction(r.faction)?.color || '#888')}">${esc(loc(faction(r.faction)?.name))}</small></div>
+            <span class="n">${esc(t('camp.pts', { n: fmtNum(r.score) }))}</span></div>`).join('') || `<p class="muted small">${esc(t('camp.rankingEmpty'))}</p>`}
+        <p class="small">${esc(rk.me.rank ? t('camp.myRank', { rank: rk.me.rank, score: fmtNum(rk.me.score) }) : t('camp.myRankNone'))}</p>
+      </section>` : ''}
 
       <section class="card">
         <h2>${esc(t('menu.territories'))}</h2>
@@ -568,7 +777,7 @@ async function renderMenu() {
   try {
     const [players, map] = await Promise.all([api('/players'), api('/map')]);
     state.players = players.players;
-    state.territories = map.territories;
+    setMap(map);
     if (state.tab === 'menu' && view.isConnected) draw();
   } catch (err) {
     if (err.status === 401) sessionLost();
@@ -582,6 +791,8 @@ function notifText(n) {
   if (p.mission) p.mission = loc((state.config.missions || []).find((m) => m.id === p.mission)?.title) || p.mission;
   if (p.faction) p.faction = loc(faction(p.faction)?.name) || p.faction;
   if (p.class) p.class = className(p.class);
+  for (const k of ['territory', 'home']) if (p[k]) p[k] = loc(state.config.map.territories.find((x) => x.id === p[k])?.name) || p[k];
+  for (const k of ['gold', 'xp', 'points', 'rank']) if (typeof p[k] === 'number') p[k] = fmtNum(p[k]);
   return { title: t(`notif.${n.type}.title`, p), body: t(`notif.${n.type}.body`, p) };
 }
 
@@ -635,44 +846,120 @@ async function renderMissions() {
     rw.xp ? `<span class="res"><img src="assets/ui/renown.svg" alt="${esc(t('missions.xpAlt'))}">+${fmtNum(rw.xp)} xp</span>` : '',
     rw.avatar ? `<span class="res"><img class="reward-avatar" src="${avatarUrl(rw.avatar)}" alt="">${esc(t('missions.avatarReward'))}</span>` : '',
   ].join('');
-  const draw = (missions, error) => {
-    const order = { done: 0, active: 1, claimed: 2 };
-    const sorted = [...missions].sort((a, b) => order[a.status] - order[b.status]);
+  const order = { done: 0, active: 1, claimed: 2 };
+  const card = (m, attr) => `
+    <article class="card mission ${m.status}">
+      <div class="notif-head"><strong>${esc(loc(m.title))}</strong>
+        ${m.status === 'claimed' ? `<span class="muted small">${esc(t('missions.claimed'))}</span>` : ''}</div>
+      <p class="muted small">${esc(loc(m.description))}</p>
+      ${m.status === 'active' ? `<div class="progress"><span class="xpbar"><i style="width:${(m.current / m.target) * 100}%"></i></span>
+        <small class="muted">${m.current} / ${m.target}</small></div>` : ''}
+      <div class="rewards">${rewardText(m.rewards)}
+        ${m.status === 'done' ? `<button type="button" class="btn compact" ${attr}="${esc(m.id)}">${esc(t('missions.claim'))}</button>` : ''}</div>
+    </article>`;
+  const sorted = (list) => [...list].sort((a, b) => order[a.status] - order[b.status]);
+  // data : { missions, daily } tel que renvoyé par le serveur.
+  const draw = (data, error) => {
+    const { missions = [], daily } = data;
     view.innerHTML = panelHead(t('missions.title'))
       + (error ? `<p class="error" role="alert">${esc(error)}</p>` : '')
-      + (sorted.length ? sorted.map((m) => `
-        <article class="card mission ${m.status}">
-          <div class="notif-head"><strong>${esc(loc(m.title))}</strong>
-            ${m.status === 'claimed' ? `<span class="muted small">${esc(t('missions.claimed'))}</span>` : ''}</div>
-          <p class="muted small">${esc(loc(m.description))}</p>
-          ${m.status === 'active' ? `<div class="progress"><span class="xpbar"><i style="width:${(m.current / m.target) * 100}%"></i></span>
-            <small class="muted">${m.current} / ${m.target}</small></div>` : ''}
-          <div class="rewards">${rewardText(m.rewards)}
-            ${m.status === 'done' ? `<button type="button" class="btn compact" data-claim="${esc(m.id)}">${esc(t('missions.claim'))}</button>` : ''}</div>
-        </article>`).join('') : (error ? '' : `<p class="muted">${esc(t('missions.empty'))}</p>`));
+      + (daily && daily.missions.length ? `
+        <div class="section-head"><h2>${esc(t('daily.title'))}</h2>
+          <span class="pill">${esc(t('daily.streak', { n: daily.streak }))}</span></div>
+        <p class="muted small">${esc(t('daily.hint'))} ${esc(t('daily.bonus', { n: daily.bonus }))}</p>
+        ${sorted(daily.missions).map((m) => card(m, 'data-claim-daily')).join('')}
+        <div class="section-head"><h2>${esc(t('missions.main'))}</h2></div>` : '')
+      + (missions.length ? sorted(missions).map((m) => card(m, 'data-claim')).join('') : (error ? '' : `<p class="muted">${esc(t('missions.empty'))}</p>`));
     bindClose(view);
-    view.querySelectorAll('[data-claim]').forEach((b) => b.addEventListener('click', async () => {
+    const claim = (attr, path) => view.querySelectorAll(`[${attr}]`).forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true;
       try {
-        const res = await api('/missions/claim', { id: b.dataset.claim });
+        const res = await api(path, { id: b.getAttribute(attr) });
         setMe(res);
-        if (state.tab === 'missions' && view.isConnected) draw(res.missions);
+        if (state.tab === 'missions' && view.isConnected) draw(res);
       } catch (err) {
         if (err.status === 401) return sessionLost();
-        draw(missions, err.message);
+        draw(data, err.message);
       }
     }));
+    claim('data-claim', '/missions/claim');
+    claim('data-claim-daily', '/missions/daily/claim');
   };
   view.innerHTML = panelHead(t('missions.title')) + `<p class="muted">${esc(t('common.loading'))}</p>`;
   bindClose(view);
   try {
-    const { missions } = await api('/missions');
-    if (state.tab === 'missions' && view.isConnected) draw(missions);
+    const data = await api('/missions');
+    if (state.tab === 'missions' && view.isConnected) draw(data);
     refreshMe();
   } catch (err) {
     if (err.status === 401) return sessionLost();
-    draw([], t('missions.error'));
+    draw({}, t('missions.error'));
   }
+}
+
+// Journal du monde : derniers événements de la carte, et alliés tombés qui demandent de l'aide.
+let journalView = null;
+async function renderJournal() {
+  const view = document.getElementById('view');
+  view.className = 'view scroll';
+  const head = `<div class="panel-head"><h1 class="page-title">${esc(t('journal.title'))}</h1></div>`;
+  const terrName = (id) => loc(state.config.map.territories.find((x) => x.id === id)?.name) || id;
+  const ago = (at, now) => {
+    const min = Math.floor((now - at) / 60000);
+    if (min < 1) return t('time.now');
+    if (min < 60) return t('time.min', { n: min });
+    if (min < 1440) return t('time.hour', { n: Math.floor(min / 60) });
+    return t('time.day', { n: Math.floor(min / 1440) });
+  };
+  // Phrase d'un événement, et faction dont la couleur le marque.
+  const describe = (e) => {
+    const p = { ...e.params };
+    const main = p.attacker || p.faction;
+    for (const k of ['faction', 'attacker', 'defender', 'from']) if (p[k]) p[k] = loc(faction(p[k])?.name) || p[k];
+    if (p.territory) p.territory = terrName(p.territory);
+    let key = 'journal.' + e.type;
+    if (e.type === 'battle_started' && p.defender) key += '_def';
+    if (e.type === 'campaign_ended' && !p.faction) key += '_draw';
+    return hasText(key) ? { text: t(key, p), color: faction(main)?.color } : null;
+  };
+  let error = '';
+  const draw = (data) => {
+    const events = data.events.map((e) => ({ e, d: describe(e) })).filter((x) => x.d);
+    view.innerHTML = head
+      + (error ? `<p class="error" role="alert">${esc(error)}</p>` : '')
+      + (data.fallen.length ? `<section class="card"><h2>${esc(t('journal.fallen'))}</h2>
+          ${data.fallen.map((f) => `<div class="fallen"><strong>${esc(f.pseudo)}</strong>
+            <button type="button" class="btn compact" data-pay="${f.id}" ${state.me.character.gold < data.reviveCost ? 'disabled' : ''}>${esc(t('journal.pay', { gold: fmtNum(data.reviveCost) }))}</button></div>`).join('')}
+        </section>` : '')
+      + (events.length ? events.map(({ e, d }) => `<article class="card event" style="--c:${esc(d.color || '#6b7287')}">
+          <p>${esc(d.text)}</p><small class="muted">${esc(ago(e.at, data.now))}</small></article>`).join('')
+        : `<p class="muted">${esc(t('journal.empty'))}</p>`);
+    view.querySelectorAll('[data-pay]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      error = '';
+      try {
+        const res = await api('/revive/pay', { id: Number(b.dataset.pay) });
+        setMe(res);
+        setMap(res.map);
+      } catch (err) {
+        if (err.status === 401) return sessionLost();
+        error = err.message;
+      }
+      reload();
+    }));
+  };
+  const reload = async () => {
+    let data;
+    try { data = await api('/journal'); } catch (err) {
+      if (err.status === 401) return sessionLost();
+      if (state.tab === 'journal' && view.isConnected) view.innerHTML = head + `<p class="error">${esc(t('journal.error'))}</p>`;
+      return;
+    }
+    if (state.tab === 'journal' && view.isConnected) draw(data);
+  };
+  journalView = { reload };
+  view.innerHTML = head + `<p class="muted">${esc(t('common.loading'))}</p>`;
+  await reload();
 }
 
 function renderRules() {
@@ -956,6 +1243,13 @@ async function start() {
   render();
   // Vérifie régulièrement les nouvelles notifications et récompenses.
   setInterval(() => { if (!document.hidden) refreshMe(); }, 30000);
+  // Comptes à rebours, et état de la carte (batailles, positions) toutes les 10 secondes quand elle est ouverte.
+  setInterval(tickTimers, 1000);
+  setInterval(() => {
+    if (document.hidden || !state.me?.character) return;
+    if (state.tab === 'map' && mapView) mapView.reload();
+    if (state.tab === 'journal' && journalView) journalView.reload();
+  }, 10000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshMe(); });
 }
 

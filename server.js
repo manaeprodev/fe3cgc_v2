@@ -10,7 +10,8 @@ const { DatabaseSync } = require('node:sqlite');
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const DATA_DIR = path.join(__dirname, 'data');
+// DATA_DIR permet de placer la base ailleurs (utile pour les tests).
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const AVATAR_DIR = path.join(PUBLIC_DIR, 'assets', 'avatars');
 const SESSION_DAYS = 30;
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif']);
@@ -498,15 +499,31 @@ function missionState(userId) {
 }
 
 function mePayload(user) {
-  const claimable = missionState(user.id).filter((m) => m.status === 'done').length;
   const ch = q.character.get(user.id);
+  const claimable = missionState(user.id).filter((m) => m.status === 'done').length + (ch ? daily.claimable(user.id) : 0);
   return {
     user: { id: user.id, email: user.email, lang: user.lang || null },
     character: ch ? { ...ch, renown: renown(ch.xp) } : null,
     unread: q.unread.get(user.id).n,
     claimable,
+    // Position, actions disponibles et état du joueur dans la campagne en cours.
+    player: ch ? campaign.playerPayload(user.id) : null,
   };
 }
+
+// Moteur de campagne : actions, déplacements, batailles, mini-boss, fin de campagne (voir campaign.js).
+// Missions du jour et série de jours consécutifs (voir daily.js).
+const daily = require('./daily')({ db, config, grant, HttpError });
+const campaign = require('./campaign')({
+  db, config, notify, grant, renown, HttpError, currentUser, readJson, send, startFaction, NEIGHBORS, mePayload,
+  // Actions de jeu constatées par le serveur : elles font avancer les missions du jour et les missions classiques.
+  onEvent: (userId, event) => {
+    daily.bump(userId, event);
+    if (MISSION_EVENTS.has(event)) q.bumpEvent.run(userId, event);
+  },
+});
+// Le monde avance tout seul : batailles arrivées à terme, replis expirés, mini-boss.
+setInterval(() => { try { campaign.tick(); } catch (e) { console.error(e); } }, Math.min(15_000, campaign.TURN_MS / 2)).unref();
 
 // ---------------------------------------------------------------- API
 const routes = {
@@ -619,6 +636,7 @@ const routes = {
     q.insertCharacter.run(user.id, pseudo, birthday, klass, avatar, faction, Number(PLAYER.startGold) || 0, now());
     q.bumpEvent.run(user.id, 'character_created');
     notify(user.id, 'welcome', { pseudo, faction });
+    campaign.ensurePlayer(user.id);
     send(res, 201, mePayload(user));
   },
 
@@ -686,7 +704,16 @@ const routes = {
   'GET /api/missions': async (req, res) => {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
-    send(res, 200, { missions: missionState(user.id) });
+    send(res, 200, { missions: missionState(user.id), daily: daily.state(user.id) });
+  },
+
+  'POST /api/missions/daily/claim': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    const { id } = await readJson(req);
+    if (!q.character.get(user.id)) throw new HttpError(409, 'no_character');
+    const state = daily.claim(user.id, id);
+    send(res, 200, { ...mePayload(user), missions: missionState(user.id), daily: state });
   },
 
   'POST /api/missions/claim': async (req, res) => {
@@ -705,7 +732,7 @@ const routes = {
       notify(user.id, 'avatar_unlocked', { avatar: prize });
     }
     const me = mePayload(user); // réévalue les missions (ex. palier de renommée atteint)
-    send(res, 200, { ...me, missions: missionState(user.id) });
+    send(res, 200, { ...me, missions: missionState(user.id), daily: daily.state(user.id) });
   },
 
   // Signale une action du joueur utile aux missions (ex. « rules_read »).
@@ -718,15 +745,15 @@ const routes = {
   },
 
   'GET /api/map': async (req, res) => {
-    if (!currentUser(req)) throw new HttpError(401, 'unauthorized');
-    const owners = new Map(q.territories.all().map((t) => [t.id, t.faction]));
-    send(res, 200, {
-      // Les contours sont déjà dans map.json : on ne renvoie ici que l'état du jeu.
-      territories: config.map.territories.map((t) => ({
-        id: t.id, name: t.name, neighbors: [...(NEIGHBORS.get(t.id) || [])], faction: owners.get(t.id) || null,
-      })),
-    });
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    // Les contours sont déjà dans map.json : on ne renvoie ici que l'état du jeu (voir campaign.js).
+    campaign.tick();
+    send(res, 200, campaign.mapPayload(user.id));
   },
+
+  // POST /api/move, /api/act et /api/retreat : actions de campagne.
+  ...campaign.routes,
 };
 
 // ---------------------------------------------------------------- Fichiers statiques

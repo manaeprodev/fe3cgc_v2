@@ -89,6 +89,50 @@ Les voisins ont été calculés à partir des contours (frontière commune d'au 
 
 Dans l'app, la carte est un SVG : chaque territoire est cliquable, coloré selon sa faction, et sa sélection met ses voisins en évidence. Le serveur expose `areNeighbors(a, b)` pour les futures règles d'attaque.
 
+### Campagne : clé `campaign` de `game.json`, moteur dans `campaign.js`
+
+Le temps est découpé en tours (`turnMinutes`, 10 minutes). Un joueur gagne 1 action par tour jusqu'à `maxActions` (6).
+
+- **Se déplacer** vers un territoire voisin : 1 action. On n'entre sur un territoire qui n'est pas à sa faction que s'il touche un territoire de sa faction (ou sa base, voir `homeBases`).
+- **Défendre** (territoire allié) : renforce la défense de la bataille en cours, ou pose une garnison qui compte si une bataille démarre dans les `battleTurns` tours.
+- **Récolter** (territoire allié, hors bataille) : rapporte `gather.gold` et `gather.xp`.
+- **Attaquer** (territoire ennemi ou neutre) : lance une bataille de `battleTurns` tours, ou renforce celle de sa faction. Les joueurs de la faction attaquée sont prévenus.
+
+Chances de l'attaque = force des attaquants / (attaquants + défense), bornées par `minChance` et `maxChance`. Chaque action Attaquer ou Défendre ajoute la force du joueur : `tierPower` selon le rang de sa classe, augmentée de `renownPower` par niveau de renommée. La défense part de `baseDefense` × importance du territoire (`importance` dans `map.json`), plus `npcDefense` pour une faction non jouable (c'est ce qui rend Garreg-Mach dur à prendre).
+
+À la fin de la bataille, un tirage décide. Attaque réussie : le territoire change de faction, les attaquants touchent `attackRewards` × importance, et les défenseurs présents ont `retreatTurns` tours pour se replier sur un territoire allié, sinon ils tombent jusqu'à la fin de la campagne. Attaque ratée : les défenseurs touchent `defenseRewards` × importance.
+
+- `capitals` : territoire d'apparition de chaque faction. `homeBases` : base d'une faction sans territoire (Garreg-Mach pour les Loups de cendre), qui lui sert d'appui sans qu'elle le contrôle.
+- `annex` : territoires annexes, conquérables mais ignorés pour la victoire.
+- `boss` : à chaque tour, la faction `boss.faction` a `chancePerTurn` chances de lancer une attaque de force `power` × importance sur un territoire au hasard (au plus `max` à la fois). Si elle gagne, le territoire lui appartient.
+- Fin de campagne : une faction jouable tient tous les territoires non annexes, ou il ne reste des joueurs en vie que dans une seule faction. `points` fixe les points gagnés ; ils s'ajoutent dans la table `faction_points`. La carte est ensuite remise à son état de départ et une nouvelle campagne commence.
+
+Autres réglages de `campaign` :
+
+- `cadenceGold` : or gagné par la première action de chaque tour (bonus de régularité).
+- `hire` : renfort payé en or, sans action. Fortification sur son territoire, mercenaires dans une attaque de sa faction ; `gold` le prix, `power` la force ajoutée, `perBattle` le maximum par joueur et par bataille.
+- `revive.gold` : prix du retour en jeu d'un joueur tombé. Il peut aussi sacrifier un niveau de renommée, ou demander à un allié de payer (les demandes apparaissent dans le Journal de sa faction). Il réapparaît dans sa capitale si sa faction la tient, sinon sur un de ses territoires au hasard.
+- Une faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne ; ses joueurs ne peuvent plus revenir. La campagne se termine quand, parmi les factions qui ont des joueurs, une seule reste en jeu.
+- `ranking` : points de classement par action de combat (`combat`), par bataille gagnée (`victory`) et par récolte (`gather`) ; `rewards` est l'or donné aux premiers à la fin de la campagne.
+- Appel à l'aide : gratuit, une fois par joueur et par bataille ; il prévient toute la faction.
+- `underdogs` : avantages d'une faction en infériorité, par identifiant de faction (les Loups de cendre) :
+  - `neverOut` : jamais hors jeu, même sans territoire ;
+  - `autoRetreat` : si son territoire tombe, le joueur se replie aussitôt dans la base de sa faction (`homeBases`) ;
+  - `freeRevive` : retour en jeu gratuit ;
+  - `outnumberedMax` : force du petit nombre. Chaque action de combat est multipliée par (moyenne des effectifs des autres factions qui ont des joueurs) / (effectif de la faction), entre 1 et ce plafond ;
+  - `rewardMultiplier` : or et expérience multipliés sur les conquêtes ;
+  - `pointsMultiplier` : points de faction multipliés par territoire tenu en fin de campagne.
+
+Le journal du monde (onglet Journal, `GET /api/journal`) liste les derniers événements : attaques, territoires pris, attaques repoussées, appels à l'aide, factions hors jeu, fins de campagne.
+
+Tables : `campaigns`, `faction_points`, `player_state` (position, actions, état), `battles`, `contributions` (actions de combat et renforts), `world_events` (journal), `battle_rallies`, `campaign_scores` (classement).
+
+Variables d'environnement pour tester : `TURN_SECONDS` (durée d'un tour), `TEST_ROLL` (tirage forcé, 0 = attaque réussie), `BOSS_CHANCE`, `CADENCE_GOLD`, `TEST_DAY` (jour forcé pour les missions du jour), `DATA_DIR` (base séparée).
+
+### Missions du jour : clé `daily` de `game.json`, code dans `daily.js`
+
+Chaque mission compte une action de jeu sur la journée : `gather` (récolter), `combat` (attaquer ou défendre), `move` (se déplacer), `battle_won` (bataille gagnée). Ces actions sont constatées par le serveur, pas déclarées par l'app. Récupérer au moins une mission par jour fait grandir la série ; chaque jour de série ajoute `streakBonus` (10 %) d'or aux récompenses, jusqu'à `maxStreak` jours. Les missions classiques (`missions`) peuvent utiliser les mêmes actions dans leur condition `event`.
+
 ### Classes
 
 - `classTiers` : les rangs, dans l'ordre (base, intermédiaire, avancée, maître, légendaire). Chaque rang fixe la renommée minimale (`renown`) et le prix en or (`cost`) pour prendre une classe de ce rang. Un rang sans prix (`null`) est verrouillé, et un rang sans classe n'est pas affiché : c'est le cas du rang légendaire pour l'instant.

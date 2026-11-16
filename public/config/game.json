@@ -53,8 +53,8 @@
         "en": "Territories"
       },
       "text": {
-        "fr": "La carte compte 59 territoires. Chacun est teinté de la couleur de la faction qui le contrôle ; un territoire sans couleur est neutre.\n\nTouche un territoire pour voir qui le contrôle, les joueurs présents, la bataille en cours et ses voisins. On ne se déplace que d'un territoire à un voisin.\n\nCertains territoires comptent plus que d'autres : les capitales (Hresvelg, Blaiddyd, Riegan) et surtout Garreg-Mach. Ils sont mieux défendus et rapportent davantage.\n\nGarreg-Mach est tenu par l'Église de Seiros, une faction non jouable qui se défend seule et qui est très difficile à faire tomber.\n\nLes territoires annexes, en bordure de carte, peuvent être conquis mais ne comptent pas pour remporter la campagne.\n\nLes Serpents des Ténèbres n'ont pas de joueurs : leurs mini-boss surgissent au hasard pour attaquer un territoire. S'ils l'emportent, il faut le reprendre.",
-        "en": "The map has 59 territories. Each is tinted with the colour of the faction controlling it; a territory with no colour is neutral.\n\nTap a territory to see who controls it, the players there, any battle under way and its neighbours. You can only move from a territory to a neighbour.\n\nSome territories matter more than others: the capitals (Hresvelg, Blaiddyd, Riegan) and above all Garreg-Mach. They are better defended and more rewarding.\n\nGarreg-Mach is held by the Church of Seiros, a non-playable faction that defends itself and is very hard to bring down.\n\nAnnex territories, on the edges of the map, can be conquered but do not count towards winning the campaign.\n\nThose Who Slither in the Dark have no players: their mini-bosses appear at random to attack a territory. If they win, it has to be retaken."
+        "fr": "La carte compte 59 territoires. Chacun est teinté de la couleur de la faction qui le contrôle ; un territoire sans couleur est neutre.\n\nTouche un territoire pour voir qui le contrôle, les joueurs présents, la bataille en cours et ses voisins. On ne se déplace que d'un territoire à un voisin.\n\nCertains territoires comptent plus que d'autres : les capitales (Hresvelg, Blaiddyd, Riegan) et surtout Garreg-Mach. Ils sont mieux défendus et rapportent davantage.\n\nGarreg-Mach est tenu par l'Église de Seiros, une faction non jouable qui se défend seule et qui est très difficile à faire tomber.\n\nLes territoires annexes, en bordure de carte, peuvent être conquis mais ne comptent pas pour remporter la campagne.\n\nLes Serpents des Ténèbres n'ont pas de joueurs : leurs mini-boss surgissent au hasard pour attaquer un territoire. S'ils l'emportent, il faut le reprendre. Ils n'apparaissent jamais entre minuit et 6 h (heure de Paris).",
+        "en": "The map has 59 territories. Each is tinted with the colour of the faction controlling it; a territory with no colour is neutral.\n\nTap a territory to see who controls it, the players there, any battle under way and its neighbours. You can only move from a territory to a neighbour.\n\nSome territories matter more than others: the capitals (Hresvelg, Blaiddyd, Riegan) and above all Garreg-Mach. They are better defended and more rewarding.\n\nGarreg-Mach is held by the Church of Seiros, a non-playable faction that defends itself and is very hard to bring down.\n\nAnnex territories, on the edges of the map, can be conquered but do not count towards winning the campaign.\n\nThose Who Slither in the Dark have no players: their mini-bosses appear at random to attack a territory. If they win, it has to be retaken. They never appear between midnight and 6 a.m. (Paris time)."
       }
     },
     {
@@ -63,8 +63,8 @@
         "en": "Campaign"
       },
       "text": {
-        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 6 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 tours pour se replier sur un territoire allié, sinon ils tombent.\n\nUn joueur tombé peut revenir : en payant 100 or, en sacrifiant un niveau de renommée, ou en demandant à un allié de payer pour lui. Il réapparaît dans la capitale de sa faction, ou sur un de ses territoires au hasard si elle est tombée.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager des mercenaires en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nLa campagne se termine quand une faction tient tous les territoires (hors territoires annexes) ou qu'il ne reste qu'une faction en jeu. Les factions reçoivent alors des points, les trois meilleurs joueurs une récompense, puis une nouvelle campagne commence.",
-        "en": "You gain 1 action every 10 minutes, up to 6 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 turns to retreat to an allied territory, otherwise they fall.\n\nA fallen player can come back: by paying 100 gold, by sacrificing one renown level, or by asking an ally to pay. They reappear in their faction's capital, or on one of its territories at random if the capital has fallen.\n\nWith no action left, you can still weigh on a battle with your gold: hire mercenaries when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nThe campaign ends when one faction holds every territory (annex territories aside) or when only one faction is still in play. Factions then receive points, the top three players a reward, and a new campaign begins."
+        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 6 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 tours pour se replier sur un territoire allié, sinon ils tombent.\n\nUn joueur tombé peut revenir : en payant 100 or, en sacrifiant un niveau de renommée, ou en demandant à un allié de payer pour lui. Il réapparaît dans la capitale de sa faction, ou sur un de ses territoires au hasard si elle est tombée.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager un bataillon en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nHors jeu, tu peux prendre les armes comme Exilé sous la bannière d'une autre faction jusqu'à la fin de la campagne, mais avec 25 % d'or et d'expérience en moins sur tes gains. Les factions qui dominent la carte refusent les exilés, sauf les Loups de cendre ; l'Église de Seiros en accueille tant qu'elle tient Garreg-Mach. Ta série de missions du jour est gelée, et des missions d'exil te sont réservées. Ceux qui ont combattu avant la chute de leur faction reçoivent une prime d'or et la distinction Vétéran ; le dernier défenseur gagne le titre de Dernier rempart.\n\nLa campagne se termine quand une faction tient tous les territoires (hors territoires annexes) ou qu'il ne reste qu'une faction en jeu. Les factions reçoivent alors des points, les trois meilleurs joueurs une récompense, puis une nouvelle campagne commence.",
+        "en": "You gain 1 action every 10 minutes, up to 6 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 turns to retreat to an allied territory, otherwise they fall.\n\nA fallen player can come back: by paying 100 gold, by sacrificing one renown level, or by asking an ally to pay. They reappear in their faction's capital, or on one of its territories at random if the capital has fallen.\n\nWith no action left, you can still weigh on a battle with your gold: hire a battalion when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nWhen out, you can take up arms as an Exile under another faction's banner until the end of the campaign, but with 25% less gold and experience on your gains. Factions that dominate the map refuse exiles, except the Ashen Wolves; the Church of Seiros takes them in as long as it holds Garreg-Mach. Your daily mission streak is frozen, and exile missions are reserved for you. Those who fought before their faction fell receive a gold bonus and the Battle-Scarred distinction; the last defender earns the Last Stand title.\n\nThe campaign ends when one faction holds every territory (annex territories aside) or when only one faction is still in play. Factions then receive points, the top three players a reward, and a new campaign begins."
       }
     }
   ],
@@ -200,14 +200,25 @@
       "tier": "base",
       "requires": [],
       "name": {
-        "fr": "Bretteur",
+        "fr": "Épéiste",
         "en": "Myrmidon"
       },
       "description": {
         "fr": "Offensif",
         "en": "Offensive"
       },
-      "icon": "assets/classes/myrmidon.svg"
+      "icon": "assets/classes/myrmidon.svg",
+      "effects": [
+        {
+          "kind": "power",
+          "side": "attack",
+          "pct": 3
+        }
+      ],
+      "effectText": {
+        "fr": "+3 % de pouvoir d'attaque.",
+        "en": "+3% attack power."
+      }
     },
     {
       "id": "soldier",
@@ -221,7 +232,18 @@
         "fr": "Défensif",
         "en": "Defensive"
       },
-      "icon": "assets/classes/soldier.svg"
+      "icon": "assets/classes/soldier.svg",
+      "effects": [
+        {
+          "kind": "power",
+          "side": "defense",
+          "pct": 3
+        }
+      ],
+      "effectText": {
+        "fr": "+3 % de pouvoir de défense.",
+        "en": "+3% defence power."
+      }
     },
     {
       "id": "fighter",
@@ -235,7 +257,18 @@
         "fr": "Adaptable",
         "en": "Adaptable"
       },
-      "icon": "assets/classes/fighter.svg"
+      "icon": "assets/classes/fighter.svg",
+      "effects": [
+        {
+          "kind": "streak",
+          "pct": 1,
+          "max": 20
+        }
+      ],
+      "effectText": {
+        "fr": "Les actions de combat consécutives sur le même territoire augmentent à chaque fois de +1 % (maximum +20 %).",
+        "en": "Consecutive combat actions on the same territory each add +1% (maximum +20%)."
+      }
     },
     {
       "id": "monk",
@@ -249,7 +282,18 @@
         "fr": "Soutien",
         "en": "Support"
       },
-      "icon": "assets/classes/monk.svg"
+      "icon": "assets/classes/monk.svg",
+      "effects": [
+        {
+          "kind": "aura",
+          "range": "adjacent",
+          "pct": 2
+        }
+      ],
+      "effectText": {
+        "fr": "Donne +2 % de pouvoir d'attaque ou de défense aux alliés présents sur son territoire et sur les territoires voisins.",
+        "en": "Gives +2% attack or defence power to allies on its territory and neighbouring territories."
+      }
     },
     {
       "id": "thief",
@@ -265,7 +309,17 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/thief.svg"
+      "icon": "assets/classes/thief.svg",
+      "effects": [
+        {
+          "kind": "steal",
+          "gold": 30
+        }
+      ],
+      "effectText": {
+        "fr": "Vole 30 or à chaque défenseur du territoire quand l'attaque réussit.",
+        "en": "Steals 30 gold from each defender of the territory when the attack succeeds."
+      }
     },
     {
       "id": "mercenary",
@@ -281,7 +335,17 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/mercenary.svg"
+      "icon": "assets/classes/mercenary.svg",
+      "effects": [
+        {
+          "kind": "goldBonus",
+          "pct": 10
+        }
+      ],
+      "effectText": {
+        "fr": "Bonus de +10 % d'or depuis toutes les sources.",
+        "en": "+10% gold from all sources."
+      }
     },
     {
       "id": "pegasus-knight",
@@ -297,7 +361,17 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/pegasus-knight.svg"
+      "icon": "assets/classes/pegasus-knight.svg",
+      "effects": [
+        {
+          "kind": "freeMove",
+          "pct": 30
+        }
+      ],
+      "effectText": {
+        "fr": "30 % de chances de ne pas consommer d'action lors d'un déplacement.",
+        "en": "30% chance of not spending an action when moving."
+      }
     },
     {
       "id": "cavalier",
@@ -313,7 +387,17 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/cavalier.svg"
+      "icon": "assets/classes/cavalier.svg",
+      "effects": [
+        {
+          "kind": "xpBonus",
+          "pct": 10
+        }
+      ],
+      "effectText": {
+        "fr": "Bonus de 10 % sur la renommée acquise depuis toutes les sources.",
+        "en": "+10% renown earned from all sources."
+      }
     },
     {
       "id": "armored-knight",
@@ -322,14 +406,25 @@
         "soldier"
       ],
       "name": {
-        "fr": "Chevalier en armure",
+        "fr": "Chevalier blindé",
         "en": "Armored Knight"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/armored-knight.svg"
+      "icon": "assets/classes/armored-knight.svg",
+      "effects": [
+        {
+          "kind": "power",
+          "side": "defense",
+          "pct": 5
+        }
+      ],
+      "effectText": {
+        "fr": "+5 % de pouvoir de défense.",
+        "en": "+5% defence power."
+      }
     },
     {
       "id": "brigand",
@@ -345,7 +440,17 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/brigand.svg"
+      "icon": "assets/classes/brigand.svg",
+      "effects": [
+        {
+          "kind": "conquestGold",
+          "pct": 30
+        }
+      ],
+      "effectText": {
+        "fr": "Gagne +30 % d'or quand une attaque réussit.",
+        "en": "Earns +30% gold when an attack succeeds."
+      }
     },
     {
       "id": "archer",
@@ -361,7 +466,26 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/archer.svg"
+      "icon": "assets/classes/archer.svg",
+      "effects": [
+        {
+          "kind": "retreat",
+          "own": 1,
+          "enemy": -1
+        },
+        {
+          "kind": "debuff",
+          "target": "defense",
+          "pct": 30,
+          "filter": {
+            "flying": true
+          }
+        }
+      ],
+      "effectText": {
+        "fr": "Sa fenêtre de repli gagne 1 tour et celle des ennemis vaincus en perd 1. Inflige -30 % de défense aux ennemis volants ({c:pegasus-knight}, {c:wyvern-rider}, {c:falcon-knight} et {c:wyvern-knight}).",
+        "en": "Its retreat window gains 1 turn and that of defeated enemies loses 1. Inflicts -30% defence on flying enemies ({c:pegasus-knight}, {c:wyvern-rider}, {c:falcon-knight} and {c:wyvern-knight})."
+      }
     },
     {
       "id": "brawler",
@@ -377,7 +501,23 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/brawler.svg"
+      "icon": "assets/classes/brawler.svg",
+      "effects": [
+        {
+          "kind": "debuff",
+          "target": "defense",
+          "pct": 30,
+          "filter": {
+            "lineage": [
+              "monk"
+            ]
+          }
+        }
+      ],
+      "effectText": {
+        "fr": "Inflige -30 % de défense aux ennemis qui ont {c:monk} dans leur arbre de classes.",
+        "en": "Inflicts -30% defence on enemies with {c:monk} in their class tree."
+      }
     },
     {
       "id": "priest",
@@ -393,7 +533,17 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/priest.svg"
+      "icon": "assets/classes/priest.svg",
+      "effects": [
+        {
+          "kind": "fortifyCost",
+          "factor": 0.5
+        }
+      ],
+      "effectText": {
+        "fr": "L'action Fortifier coûte moitié prix.",
+        "en": "The Fortify action costs half price."
+      }
     },
     {
       "id": "mage",
@@ -409,7 +559,23 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/mage.svg"
+      "icon": "assets/classes/mage.svg",
+      "effects": [
+        {
+          "kind": "aura",
+          "range": "territory",
+          "pct": 2,
+          "targets": [
+            "myrmidon",
+            "soldier",
+            "fighter"
+          ]
+        }
+      ],
+      "effectText": {
+        "fr": "Donne +2 % de pouvoir de défense et d'attaque aux alliés qui ont {c:myrmidon}, {c:soldier} ou {c:fighter} dans leur arbre de classes.",
+        "en": "Gives +2% defence and attack power to allies with {c:myrmidon}, {c:soldier} or {c:fighter} in their class tree."
+      }
     },
     {
       "id": "assassin",
@@ -425,7 +591,18 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/assassin.svg"
+      "icon": "assets/classes/assassin.svg",
+      "effects": [
+        {
+          "kind": "power",
+          "side": "attack",
+          "pct": 5
+        }
+      ],
+      "effectText": {
+        "fr": "+5 % de pouvoir d'attaque.",
+        "en": "+5% attack power."
+      }
     },
     {
       "id": "swordsmaster",
@@ -434,14 +611,28 @@
         "mercenary"
       ],
       "name": {
-        "fr": "Maître épéiste",
+        "fr": "Bretteur",
         "en": "Swordsmaster"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/swordsmaster.svg"
+      "icon": "assets/classes/swordsmaster.svg",
+      "effects": [
+        {
+          "kind": "aura",
+          "range": "territory",
+          "pct": 3,
+          "targets": [
+            "myrmidon"
+          ]
+        }
+      ],
+      "effectText": {
+        "fr": "Donne +3 % de pouvoir d'attaque ou de défense aux alliés qui ont ou ont eu {c:myrmidon} dans leur arbre de classes, lors d'une attaque ou d'une défense sur son territoire.",
+        "en": "Gives +3% attack or defence power to allies who have or had {c:myrmidon} in their class tree, in an attack or defence on its territory."
+      }
     },
     {
       "id": "paladin",
@@ -458,7 +649,21 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/paladin.svg"
+      "icon": "assets/classes/paladin.svg",
+      "effects": [
+        {
+          "kind": "aura",
+          "range": "territory",
+          "pct": 3,
+          "targets": [
+            "soldier"
+          ]
+        }
+      ],
+      "effectText": {
+        "fr": "Donne +3 % de pouvoir d'attaque ou de défense aux alliés qui ont ou ont eu {c:soldier} dans leur arbre de classes, lors d'une attaque ou d'une défense sur son territoire.",
+        "en": "Gives +3% attack or defence power to allies who have or had {c:soldier} in their class tree, in an attack or defence on its territory."
+      }
     },
     {
       "id": "wyvern-rider",
@@ -468,14 +673,25 @@
         "pegasus-knight"
       ],
       "name": {
-        "fr": "Cavalier wyverne",
+        "fr": "Chevalier wyverne",
         "en": "Wyvern Rider"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/wyvern-rider.svg"
+      "icon": "assets/classes/wyvern-rider.svg",
+      "effects": [
+        {
+          "kind": "actionStock",
+          "plus": 1,
+          "regenMinutes": 8
+        }
+      ],
+      "effectText": {
+        "fr": "Gagne un stock d'action supplémentaire et les actions se rechargent en 8 minutes au lieu de 10.",
+        "en": "Gains an extra action slot, and actions recharge in 8 minutes instead of 10."
+      }
     },
     {
       "id": "fortress-knight",
@@ -491,7 +707,18 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/fortress-knight.svg"
+      "icon": "assets/classes/fortress-knight.svg",
+      "effects": [
+        {
+          "kind": "power",
+          "side": "defense",
+          "pct": 10
+        }
+      ],
+      "effectText": {
+        "fr": "+10 % de pouvoir de défense.",
+        "en": "+10% defence power."
+      }
     },
     {
       "id": "warrior",
@@ -507,7 +734,17 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/warrior.svg"
+      "icon": "assets/classes/warrior.svg",
+      "effects": [
+        {
+          "kind": "renownPerWin",
+          "xp": 25
+        }
+      ],
+      "effectText": {
+        "fr": "Gagne +25 de renommée supplémentaire à chaque bataille remportée.",
+        "en": "Earns +25 extra renown for each battle won."
+      }
     },
     {
       "id": "sniper",
@@ -516,14 +753,24 @@
         "archer"
       ],
       "name": {
-        "fr": "Tireur d'élite",
+        "fr": "Archer d'élite",
         "en": "Sniper"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/sniper.svg"
+      "icon": "assets/classes/sniper.svg",
+      "effects": [
+        {
+          "kind": "sniper",
+          "gold": 150
+        }
+      ],
+      "effectText": {
+        "fr": "Les ennemis qui ne se replient pas à temps perdent 150 or.",
+        "en": "Enemies who do not retreat in time lose 150 gold."
+      }
     },
     {
       "id": "grappler",
@@ -532,14 +779,30 @@
         "brawler"
       ],
       "name": {
-        "fr": "Lutteur",
+        "fr": "Batailleur",
         "en": "Grappler"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/grappler.svg"
+      "icon": "assets/classes/grappler.svg",
+      "effects": [
+        {
+          "kind": "debuff",
+          "target": "defense",
+          "pct": 30,
+          "filter": {
+            "lineage": [
+              "monk"
+            ]
+          }
+        }
+      ],
+      "effectText": {
+        "fr": "Inflige -30 % de défense supplémentaire (60 % au total) aux ennemis qui ont {c:monk} dans leur arbre de classes.",
+        "en": "Inflicts a further -30% defence (60% in total) on enemies with {c:monk} in their class tree."
+      }
     },
     {
       "id": "bishop",
@@ -555,7 +818,17 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/bishop.svg"
+      "icon": "assets/classes/bishop.svg",
+      "effects": [
+        {
+          "kind": "fortifyPower",
+          "factor": 1.5
+        }
+      ],
+      "effectText": {
+        "fr": "L'action Fortifier est 50 % plus efficace.",
+        "en": "The Fortify action is 50% more effective."
+      }
     },
     {
       "id": "dark-mage",
@@ -571,7 +844,20 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/dark-mage.svg"
+      "icon": "assets/classes/dark-mage.svg",
+      "unlock": {
+        "event": "serpents_repelled",
+        "count": 3
+      },
+      "effects": [
+        {
+          "kind": "darkMage"
+        }
+      ],
+      "effectText": {
+        "fr": "Double la puissance d'attaque ou de défense s'il n'y a aucun autre allié ayant {c:monk} dans son arbre de classes sur le territoire ; triplée si aucun ennemi n'en a non plus.",
+        "en": "Doubles attack or defence power if no other ally with {c:monk} in their class tree is on the territory; tripled if no enemy has it either."
+      }
     },
     {
       "id": "warlock",
@@ -580,14 +866,32 @@
         "mage"
       ],
       "name": {
-        "fr": "Sorcier",
+        "fr": "Enchanteur",
         "en": "Warlock"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/warlock.svg"
+      "icon": "assets/classes/warlock.svg",
+      "effects": [
+        {
+          "kind": "debuff",
+          "target": "both",
+          "pct": 10,
+          "filter": {
+            "lineage": [
+              "myrmidon",
+              "soldier",
+              "fighter"
+            ]
+          }
+        }
+      ],
+      "effectText": {
+        "fr": "Inflige -10 % de pouvoir de défense et d'attaque aux ennemis qui ont {c:myrmidon}, {c:soldier} ou {c:fighter} dans leur arbre de classes.",
+        "en": "Inflicts -10% defence and attack power on enemies with {c:myrmidon}, {c:soldier} or {c:fighter} in their class tree."
+      }
     },
     {
       "id": "trickster",
@@ -596,14 +900,24 @@
         "assassin"
       ],
       "name": {
-        "fr": "Filou",
+        "fr": "Baladin",
         "en": "Trickster"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/trickster.svg"
+      "icon": "assets/classes/trickster.svg",
+      "effects": [
+        {
+          "kind": "outnumbered",
+          "pct": 10
+        }
+      ],
+      "effectText": {
+        "fr": "En infériorité numérique lors d'une attaque ou d'une défense : +10 % de pouvoir d'attaque ou de défense.",
+        "en": "When outnumbered in an attack or defence: +10% attack or defence power."
+      }
     },
     {
       "id": "dancer",
@@ -620,7 +934,19 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/dancer.svg"
+      "icon": "assets/classes/dancer.svg",
+      "effects": [
+        {
+          "kind": "aura",
+          "range": "territory",
+          "pct": 5,
+          "except": "dancer"
+        }
+      ],
+      "effectText": {
+        "fr": "Donne +5 % de pouvoir d'attaque ou de défense à tous les alliés présents sur le territoire en bataille, sauf les autres {c:dancer}.",
+        "en": "Gives +5% attack or defence power to all allies on the battle territory, except other {c:dancer}."
+      }
     },
     {
       "id": "mortal-savant",
@@ -629,14 +955,26 @@
         "swordsmaster"
       ],
       "name": {
-        "fr": "Érudit mortel",
+        "fr": "Fossoyeur",
         "en": "Mortal Savant"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/mortal-savant.svg"
+      "icon": "assets/classes/mortal-savant.svg",
+      "effects": [
+        {
+          "kind": "perAlly",
+          "side": "attack",
+          "pct": 2,
+          "max": 30
+        }
+      ],
+      "effectText": {
+        "fr": "Gagne +2 % de pouvoir d'attaque pour chaque allié présent sur son territoire et sur les territoires voisins (maximum +30 %).",
+        "en": "Gains +2% attack power for each ally on its territory and neighbouring territories (maximum +30%)."
+      }
     },
     {
       "id": "falcon-knight",
@@ -654,24 +992,50 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/falcon-knight.svg"
+      "icon": "assets/classes/falcon-knight.svg",
+      "effects": [
+        {
+          "kind": "freeMove",
+          "pct": 50,
+          "bonusIfLineage": {
+            "class": "pegasus-knight",
+            "pct": 5
+          }
+        }
+      ],
+      "effectText": {
+        "fr": "50 % de chances de ne pas consommer d'action lors des déplacements. Avec {c:pegasus-knight} dans son arbre de classes, les bonus s'additionnent et gagnent 5 % de plus : 85 % au total.",
+        "en": "50% chance of not spending an action when moving. With {c:pegasus-knight} in its class tree, the bonuses add up and gain 5% more: 85% in total."
+      }
     },
     {
       "id": "wyvern-knight",
       "tier": "master",
       "requires": [
         "pegasus-knight",
-        "wyvern-rider"
+        "wyvern-rider",
+        "warrior"
       ],
       "name": {
-        "fr": "Chevalier wyverne",
+        "fr": "Lord wyverne",
         "en": "Wyvern Knight"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/wyvern-knight.svg"
+      "icon": "assets/classes/wyvern-knight.svg",
+      "effects": [
+        {
+          "kind": "actionStock",
+          "plus": 1,
+          "regenMinutes": 7
+        }
+      ],
+      "effectText": {
+        "fr": "Gagne un stock d'action supplémentaire et les actions se rechargent en 7 minutes au lieu de 8 ou 10.",
+        "en": "Gains an extra action slot, and actions recharge in 7 minutes instead of 8 or 10."
+      }
     },
     {
       "id": "great-knight",
@@ -687,7 +1051,18 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/great-knight.svg"
+      "icon": "assets/classes/great-knight.svg",
+      "effects": [
+        {
+          "kind": "power",
+          "side": "defense",
+          "pct": 20
+        }
+      ],
+      "effectText": {
+        "fr": "+20 % de pouvoir de défense.",
+        "en": "+20% defence power."
+      }
     },
     {
       "id": "bow-knight",
@@ -696,20 +1071,43 @@
         "sniper"
       ],
       "name": {
-        "fr": "Chevalier archer",
+        "fr": "Cavalier archer",
         "en": "Bow Knight"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/bow-knight.svg"
+      "icon": "assets/classes/bow-knight.svg",
+      "effects": [
+        {
+          "kind": "debuff",
+          "target": "defense",
+          "pct": 30,
+          "filter": {
+            "flying": true
+          }
+        },
+        {
+          "kind": "perEnemy",
+          "filter": {
+            "flying": true
+          },
+          "pct": 10,
+          "max": 50
+        }
+      ],
+      "effectText": {
+        "fr": "Inflige -30 % de défense supplémentaire (60 % au total) aux ennemis volants et gagne +10 % de puissance d'attaque ou de défense pour chaque ennemi volant présent sur le territoire en bataille (maximum +50 %).",
+        "en": "Inflicts a further -30% defence (60% in total) on flying enemies and gains +10% attack or defence power for each flying enemy on the battle territory (maximum +50%)."
+      }
     },
     {
       "id": "war-master",
       "tier": "master",
       "requires": [
-        "grappler"
+        "grappler",
+        "warrior"
       ],
       "name": {
         "fr": "Maître de guerre",
@@ -719,7 +1117,17 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/war-master.svg"
+      "icon": "assets/classes/war-master.svg",
+      "effects": [
+        {
+          "kind": "warMaster",
+          "pct": 50
+        }
+      ],
+      "effectText": {
+        "fr": "Gagne +50 % de puissance d'attaque ou de défense si son niveau de renommée est supérieur ou égal à celui de l'ennemi au plus haut niveau.",
+        "en": "Gains +50% attack or defence power if its renown level is greater than or equal to that of the highest-level enemy."
+      }
     },
     {
       "id": "holy-knight",
@@ -729,14 +1137,29 @@
         "paladin"
       ],
       "name": {
-        "fr": "Chevalier saint",
+        "fr": "Chevalier sacré",
         "en": "Holy Knight"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/holy-knight.svg"
+      "icon": "assets/classes/holy-knight.svg",
+      "effects": [
+        {
+          "kind": "holyKnight",
+          "bossDivisor": 4,
+          "conqueredFactor": 4,
+          "gold": 200,
+          "xp": 80,
+          "repelledPct": 1,
+          "repelledMax": 25
+        }
+      ],
+      "effectText": {
+        "fr": "Divise par 4 la puissance d'attaque des Serpents des Ténèbres. Multiplie par 4 sa propre puissance sur un territoire conquis par les Serpents des Ténèbres. Gagne 200 or et 80 points de renommée quand il gagne une bataille contre eux. Sur les autres territoires, gagne +1 % de pouvoir d'attaque ou de défense pour chaque attaque des Serpents des Ténèbres qu'il a participé à repousser (maximum +25 %).",
+        "en": "Divides the attack power of Those Who Slither in the Dark by 4. Multiplies its own power by 4 on a territory conquered by them. Earns 200 gold and 80 renown points when it wins a battle against them. On other territories, gains +1% attack or defence power for each of their attacks it helped repel (maximum +25%)."
+      }
     },
     {
       "id": "gremory",
@@ -754,7 +1177,8 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/gremory.svg"
+      "icon": "assets/classes/gremory.svg",
+      "effects": []
     },
     {
       "id": "dark-bishop",
@@ -770,7 +1194,23 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/dark-bishop.svg"
+      "icon": "assets/classes/dark-bishop.svg",
+      "unlock": {
+        "event": "serpents_repelled",
+        "count": 15
+      },
+      "effects": [
+        {
+          "kind": "teleport",
+          "gold": 500,
+          "actions": 10,
+          "rewardFactor": 0.5
+        }
+      ],
+      "effectText": {
+        "fr": "Peut se téléporter vers n'importe quel territoire de sa faction ou voisin de sa faction pour 500 or. Les récompenses des 10 actions suivantes sont alors divisées par 2 ; se téléporter à nouveau avant la fin de l'effet le renouvelle.",
+        "en": "Can teleport to any territory of its faction or next to its faction for 500 gold. Rewards from the next 10 actions are then halved; teleporting again before the effect ends renews it."
+      }
     },
     {
       "id": "dark-knight",
@@ -781,14 +1221,15 @@
         "paladin"
       ],
       "name": {
-        "fr": "Chevalier noir",
+        "fr": "Paladin noir",
         "en": "Dark Knight"
       },
       "description": {
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/dark-knight.svg"
+      "icon": "assets/classes/dark-knight.svg",
+      "effects": []
     }
   ],
   "factions": [
@@ -829,6 +1270,9 @@
       "description": {
         "fr": "Courte description de la faction jaune à écrire ici.",
         "en": "Short description of the yellow faction to be written here."
+      },
+      "plural": {
+        "en": false
       }
     },
     {
@@ -857,7 +1301,11 @@
         "fr": "Faction non jouable. Elle tient Garreg-Mach et le défend seule.",
         "en": "Non-playable faction. It holds Garreg-Mach and defends it alone."
       },
-      "npc": true
+      "npc": true,
+      "plural": {
+        "fr": false,
+        "en": false
+      }
     },
     {
       "id": "serpents",
@@ -993,9 +1441,14 @@
     "maxChance": 0.95,
     "boss": {
       "faction": "serpents",
-      "chancePerTurn": 0.1,
+      "chancePerTurn": 0.07,
       "max": 1,
-      "power": 3
+      "power": 3,
+      "quietHours": {
+        "from": 0,
+        "to": 6,
+        "timezone": "Europe/Paris"
+      }
     },
     "points": {
       "win": 100,
@@ -1032,6 +1485,28 @@
         "rewardMultiplier": 2,
         "pointsMultiplier": 3
       }
+    },
+    "exile": {
+      "trailingOnly": true,
+      "rewardMultiplier": 0.75,
+      "alwaysOpen": [
+        "violette"
+      ],
+      "npcHosts": [
+        "eglise"
+      ]
+    },
+    "defeat": {
+      "consolationGold": 200
+    },
+    "flyingClasses": [
+      "pegasus-knight",
+      "wyvern-rider",
+      "falcon-knight",
+      "wyvern-knight"
+    ],
+    "classEffects": {
+      "auraCap": 25
     }
   },
   "daily": {
@@ -1095,6 +1570,91 @@
           "xp": 10
         }
       }
+    ],
+    "exileMissions": [
+      {
+        "id": "temoin",
+        "title": {
+          "fr": "Témoin de l'histoire",
+          "en": "Witness to history"
+        },
+        "description": {
+          "fr": "Consulte le journal du monde.",
+          "en": "Read the world journal."
+        },
+        "condition": {
+          "event": "journal_read",
+          "count": 1
+        },
+        "rewards": {
+          "gold": 50,
+          "xp": 20
+        }
+      },
+      {
+        "id": "armes",
+        "title": {
+          "fr": "Prendre les armes",
+          "en": "Take up arms"
+        },
+        "description": {
+          "fr": "Rejoins une autre bannière en tant qu'Exilé.",
+          "en": "Join another banner as an Exile."
+        },
+        "condition": {
+          "event": "exile_join",
+          "count": 1
+        },
+        "rewards": {
+          "gold": 100,
+          "xp": 40
+        }
+      },
+      {
+        "id": "autre-banniere",
+        "title": {
+          "fr": "Sous une autre bannière",
+          "en": "Under another banner"
+        },
+        "description": {
+          "fr": "Fais 3 actions de combat en tant qu'Exilé.",
+          "en": "Take 3 combat actions as an Exile."
+        },
+        "condition": {
+          "event": "exile_combat",
+          "count": 3
+        },
+        "rewards": {
+          "gold": 120,
+          "xp": 50
+        }
+      }
     ]
-  }
+  },
+  "distinctions": [
+    {
+      "id": "last_stand",
+      "name": {
+        "fr": "Dernier rempart",
+        "en": "Last Stand"
+      },
+      "description": {
+        "fr": "A défendu le dernier territoire de sa faction.",
+        "en": "Defended the last territory of its faction."
+      },
+      "avatar": "mission-03.svg"
+    },
+    {
+      "id": "veteran",
+      "name": {
+        "fr": "Vétéran",
+        "en": "Battle-Scarred"
+      },
+      "description": {
+        "fr": "A combattu jusqu'à la chute de sa faction.",
+        "en": "Fought until its faction fell."
+      },
+      "avatar": "mission-02.svg"
+    }
+  ]
 }

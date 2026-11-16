@@ -450,3 +450,11 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 .player.rank .n { font-variant-numeric: tabular-nums; font-size: .9rem; }
 .player.rank.me { background: var(--panel-2); border-radius: 10px; padding: 4px 6px; margin: 0 -6px; }
 .perks { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: .88rem; color: var(--muted); }
+.exile .row { flex-wrap: wrap; }
+.exile .btn { flex: 1 1 45%; }
+.exile .muted { margin: 0; }
+.tag { display: inline-block; vertical-align: middle; margin-left: 4px; padding: 1px 7px; border: 1px solid var(--faction); border-radius: 999px; color: var(--faction); font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.fx-line { display: flex; gap: 10px; align-items: flex-start; }
+.fx-line > div { display: flex; flex-direction: column; gap: 2px; }
+.fx-line .class-icon { margin-top: 2px; }
+.effect { border-left: 3px solid var(--accent); padding-left: 10px; }

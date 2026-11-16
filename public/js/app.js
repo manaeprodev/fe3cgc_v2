@@ -73,6 +73,13 @@ function bindLang(root) {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const avatarUrl = (file) => 'assets/avatars/' + encodeURIComponent(file);
 const faction = (id) => state.config.factions.find((f) => f.id === id);
+// Camp pour lequel le joueur combat : la faction rejointe en exil, sinon la sienne.
+const effFaction = () => state.me?.player?.faction || state.me?.character?.faction;
+// Accord du verbe : une faction est au pluriel (« Les Aigles de jais ») ou au singulier (« L'Église de Seiros »), selon la langue
+// (champ « plural » de la faction dans game.json, pluriel par défaut). Les textes dont la faction est sujet existent en deux
+// variantes : la clé, et la même clé suivie de « .pl » pour le pluriel.
+const isPlural = (id) => faction(id)?.plural?.[state.lang] !== false;
+const numKey = (key, id) => (isPlural(id) && hasText(`${key}.pl`) ? `${key}.pl` : key);
 const klass = (id) => state.config.classes.find((c) => c.id === id);
 const className = (id) => loc(klass(id)?.name) || id;
 const classIcon = (c) => `<img class="class-icon" src="${esc(c?.icon || 'assets/classes/' + (c?.id || '') + '.svg')}" alt="">`;
@@ -81,6 +88,16 @@ const classTiers = () => (state.config.classTiers || []).filter((tr) => state.co
 const tierOf = (c) => (state.config.classTiers || []).find((tr) => tr.id === c.tier);
 const baseTierId = () => state.config.classTiers?.[0]?.id;
 const requiresText = (c) => (c.requires || []).map(className).join(t('classes.or'));
+// Effet d'une classe, dans la langue du joueur ({c:id} devient le nom de la classe correspondante).
+const effectText = (c) => (c?.effectText ? loc(c.effectText).replace(/\{c:([a-z-]+)\}/g, (_, id) => className(id)) : '');
+// Effets cumulés du joueur : ceux de toutes les classes de sa lignée.
+const myEffects = () => (state.me?.character?.path || []).flatMap((id) => klass(id)?.effects || []);
+// Condition supplémentaire d'une classe (exploit compté par le serveur), avec la progression du joueur.
+const unlockText = (c) => {
+  if (!c.unlock) return '';
+  const done = Math.min(state.me?.stats?.[c.unlock.event] || 0, c.unlock.count);
+  return t('classes.extra', { text: t(`unlock.${c.unlock.event}`, { n: c.unlock.count, done }) });
+};
 
 // Le joueur peut-il prendre cette classe ? Renvoie { ok } ou { ok: false, why } (mêmes règles que le serveur).
 function classAccess(c) {
@@ -90,6 +107,7 @@ function classAccess(c) {
   if (!tier || !Number.isInteger(tier.cost) || !Number.isInteger(tier.renown)) return { ok: false, why: t('classes.locked') };
   if (c.tier !== baseTierId() && !(c.requires || []).includes(ch.class)) return { ok: false, why: t('classes.needPath', { list: requiresText(c) }) };
   if (ch.renown.level < tier.renown) return { ok: false, why: t('classes.needRenown', { renown: tier.renown }) };
+  if (c.unlock && (state.me.stats?.[c.unlock.event] || 0) < c.unlock.count) return { ok: false, why: unlockText(c) };
   if (ch.gold < tier.cost) return { ok: false, why: t('classes.needGold', { gold: fmtNum(tier.cost - ch.gold) }) };
   return { ok: true };
 }
@@ -128,7 +146,7 @@ function showError(msg) {
 // ------------------------------------------------------------ Aiguillage
 function render() {
   const ch = state.me && state.me.character;
-  document.body.style.setProperty('--faction', ch ? faction(ch.faction).color : 'var(--accent)');
+  document.body.style.setProperty('--faction', ch ? faction(effFaction()).color : 'var(--accent)');
   if (!state.me) return renderAuth();
   if (!ch) return state.step === 1 ? renderCharacter() : renderFaction();
   return renderGame();
@@ -392,7 +410,9 @@ function drawTopbar() {
   const bar = document.getElementById('topbar');
   if (!bar) return;
   const ch = state.me.character;
-  const f = faction(ch.faction);
+  const f = faction(effFaction());
+  // La couleur d'accent suit le camp pour lequel on combat (change quand on s'exile).
+  document.body.style.setProperty('--faction', f.color);
   const r = ch.renown;
   const badge = (n) => (n > 0 ? `<span class="badge">${n > 99 ? '99+' : n}</span>` : '');
   const { unread, claimable } = state.me;
@@ -400,7 +420,7 @@ function drawTopbar() {
   bar.innerHTML = `
     <div class="topbar-row">
       <img class="avatar" src="${avatarUrl(ch.avatar)}" alt="">
-      <div class="who"><strong>${esc(ch.pseudo)}</strong>
+      <div class="who"><strong>${esc(ch.pseudo)}${pl?.exile ? ` <span class="tag">${esc(t('exile.tag'))}</span>` : ''}</strong>
         <span class="muted small">${classIcon(klass(ch.class))}${esc(className(ch.class))} · <span style="color:${esc(f.color)}">${esc(loc(f.name))}</span></span></div>
       ${langPicker()}
       <button type="button" class="icon-btn ${state.tab === 'notifs' ? 'active' : ''}" data-go="notifs"
@@ -426,7 +446,7 @@ function drawTopbar() {
 
 // Met à jour le joueur (ressources, pastilles) à partir d'une réponse de l'API.
 function setMe(me) {
-  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable, player: me.player };
+  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable, player: me.player, distinctions: me.distinctions || [], stats: me.stats || {} };
   syncClock(me.player);
   // On ne redessine pas le bandeau pendant que le joueur manipule le sélecteur de langue.
   if (!document.activeElement || !document.activeElement.matches('#topbar [data-lang]')) drawTopbar();
@@ -497,7 +517,7 @@ async function renderMap() {
     .filter((x) => x.id !== id && ((shape(id)?.neighbors || []).includes(x.id) || (x.neighbors || []).includes(id)))
     .map((x) => x.id);
   const me = () => state.me.player || {};
-  const myFaction = () => state.me.character.faction;
+  const myFaction = () => effFaction();
   // Mêmes règles que le serveur : un territoire « allié » est à ma faction ou est sa base ;
   // on n'entre ailleurs que si la cible touche un territoire allié.
   const isHome = (id) => ownerOf(id) === myFaction() || (state.map?.homeBases || {})[myFaction()] === id;
@@ -530,12 +550,15 @@ async function renderMap() {
   };
 
   // Les actions secondaires (renforts payés, appel à l'aide, retours alternatifs) ont un bouton discret.
-  const QUIET = new Set(['hire', 'rally', 'revive-renown', 'revive-ask']);
+  const QUIET = new Set(['hire', 'rally', 'teleport', 'revive-renown', 'revive-ask']);
   const btn = (act, label, disabled) => `<button type="button" class="btn compact ${QUIET.has(act) ? 'ghost' : ''}" data-act="${act}" ${disabled ? 'disabled' : ''}>${esc(label)}</button>`;
-  const bindActs = (box) => box.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', () => {
-    box.querySelectorAll('[data-act]').forEach((x) => { x.disabled = true; });
-    doAct(el.dataset.act);
-  }));
+  const bindActs = (box) => {
+    box.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', () => {
+      box.querySelectorAll('[data-act]').forEach((x) => { x.disabled = true; });
+      doAct(el.dataset.act);
+    }));
+    box.querySelectorAll('[data-goto-tab]').forEach((el) => el.addEventListener('click', () => go(el.dataset.gotoTab)));
+  };
   const drawInfo = () => {
     const box = view.querySelector('.info');
     const tr = shape(state.selected);
@@ -544,7 +567,10 @@ async function renderMap() {
     const mine = state.me.character;
     // Tombé : trois façons de revenir (or, niveau de renommée, aide d'un allié), sauf si la faction est hors jeu.
     const banner = p.status === 'dead'
-      ? (p.factionOut ? `<p class="banner">${esc(t('camp.out'))}</p>` : `<p class="banner">${esc(t('camp.dead'))}</p>
+      ? (state.map?.exile
+        ? `<p class="banner">${esc(t('camp.outExile'))}</p>
+          <div class="row act-row"><button type="button" class="btn compact" data-goto-tab="journal">${esc(t('camp.chooseBanner'))}</button></div>`
+        : p.factionOut ? `<p class="banner">${esc(t('camp.out'))}</p>` : `<p class="banner">${esc(t('camp.dead'))}</p>
           <div class="row act-row">${btn('revive-gold', costs.revive ? t('camp.reviveGold', { gold: fmtNum(costs.revive) }) : t('camp.reviveFree'), mine.gold < costs.revive)}
             ${btn('revive-renown', t('camp.reviveRenown'), mine.renown.level < 1)}
             ${btn('revive-ask', t(p.reviveAsked ? 'camp.reviveAsked' : 'camp.reviveAsk'), p.reviveAsked)}</div>`)
@@ -571,14 +597,19 @@ async function renderMap() {
         actions = canEnter(tr.id) ? btn('move', t('camp.move'), noAct) : `<p class="muted small">${esc(t('camp.cantEnter'))}</p>`;
       }
       if (here) {
-        // Sans dépenser d'action : payer un renfort (fortification chez soi, mercenaires dans une attaque de sa faction)…
+        // Sans dépenser d'action : payer un renfort (fortification chez soi, bataillon dans une attaque de sa faction)…
         const home = st.faction === myFaction();
         if (home || (b && b.attacker === myFaction())) {
           const hired = b ? b.hired : st.garrisonHired;
-          actions += btn('hire', t(home ? 'camp.hireDefense' : 'camp.hireAttack', { gold: fmtNum(costs.hire) }), hired >= costs.hireMax || mine.gold < costs.hire);
+          const price = home ? costs.fortify : costs.hire; // le Prêtre fortifie à moitié prix
+          actions += btn('hire', t(home ? 'camp.hireDefense' : 'camp.hireAttack', { gold: fmtNum(price) }), hired >= costs.hireMax || mine.gold < price);
         }
         // … et appeler sa faction à l'aide, une fois par bataille.
         if (b && (b.attacker === myFaction() || b.defender === myFaction())) actions += btn('rally', t(b.rallied ? 'camp.rallied' : 'camp.rally'), b.rallied);
+      }
+      // Évêque noir : se téléporter vers un territoire de sa faction ou voisin de sa faction, sans dépenser d'action.
+      if (!here && costs.teleport != null && myEffects().some((e) => e.kind === 'teleport') && canEnter(tr.id)) {
+        actions += btn('teleport', t('camp.teleport', { gold: fmtNum(costs.teleport) }), mine.gold < costs.teleport);
       }
     }
     box.innerHTML = `${banner}
@@ -586,10 +617,11 @@ async function renderMap() {
       <p class="muted small">${owner
     ? `${esc(t('map.owned'))} <span style="color:${esc(owner.color)}">${esc(loc(owner.name))}</span>`
     : esc(t('map.neutral'))}${tags.length ? ' · ' + esc(tags.join(' · ')) : ''}${present ? ` · ${present}` : ''}</p>
-      ${b ? `<p class="small battle-line">${withTimer('camp.battle', { attacker: loc(faction(b.attacker)?.name), chance: b.chance }, b.endsAt)}
+      ${b ? `<p class="small battle-line">${withTimer(numKey('camp.battle', b.attacker), { attacker: loc(faction(b.attacker)?.name), chance: b.chance }, b.endsAt)}
         · ${esc(t('camp.forces', { attackers: b.attackers, defenders: b.defenders }))}</p>` : ''}
       ${actionError ? `<p class="error" role="alert">${esc(actionError)}</p>` : ''}
       ${actionNote ? `<p class="small note">${esc(actionNote)}</p>` : ''}
+      ${p.rewardDebuff > 0 ? `<p class="small note">${esc(t('camp.rewardDebuff', { n: p.rewardDebuff }))}</p>` : ''}
       ${actions ? `<div class="row act-row">${actions}</div>` : ''}
       ${near.length ? `<div class="chips">${near.map((id) => {
     const o = ownerOf(id) ? faction(ownerOf(id)) : null;
@@ -627,6 +659,7 @@ async function renderMap() {
   const doAct = async (act) => {
     const [path, body] = act === 'move' ? ['/move', { to: state.selected }]
       : act === 'retreat' ? ['/retreat', { to: state.selected }]
+        : act === 'teleport' ? ['/teleport', { to: state.selected }]
         : act === 'rally' ? ['/rally', {}]
           : act.startsWith('revive-') ? ['/revive', { mode: act.slice(7) }] : ['/act', { action: act }];
     actionError = '';
@@ -636,6 +669,7 @@ async function renderMap() {
       setMe(res);
       setMap(res.map);
       if (res.bonus) actionNote = t('camp.bonus', { gold: res.bonus });
+      if (res.free) actionNote = t('camp.freeMove'); // déplacement gratuit (Chevalier pégase, Chevalier faucon)
       // De retour en jeu : la carte se place sur le territoire où l'on réapparaît.
       if (act.startsWith('revive-') && res.player.status === 'alive') state.selected = res.player.territory;
     } catch (err) {
@@ -684,6 +718,11 @@ async function renderMenu() {
     const points = state.map?.points || {};
     const rk = state.map?.ranking;
     const pk = state.map?.perks;
+    // Titres gagnés (distinctions), avec leur nombre quand on les a obtenus plusieurs fois.
+    const dist = (state.me.distinctions || []).map((d) => {
+      const def = (state.config.distinctions || []).find((x) => x.id === d.id);
+      return def ? esc(loc(def.name)) + (d.count > 1 ? ` ×${d.count}` : '') : null;
+    }).filter(Boolean);
     const playable = state.config.factions.filter((x) => !x.npc && (!x.secret || x.id === ch.faction || points[x.id] > 0));
     // Factions non jouables ou secrète : affichées seulement si elles tiennent un territoire ou ont des joueurs.
     const shownFactions = state.config.factions.filter((x) => (!x.secret && !x.npc) || x.id === ch.faction || counts[x.id] > 0
@@ -695,19 +734,28 @@ async function renderMenu() {
         <h2>${esc(t('menu.character'))}</h2>
         <div class="profile">
           <img class="avatar" src="${avatarUrl(ch.avatar)}" alt="">
-          <div><h3>${esc(ch.pseudo)}</h3><span class="pill">${esc(loc(f.name))}</span></div>
+          <div><h3>${esc(ch.pseudo)}</h3><span class="pill">${esc(loc(f.name))}</span>
+            ${state.me.player?.exile ? `<span class="pill">${esc(t('exile.tag'))} · ${esc(loc(faction(effFaction()).name))}</span>` : ''}</div>
         </div>
         <dl class="kv">
           <dt>${esc(t('menu.class'))}</dt><dd>${esc(className(ch.class))}</dd>
           <dt>${esc(t('menu.birthday'))}</dt><dd>${esc(fmtDate(ch.birthday))}</dd>
           <dt>${esc(t('menu.gold'))}</dt><dd>${fmtNum(ch.gold)}</dd>
           <dt>${esc(t('menu.renown'))}</dt><dd>${esc(t('menu.renownValue', ch.renown))}</dd>
+          ${dist.length ? `<dt>${esc(t('menu.distinctions'))}</dt><dd>${dist.join(', ')}</dd>` : ''}
           <dt>${esc(t('menu.email'))}</dt><dd>${esc(state.me.user.email)}</dd>
         </dl>
         <div class="row">
           <button class="btn ghost" type="button" data-avatars>${esc(t('avatars.change'))}</button>
           <button class="btn ghost" type="button" data-classes>${esc(t('classes.change'))}</button>
         </div>
+      </section>
+
+      <section class="card">
+        <h2>${esc(t('menu.effects'))}</h2>
+        <p class="muted small">${esc(t('menu.effectsHint'))}</p>
+        ${(ch.path || []).map((id) => klass(id)).filter((c) => c && effectText(c)).map((c) => `
+          <div class="fx-line">${classIcon(c)}<div><strong>${esc(loc(c.name))}</strong><span class="small">${esc(effectText(c))}</span></div></div>`).join('') || `<p class="muted small">${esc(t('menu.noEffects'))}</p>`}
       </section>
 
       <section class="card">
@@ -791,9 +839,10 @@ function notifText(n) {
   if (p.mission) p.mission = loc((state.config.missions || []).find((m) => m.id === p.mission)?.title) || p.mission;
   if (p.faction) p.faction = loc(faction(p.faction)?.name) || p.faction;
   if (p.class) p.class = className(p.class);
+  if (p.distinction) p.distinction = loc((state.config.distinctions || []).find((x) => x.id === p.distinction)?.name) || p.distinction;
   for (const k of ['territory', 'home']) if (p[k]) p[k] = loc(state.config.map.territories.find((x) => x.id === p[k])?.name) || p[k];
   for (const k of ['gold', 'xp', 'points', 'rank']) if (typeof p[k] === 'number') p[k] = fmtNum(p[k]);
-  return { title: t(`notif.${n.type}.title`, p), body: t(`notif.${n.type}.body`, p) };
+  return { title: t(`notif.${n.type}.title`, p), body: t(numKey(`notif.${n.type}.body`, n.params.faction), p) };
 }
 
 async function renderNotifs() {
@@ -867,7 +916,11 @@ async function renderMissions() {
         <div class="section-head"><h2>${esc(t('daily.title'))}</h2>
           <span class="pill">${esc(t('daily.streak', { n: daily.streak }))}</span></div>
         <p class="muted small">${esc(t('daily.hint'))} ${esc(t('daily.bonus', { n: daily.bonus }))}</p>
+        ${daily.frozen ? `<p class="note small">${esc(t('daily.frozen'))}</p>` : ''}
         ${sorted(daily.missions).map((m) => card(m, 'data-claim-daily')).join('')}
+        ${daily.exile && daily.exile.length ? `<div class="section-head"><h2>${esc(t('daily.exile'))}</h2></div>
+          <p class="muted small">${esc(t('daily.exileHint'))}</p>
+          ${sorted(daily.exile).map((m) => card(m, 'data-claim-daily')).join('')}` : ''}
         <div class="section-head"><h2>${esc(t('missions.main'))}</h2></div>` : '')
       + (missions.length ? sorted(missions).map((m) => card(m, 'data-claim')).join('') : (error ? '' : `<p class="muted">${esc(t('missions.empty'))}</p>`));
     bindClose(view);
@@ -920,6 +973,7 @@ async function renderJournal() {
     let key = 'journal.' + e.type;
     if (e.type === 'battle_started' && p.defender) key += '_def';
     if (e.type === 'campaign_ended' && !p.faction) key += '_draw';
+    if (['battle_started', 'territory_taken', 'faction_out'].includes(e.type)) key = numKey(key, main);
     return hasText(key) ? { text: t(key, p), color: faction(main)?.color } : null;
   };
   let error = '';
@@ -927,6 +981,12 @@ async function renderJournal() {
     const events = data.events.map((e) => ({ e, d: describe(e) })).filter((x) => x.d);
     view.innerHTML = head
       + (error ? `<p class="error" role="alert">${esc(error)}</p>` : '')
+      // Faction hors jeu : choix d'une bannière à rejoindre en exil.
+      + (data.exile ? `<section class="card exile"><h2>${esc(t('exile.title'))}</h2>
+          <p class="small">${esc(t('exile.intro', { malus: data.exile.malus }))}</p>
+          ${data.exile.options.length ? `<div class="row">${data.exile.options.map((f) => `<button type="button" class="btn compact" data-exile="${esc(f)}">${esc(t('exile.join', { faction: loc(faction(f)?.name) }))}</button>`).join('')}</div>
+            <p class="muted small">${esc(t('exile.note'))}</p>` : `<p class="muted small">${esc(t('exile.none'))}</p>`}
+        </section>` : '')
       + (data.fallen.length ? `<section class="card"><h2>${esc(t('journal.fallen'))}</h2>
           ${data.fallen.map((f) => `<div class="fallen"><strong>${esc(f.pseudo)}</strong>
             <button type="button" class="btn compact" data-pay="${f.id}" ${state.me.character.gold < data.reviveCost ? 'disabled' : ''}>${esc(t('journal.pay', { gold: fmtNum(data.reviveCost) }))}</button></div>`).join('')}
@@ -934,6 +994,22 @@ async function renderJournal() {
       + (events.length ? events.map(({ e, d }) => `<article class="card event" style="--c:${esc(d.color || '#6b7287')}">
           <p>${esc(d.text)}</p><small class="muted">${esc(ago(e.at, data.now))}</small></article>`).join('')
         : `<p class="muted">${esc(t('journal.empty'))}</p>`);
+    view.querySelectorAll('[data-exile]').forEach((b) => b.addEventListener('click', async () => {
+      view.querySelectorAll('[data-exile]').forEach((x) => { x.disabled = true; });
+      error = '';
+      try {
+        const res = await api('/exile', { faction: b.dataset.exile });
+        setMe(res);
+        setMap(res.map);
+        state.selected = res.player.territory; // la carte s'ouvre sur le territoire où l'exilé apparaît
+        go('map');
+        return;
+      } catch (err) {
+        if (err.status === 401) return sessionLost();
+        error = err.message;
+      }
+      reload();
+    }));
     view.querySelectorAll('[data-pay]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true;
       error = '';
@@ -1076,8 +1152,10 @@ function classesFold() {
         <ul class="class-list">
           ${state.config.classes.filter((c) => c.tier === tier.id).map((c) => `
             <li>${classIcon(c)}<div><strong>${esc(loc(c.name))}</strong>
+              ${effectText(c) ? `<span class="small">${esc(effectText(c))}</span>` : ''}
               ${loc(c.description) ? `<span class="muted small">${esc(loc(c.description))}</span>` : ''}
-              ${(c.requires || []).length ? `<span class="muted small">${esc(t('classes.requires', { list: requiresText(c) }))}</span>` : ''}</div></li>`).join('')}
+              ${(c.requires || []).length ? `<span class="muted small">${esc(t('classes.requires', { list: requiresText(c) }))}</span>` : ''}
+              ${c.unlock ? `<span class="muted small">${esc(unlockText(c))}</span>` : ''}</div></li>`).join('')}
         </ul>`).join('')}
     </details>`;
 }
@@ -1143,6 +1221,8 @@ function renderClasses() {
         <div class="class-head">${classIcon(sel)}
           <div><h3>${esc(loc(sel.name))}</h3><span class="muted small">${esc(loc(tier?.name))}${loc(sel.description) ? ' · ' + esc(loc(sel.description)) : ''}</span></div></div>
         ${(sel.requires || []).length ? `<p class="muted small">${esc(t('classes.requires', { list: requiresText(sel) }))}</p>` : ''}
+        ${effectText(sel) ? `<p class="small effect">${esc(effectText(sel))}</p>` : ''}
+        ${sel.unlock && access.why !== unlockText(sel) ? `<p class="muted small">${esc(unlockText(sel))}</p>` : ''}
         <p class="muted small">${esc(tier ? tierCondition(tier) : '')}</p>
         ${error ? `<p class="error" role="alert">${esc(error)}</p>` : ''}
         ${access.current ? `<p class="current-note">${esc(t('classes.current'))}</p>`

@@ -19,6 +19,8 @@ const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif']);
 const config = JSON.parse(fs.readFileSync(path.join(PUBLIC_DIR, 'config', 'game.json'), 'utf8'));
 // Carte : image de fond, contour de chaque territoire et liste de ses voisins.
 config.map = JSON.parse(fs.readFileSync(path.join(PUBLIC_DIR, 'config', 'map.json'), 'utf8'));
+// Effets de classe et lignée de classes d'un joueur (voir effects.js).
+const fx = require('./effects')(config);
 
 // ---------------------------------------------------------------- Base de données
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -121,6 +123,15 @@ const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'eve
   const cols = db.prepare('PRAGMA table_info(characters)').all().map((c) => c.name);
   if (!cols.includes('gold')) db.exec(`ALTER TABLE characters ADD COLUMN gold INTEGER NOT NULL DEFAULT ${Number(PLAYER.startGold) || 0}`);
   if (!cols.includes('xp')) db.exec('ALTER TABLE characters ADD COLUMN xp INTEGER NOT NULL DEFAULT 0');
+  // Lignée de classes (« arbre de classes ») : les classes traversées depuis la classe de base, en JSON.
+  if (!cols.includes('class_path')) db.exec('ALTER TABLE characters ADD COLUMN class_path TEXT');
+  {
+    const fill = db.prepare('UPDATE characters SET class_path = ? WHERE user_id = ?');
+    for (const r of db.prepare('SELECT user_id, class, class_path FROM characters').all()) {
+      const p = fx.pathOf(r);
+      if (r.class_path !== JSON.stringify(p)) fill.run(JSON.stringify(p), r.user_id);
+    }
+  }
   // Notifications traduisibles : on stocke un type et des paramètres, le texte est produit par l'app.
   const ncols = db.prepare('PRAGMA table_info(notifications)').all().map((c) => c.name);
   if (!ncols.includes('type')) db.exec('ALTER TABLE notifications ADD COLUMN type TEXT');
@@ -215,9 +226,9 @@ const q = {
   deleteSession: db.prepare('DELETE FROM sessions WHERE token_hash = ?'),
   purgeSessions: db.prepare('DELETE FROM sessions WHERE expires_at <= ?'),
   logEvent: db.prepare('INSERT INTO login_events (user_id, email, event, success, ip, user_agent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'),
-  character: db.prepare('SELECT pseudo, birthday, class, avatar, faction, gold, xp, created_at FROM characters WHERE user_id = ?'),
+  character: db.prepare('SELECT pseudo, birthday, class, class_path, avatar, faction, gold, xp, created_at FROM characters WHERE user_id = ?'),
   pseudoTaken: db.prepare('SELECT 1 FROM characters WHERE pseudo = ?'),
-  insertCharacter: db.prepare('INSERT INTO characters (user_id, pseudo, birthday, class, avatar, faction, gold, xp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)'),
+  insertCharacter: db.prepare('INSERT INTO characters (user_id, pseudo, birthday, class, class_path, avatar, faction, gold, xp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)'),
   players: db.prepare('SELECT pseudo, birthday, class, avatar, faction, xp FROM characters ORDER BY pseudo COLLATE NOCASE'),
   territories: db.prepare('SELECT id, faction FROM territories'),
   addResources: db.prepare('UPDATE characters SET gold = gold + ?, xp = xp + ? WHERE user_id = ?'),
@@ -232,7 +243,7 @@ const q = {
   unlockAvatar: db.prepare('INSERT OR IGNORE INTO unlocked_avatars (user_id, avatar, source, created_at) VALUES (?, ?, ?, ?)'),
   setAvatar: db.prepare('UPDATE characters SET avatar = ? WHERE user_id = ?'),
   buyAvatar: db.prepare('UPDATE characters SET avatar = ?, gold = gold - ? WHERE user_id = ? AND gold >= ?'),
-  changeClass: db.prepare('UPDATE characters SET class = ?, gold = gold - ? WHERE user_id = ? AND gold >= ?'),
+  changeClass: db.prepare('UPDATE characters SET class = ?, class_path = ?, gold = gold - ? WHERE user_id = ? AND gold >= ?'),
   logClass: db.prepare('INSERT INTO class_changes (user_id, from_class, to_class, cost, created_at) VALUES (?, ?, ?, ?, ?)'),
   unread: db.prepare('SELECT count(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL'),
   markRead: db.prepare('UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL'),
@@ -456,10 +467,18 @@ function parseParams(s) {
   try { return JSON.parse(s) || {}; } catch { return {}; }
 }
 
+// Multiplicateurs d'or et d'expérience du joueur (effets de classe, téléportation de l'Évêque noir…),
+// fournis par le moteur de campagne dès qu'il est démarré.
+let rewardMods = () => ({ gold: 1, xp: 1 });
+
 // Donne de l'or et/ou de l'xp à un joueur, et le prévient s'il gagne un niveau de renommée.
+// Toutes les sources de gains passent ici : les bonus et malus de classe s'appliquent donc à toutes.
 function grant(userId, gold, xp) {
   const ch = q.character.get(userId);
   if (!ch) return;
+  const mods = rewardMods(userId);
+  gold = Math.round(gold * mods.gold);
+  xp = Math.round(xp * mods.xp);
   const before = renown(ch.xp).level;
   q.addResources.run(gold, xp, userId);
   const after = renown(ch.xp + xp).level;
@@ -498,30 +517,47 @@ function missionState(userId) {
   });
 }
 
+// Compteurs durables du joueur (exploits, actions comptées pour les missions et les conditions de classe).
+const statOf = (userId, event) => q.events.all(userId).find((r) => r.event === event)?.count || 0;
+
 function mePayload(user) {
   const ch = q.character.get(user.id);
   const claimable = missionState(user.id).filter((m) => m.status === 'done').length + (ch ? daily.claimable(user.id) : 0);
   return {
     user: { id: user.id, email: user.email, lang: user.lang || null },
-    character: ch ? { ...ch, renown: renown(ch.xp) } : null,
+    // `path` : lignée de classes du joueur (ses effets de classe se cumulent le long de ce chemin).
+    character: ch ? (({ class_path: _p, ...rest }) => ({ ...rest, path: fx.pathOf(ch), renown: renown(ch.xp) }))(ch) : null,
     unread: q.unread.get(user.id).n,
     claimable,
     // Position, actions disponibles et état du joueur dans la campagne en cours.
     player: ch ? campaign.playerPayload(user.id) : null,
+    // Distinctions gagnées (titres), avec leur nombre.
+    distinctions: ch ? campaign.distinctionsOf(user.id) : [],
+    // Compteurs durables (par exemple les attaques des Serpents repoussées), pour les conditions de classe.
+    stats: ch ? Object.fromEntries(q.events.all(user.id).map((r) => [r.event, r.count])) : {},
   };
 }
 
 // Moteur de campagne : actions, déplacements, batailles, mini-boss, fin de campagne (voir campaign.js).
 // Missions du jour et série de jours consécutifs (voir daily.js).
-const daily = require('./daily')({ db, config, grant, HttpError });
+const daily = require('./daily')({ db, config, grant, HttpError, fallenState: (userId) => campaign.fallenState(userId) });
+// Débloque un avatar verrouillé (distinction, mission…) et prévient le joueur.
+const unlockAvatar = (userId, file, source) => {
+  if (LOCKED_AVATARS.has(file) && q.unlockAvatar.run(userId, file, source, now()).changes === 1) notify(userId, 'avatar_unlocked', { avatar: file });
+};
 const campaign = require('./campaign')({
   db, config, notify, grant, renown, HttpError, currentUser, readJson, send, startFaction, NEIGHBORS, mePayload,
+  unlockAvatar, freezeStreaks: (userIds) => daily.freeze(userIds),
+  countStat: (userId, key) => q.bumpEvent.run(userId, key),
+  fx, statOf: (userId, event) => statOf(userId, event),
   // Actions de jeu constatées par le serveur : elles font avancer les missions du jour et les missions classiques.
   onEvent: (userId, event) => {
     daily.bump(userId, event);
     if (MISSION_EVENTS.has(event)) q.bumpEvent.run(userId, event);
   },
 });
+// À partir de maintenant, les gains d'or et d'expérience tiennent compte des effets de classe.
+rewardMods = campaign.rewardMods;
 // Le monde avance tout seul : batailles arrivées à terme, replis expirés, mini-boss.
 setInterval(() => { try { campaign.tick(); } catch (e) { console.error(e); } }, Math.min(15_000, campaign.TURN_MS / 2)).unref();
 
@@ -633,7 +669,7 @@ const routes = {
     // Une faction non jouable ("npc": true) ne peut pas être rejointe.
     if (!config.factions.some((f) => f.id === faction && !f.npc)) throw new HttpError(400, 'invalid_faction');
     if (q.pseudoTaken.get(pseudo)) throw new HttpError(409, 'pseudo_taken');
-    q.insertCharacter.run(user.id, pseudo, birthday, klass, avatar, faction, Number(PLAYER.startGold) || 0, now());
+    q.insertCharacter.run(user.id, pseudo, birthday, klass, JSON.stringify([klass]), avatar, faction, Number(PLAYER.startGold) || 0, now());
     q.bumpEvent.run(user.id, 'character_created');
     notify(user.id, 'welcome', { pseudo, faction });
     campaign.ensurePlayer(user.id);
@@ -667,8 +703,11 @@ const routes = {
     if (cls.id === ch.class) throw new HttpError(409, 'class_same');
     if (cls.tier !== BASE_TIER && !(cls.requires || []).includes(ch.class)) throw new HttpError(409, 'class_path');
     if (renown(ch.xp).level < tier.renown) throw new HttpError(409, 'class_renown');
+    // Certaines classes demandent un exploit en plus (clé "unlock" : event et count), compté par le serveur.
+    if (cls.unlock && statOf(user.id, cls.unlock.event) < cls.unlock.count) throw new HttpError(409, 'class_unlock');
     // L'or n'est débité que s'il y en a assez (vérifié dans la même requête).
-    if (q.changeClass.run(cls.id, tier.cost, user.id, tier.cost).changes !== 1) throw new HttpError(409, 'class_gold');
+    // La lignée garde les classes traversées : leurs effets restent acquis (une classe de base la remet à zéro).
+    if (q.changeClass.run(cls.id, JSON.stringify(fx.nextPath(ch, cls.id)), tier.cost, user.id, tier.cost).changes !== 1) throw new HttpError(409, 'class_gold');
     q.logClass.run(user.id, ch.class, cls.id, tier.cost, now());
     notify(user.id, 'class_changed', { class: cls.id });
     send(res, 200, mePayload(user));

@@ -4,7 +4,7 @@
 
 module.exports = function createDaily(ctx) {
   const { db, config, grant, HttpError } = ctx;
-  const D = { streakBonus: 0.1, maxStreak: 7, missions: [], ...(config.daily || {}) };
+  const D = { streakBonus: 0.1, maxStreak: 7, missions: [], exileMissions: [], ...(config.daily || {}) };
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS daily_progress (
@@ -57,6 +57,8 @@ module.exports = function createDaily(ctx) {
 
   function state(userId) {
     const day = today();
+    // Un joueur dont la faction est hors jeu a aussi des missions d'exil, et sa série est gelée tant qu'il est tombé.
+    const { fallen, frozen } = ctx.fallenState ? ctx.fallenState(userId) : { fallen: false, frozen: false };
     const progress = new Map(q.progress.all(userId, day).map((r) => [r.event, r.count]));
     const claimed = new Set(q.claims.all(userId, day).map((r) => r.mission_id));
     const streak = streakOf(userId);
@@ -64,26 +66,41 @@ module.exports = function createDaily(ctx) {
     const s = q.streak.get(userId);
     const next = s && s.last_day === day ? streak : streak + 1;
     const mult = multiplier(next);
+    const view = (list) => list.map((m) => {
+      const target = m.condition?.count || 1;
+      const current = Math.min(progress.get(m.condition?.event) || 0, target);
+      return {
+        id: m.id, title: m.title, description: m.description || '', current, target,
+        rewards: { gold: Math.round((m.rewards?.gold || 0) * mult), xp: m.rewards?.xp || 0 },
+        status: claimed.has(m.id) ? 'claimed' : current >= target ? 'done' : 'active',
+      };
+    });
     return {
-      streak,
+      streak, frozen,
       bonus: Math.round((mult - 1) * 100),
-      missions: D.missions.map((m) => {
-        const target = m.condition?.count || 1;
-        const current = Math.min(progress.get(m.condition?.event) || 0, target);
-        return {
-          id: m.id, title: m.title, description: m.description || '', current, target,
-          rewards: { gold: Math.round((m.rewards?.gold || 0) * mult), xp: m.rewards?.xp || 0 },
-          status: claimed.has(m.id) ? 'claimed' : current >= target ? 'done' : 'active',
-        };
-      }),
+      missions: view(D.missions),
+      exile: fallen ? view(D.exileMissions) : [],
     };
   }
-  const claimable = (userId) => state(userId).missions.filter((m) => m.status === 'done').length;
+  const claimable = (userId) => {
+    const s = state(userId);
+    return [...s.missions, ...s.exile].filter((m) => m.status === 'done').length;
+  };
+
+  // Gèle la série des joueurs tombés : elle ne se casse pas tant que leur faction est hors jeu.
+  // Une série tient si la dernière récupération date d'hier ; on la ramène à hier quand elle aurait dû se casser.
+  function freeze(userIds) {
+    const yesterday = dayBefore(today());
+    for (const uid of userIds) {
+      const s = q.streak.get(uid);
+      if (s && s.last_day === dayBefore(yesterday)) q.setStreak.run(uid, yesterday, s.streak);
+    }
+  }
 
   function claim(userId, id) {
     const day = today();
     const before = state(userId);
-    const mission = before.missions.find((m) => m.id === id);
+    const mission = [...before.missions, ...before.exile].find((m) => m.id === id);
     if (!mission) throw new HttpError(404, 'mission_unknown');
     if (mission.status !== 'done' || q.claim.run(userId, day, id).changes !== 1) throw new HttpError(409, 'reward_unavailable');
     // La première récupération du jour prolonge la série (ou la recommence).
@@ -95,5 +112,5 @@ module.exports = function createDaily(ctx) {
 
   setInterval(() => { const old = dayBefore(dayBefore(today())); q.purge.run(old); q.purgeClaims.run(old); }, 3_600_000).unref();
 
-  return { bump, state, claim, claimable };
+  return { bump, state, claim, claimable, freeze };
 };

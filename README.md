@@ -61,6 +61,8 @@ Pour ajouter une langue : copier `public/i18n/fr.json` sous le nouveau code (ex.
 
 Le serveur ne renvoie aucun texte : il renvoie des codes d'erreur (clés `error.<code>`) et des notifications sous forme de type et paramètres (clés `notif.<type>.title` et `.body`).
 
+
+**Accord des verbes** : une faction est au pluriel (« Les Aigles de jais attaquent ») ou au singulier (« L'Église de Seiros attaque ») selon sa langue. Le champ `plural` d'une faction dans `game.json` donne le nombre par langue (`{ "fr": false, "en": false }` pour l'Église, `{ "en": false }` pour The Golden Deer) ; sans lui, la faction est au pluriel. Les textes dont une faction est le sujet ont deux variantes : `journal.territory_taken` et `journal.territory_taken.pl`. Pour une nouvelle phrase de ce type, ajouter la variante `.pl` dans chaque langue et appeler `numKey` côté app.
 ## Régler le jeu : `public/config/game.json`
 
 - `languages`, `defaultLang` : langues proposées et langue par défaut.
@@ -104,17 +106,25 @@ Chances de l'attaque = force des attaquants / (attaquants + défense), bornées 
 
 - `capitals` : territoire d'apparition de chaque faction. `homeBases` : base d'une faction sans territoire (Garreg-Mach pour les Loups de cendre), qui lui sert d'appui sans qu'elle le contrôle.
 - `annex` : territoires annexes, conquérables mais ignorés pour la victoire.
-- `boss` : à chaque tour, la faction `boss.faction` a `chancePerTurn` chances de lancer une attaque de force `power` × importance sur un territoire au hasard (au plus `max` à la fois). Si elle gagne, le territoire lui appartient.
+- `boss` : à chaque tour, la faction `boss.faction` a `chancePerTurn` chances (0,07 = 7 %) de lancer une attaque de force `power` × importance sur un territoire au hasard (au plus `max` à la fois). Si elle gagne, le territoire lui appartient. `quietHours` (`from` inclus, `to` exclu, en heures, avec son fuseau `timezone`) interdit toute apparition pendant la nuit : de minuit à 6 h, heure de Paris. Les batailles déjà commencées continuent, et le fuseau est fixé dans la config pour que la nuit ne dépende pas du serveur qui héberge le jeu. `TEST_HOUR` force l'heure pour les tests.
 - Fin de campagne : une faction jouable tient tous les territoires non annexes, ou il ne reste des joueurs en vie que dans une seule faction. `points` fixe les points gagnés ; ils s'ajoutent dans la table `faction_points`. La carte est ensuite remise à son état de départ et une nouvelle campagne commence.
 
 Autres réglages de `campaign` :
 
 - `cadenceGold` : or gagné par la première action de chaque tour (bonus de régularité).
-- `hire` : renfort payé en or, sans action. Fortification sur son territoire, mercenaires dans une attaque de sa faction ; `gold` le prix, `power` la force ajoutée, `perBattle` le maximum par joueur et par bataille.
+- `hire` : renfort payé en or, sans action. Fortification sur son territoire, bataillon (« Battalion ») dans une attaque de sa faction ; `gold` le prix, `power` la force ajoutée, `perBattle` le maximum par joueur et par bataille.
 - `revive.gold` : prix du retour en jeu d'un joueur tombé. Il peut aussi sacrifier un niveau de renommée, ou demander à un allié de payer (les demandes apparaissent dans le Journal de sa faction). Il réapparaît dans sa capitale si sa faction la tient, sinon sur un de ses territoires au hasard.
 - Une faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne ; ses joueurs ne peuvent plus revenir. La campagne se termine quand, parmi les factions qui ont des joueurs, une seule reste en jeu.
 - `ranking` : points de classement par action de combat (`combat`), par bataille gagnée (`victory`) et par récolte (`gather`) ; `rewards` est l'or donné aux premiers à la fin de la campagne.
 - Appel à l'aide : gratuit, une fois par joueur et par bataille ; il prévient toute la faction.
+- `exile` : quand sa faction est hors jeu, un joueur tombé peut s'exiler sous la bannière d'une autre faction jusqu'à la fin de la campagne (route `POST /api/exile`, choix dans l'onglet Journal). Il réapparaît dans la capitale de cette faction et combat pour elle, mais ses gains d'or et d'expérience sont multipliés par `rewardMultiplier` (0,75 = 25 % de moins). Qui peut accueillir un exilé :
+  - avec `trailingOnly`, les factions jouables qui ne tiennent pas le plus de territoires (toutes, s'il n'y a pas d'autre choix) ;
+  - `alwaysOpen` : les factions qui acceptent des exilés même en tête (les Loups de cendre) ;
+  - `npcHosts` : les factions non jouables qui en accueillent tant qu'elles tiennent un territoire (l'Église de Seiros). Si elle perd Garreg-Mach, ses exilés tombent et choisissent une autre bannière.
+  Si la bannière d'adoption tombe à son tour, l'exilé peut en choisir une autre.
+- `defeat.consolationGold` : prime d'or donnée aux membres d'une faction qui tombe, à condition d'avoir marqué au moins un point au classement de la campagne. Ils reçoivent aussi la distinction `veteran` ; ceux qui ont défendu son dernier territoire reçoivent `last_stand`.
+
+Les distinctions sont déclarées dans la clé `distinctions` de `game.json` (nom, description, avatar exclusif débloqué). Elles s'affichent dans le menu, avec leur nombre quand on les a obtenues plusieurs fois, dans la table `distinctions`.
 - `underdogs` : avantages d'une faction en infériorité, par identifiant de faction (les Loups de cendre) :
   - `neverOut` : jamais hors jeu, même sans territoire ;
   - `autoRetreat` : si son territoire tombe, le joueur se replie aussitôt dans la base de sa faction (`homeBases`) ;
@@ -127,11 +137,11 @@ Le journal du monde (onglet Journal, `GET /api/journal`) liste les derniers év�
 
 Tables : `campaigns`, `faction_points`, `player_state` (position, actions, état), `battles`, `contributions` (actions de combat et renforts), `world_events` (journal), `battle_rallies`, `campaign_scores` (classement).
 
-Variables d'environnement pour tester : `TURN_SECONDS` (durée d'un tour), `TEST_ROLL` (tirage forcé, 0 = attaque réussie), `BOSS_CHANCE`, `CADENCE_GOLD`, `TEST_DAY` (jour forcé pour les missions du jour), `DATA_DIR` (base séparée).
+Variables d'environnement pour tester : `TURN_SECONDS` (durée d'un tour), `TEST_ROLL` (tirage forcé, 0 = attaque réussie), `BOSS_CHANCE`, `CADENCE_GOLD`, `TEST_DAY` (jour forcé pour les missions du jour), `TEST_HOUR` (heure forcée pour les heures calmes), `TEST_MOVE_ROLL` (tirage forcé du déplacement gratuit, entre 0 et 1), `DATA_DIR` (base séparée).
 
 ### Missions du jour : clé `daily` de `game.json`, code dans `daily.js`
 
-Chaque mission compte une action de jeu sur la journée : `gather` (récolter), `combat` (attaquer ou défendre), `move` (se déplacer), `battle_won` (bataille gagnée). Ces actions sont constatées par le serveur, pas déclarées par l'app. Récupérer au moins une mission par jour fait grandir la série ; chaque jour de série ajoute `streakBonus` (10 %) d'or aux récompenses, jusqu'à `maxStreak` jours. Les missions classiques (`missions`) peuvent utiliser les mêmes actions dans leur condition `event`.
+Chaque mission compte une action de jeu sur la journée : `gather` (récolter), `combat` (attaquer ou défendre), `move` (se déplacer), `battle_won` (bataille gagnée). Les missions d'exil (clé `exileMissions`, réservées aux joueurs dont la faction est hors jeu) comptent `journal_read` (consulter le journal), `exile_join` (s'exiler) et `exile_combat` (action de combat en exil). Tant qu'un joueur est tombé et que sa faction est hors jeu, sa série de jours est gelée. Ces actions sont constatées par le serveur, pas déclarées par l'app. Récupérer au moins une mission par jour fait grandir la série ; chaque jour de série ajoute `streakBonus` (10 %) d'or aux récompenses, jusqu'à `maxStreak` jours. Les missions classiques (`missions`) peuvent utiliser les mêmes actions dans leur condition `event`.
 
 ### Classes
 
@@ -143,6 +153,16 @@ Règles appliquées par le serveur (`POST /api/class`) :
 - à la création du personnage, seules les classes du premier rang sont proposées ;
 - pour prendre une classe, la classe actuelle doit figurer dans ses prérequis, et le joueur doit avoir la renommée et l'or du rang visé (un Pegasus Knight peut donc passer directement Falcon Knight au tarif des classes de Maître) ;
 - on peut revenir à n'importe quelle classe de base depuis n'importe quelle classe, au tarif du premier rang (renommée 1, 400 or).
+
+### Effets de classe
+
+Chaque classe porte une liste `effects` (et un texte `effectText` pour l'affichage, où `{c:id}` devient le nom de la classe). Le joueur garde les effets de **toutes les classes de sa lignée** (`characters.class_path`) : en évoluant, il ajoute la classe à sa lignée ; en revenant à une classe de base, la lignée repart de cette classe. Le calcul est dans `effects.js`, l'application dans `campaign.js` (`battleDetail` pour la puissance, `resolveBattle` pour les gains).
+
+Types d'effets : `power` (bonus d'attaque ou de défense), `streak` (Combattant), `aura` (alliés sur place ou voisins, filtrés par lignée), `debuff` (affaiblit les ennemis, un même effet ne compte qu'une fois), `steal`, `goldBonus`, `xpBonus`, `conquestGold`, `renownPerWin`, `freeMove`, `retreat`, `sniper`, `fortifyCost`, `fortifyPower`, `actionStock`, `darkMage`, `outnumbered`, `perAlly`, `perEnemy`, `warMaster`, `holyKnight`, `teleport`. Plafonds : `campaign.classEffects.auraCap` (25 %), série du Combattant (20 %), Érudit mortel (30 %), Chevalier archer (50 %).
+
+La téléportation de l'Évêque noir (`POST /api/teleport`) coûte de l'or, aucune action, et divise les récompenses par deux pour les actions suivantes. Gremory et Chevalier noir n'ont pas encore d'effet.
+
+Une classe peut aussi demander un exploit en plus, avec `"unlock": { "event": "serpents_repelled", "count": 3 }` : le serveur compte les attaques des Serpents des Ténèbres repoussées par le joueur (il faut avoir défendu le territoire attaqué) et refuse le changement de classe tant que le compte n'y est pas. Dark Mage demande 3 attaques repoussées, Dark Bishop 15. Le texte affiché est la clé `unlock.<event>` des fichiers de langue, et le compteur est dans `stats` de `GET /api/me`.
 
 Pour ajouter des classes légendaires : renseigner `renown` et `cost` du rang `legendary`, puis ajouter les classes avec `"tier": "legendary"` et leurs prérequis. Elles apparaîtront dans l'arbre et dans les règles sans autre changement. Chaque changement de classe est enregistré dans la table `class_changes`.
 
@@ -179,7 +199,7 @@ Fichier SQLite `data/conquete.db`, créé au premier lancement.
 | Table | Contenu |
 |---|---|
 | `users` | email, mot de passe haché (scrypt + sel), dates de création et de dernière connexion |
-| `characters` | pseudo, anniversaire, classe, avatar, faction, or (`gold`), expérience (`xp`) |
+| `characters` | pseudo, anniversaire, classe, lignée de classes (`class_path`), avatar, faction, or (`gold`), expérience (`xp`) |
 | `notifications` | notifications de chaque joueur, lues ou non |
 | `mission_progress` | missions accomplies et récompenses récupérées |
 | `unlocked_avatars` | avatars débloqués par chaque joueur (achat ou mission) |

@@ -139,6 +139,14 @@ Tables : `campaigns`, `faction_points`, `player_state` (position, actions, état
 
 Variables d'environnement pour tester : `TURN_SECONDS` (durée d'un tour), `TEST_ROLL` (tirage forcé, 0 = attaque réussie), `BOSS_CHANCE`, `CADENCE_GOLD`, `TEST_DAY` (jour forcé pour les missions du jour), `TEST_HOUR` (heure forcée pour les heures calmes), `TEST_MOVE_ROLL` (tirage forcé du déplacement gratuit, entre 0 et 1), `DATA_DIR` (base séparée).
 
+### Contre-attaque : clé `campaign.counter`
+
+Quand une attaque d'une faction jouable échoue contre une autre faction jouable, le territoire défendu devient insaisissable pendant `minutes` minutes de jeu (240 = 4 h, ramenées à la durée d'un tour comme le reste) : `POST /api/act` refuse alors l'attaque (`untouchable`) et les mini-boss l'évitent. Pendant ce temps, la faction qui a défendu gagne `attackBonus` % de puissance d'attaque sur les territoires ennemis voisins du territoire défendu (bonus fixé à l'ouverture de la bataille). Les Serpents des Ténèbres et l'Église de Seiros ne déclenchent rien. Le serveur le déduit des batailles terminées (`battles`), sans table dédiée.
+
+### Mises à jour : clé `patches` de `game.json`
+
+Les notes de patch, la plus récente en premier : `id`, `date`, `title`, `intro`, `sections` (titre et liste de phrases), chaque texte en `{ fr, en }`. Le premier `id` est la « dernière mise à jour » ; `users.patch_seen` retient celle que chaque joueur a lue (`POST /api/patch/seen`), et `GET /api/me` renvoie `patch: { latest, seen }` : une pastille s'affiche sur le menu tant qu'ils diffèrent. Un nouveau compte part avec la dernière mise à jour déjà lue. Pour publier un patch, ajouter une entrée en tête de la liste.
+
 ### Missions du jour : clé `daily` de `game.json`, code dans `daily.js`
 
 Chaque mission compte une action de jeu sur la journée : `gather` (récolter), `combat` (attaquer ou défendre), `move` (se déplacer), `battle_won` (bataille gagnée). Les missions d'exil (clé `exileMissions`, réservées aux joueurs dont la faction est hors jeu) comptent `journal_read` (consulter le journal), `exile_join` (s'exiler) et `exile_combat` (action de combat en exil). Tant qu'un joueur est tombé et que sa faction est hors jeu, sa série de jours est gelée. Ces actions sont constatées par le serveur, pas déclarées par l'app. Récupérer au moins une mission par jour fait grandir la série ; chaque jour de série ajoute `streakBonus` (10 %) d'or aux récompenses, jusqu'à `maxStreak` jours. Les missions classiques (`missions`) peuvent utiliser les mêmes actions dans leur condition `event`.

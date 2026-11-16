@@ -63,8 +63,8 @@
         "en": "Campaign"
       },
       "text": {
-        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 6 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 tours pour se replier sur un territoire allié, sinon ils tombent.\n\nUn joueur tombé peut revenir : en payant 100 or, en sacrifiant un niveau de renommée, ou en demandant à un allié de payer pour lui. Il réapparaît dans la capitale de sa faction, ou sur un de ses territoires au hasard si elle est tombée.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager un bataillon en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nHors jeu, tu peux prendre les armes comme Exilé sous la bannière d'une autre faction jusqu'à la fin de la campagne, mais avec 25 % d'or et d'expérience en moins sur tes gains. Les factions qui dominent la carte refusent les exilés, sauf les Loups de cendre ; l'Église de Seiros en accueille tant qu'elle tient Garreg-Mach. Ta série de missions du jour est gelée, et des missions d'exil te sont réservées. Ceux qui ont combattu avant la chute de leur faction reçoivent une prime d'or et la distinction Vétéran ; le dernier défenseur gagne le titre de Dernier rempart.\n\nLa campagne se termine quand une faction tient tous les territoires (hors territoires annexes) ou qu'il ne reste qu'une faction en jeu. Les factions reçoivent alors des points, les trois meilleurs joueurs une récompense, puis une nouvelle campagne commence.",
-        "en": "You gain 1 action every 10 minutes, up to 6 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 turns to retreat to an allied territory, otherwise they fall.\n\nA fallen player can come back: by paying 100 gold, by sacrificing one renown level, or by asking an ally to pay. They reappear in their faction's capital, or on one of its territories at random if the capital has fallen.\n\nWith no action left, you can still weigh on a battle with your gold: hire a battalion when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nWhen out, you can take up arms as an Exile under another faction's banner until the end of the campaign, but with 25% less gold and experience on your gains. Factions that dominate the map refuse exiles, except the Ashen Wolves; the Church of Seiros takes them in as long as it holds Garreg-Mach. Your daily mission streak is frozen, and exile missions are reserved for you. Those who fought before their faction fell receive a gold bonus and the Battle-Scarred distinction; the last defender earns the Last Stand title.\n\nThe campaign ends when one faction holds every territory (annex territories aside) or when only one faction is still in play. Factions then receive points, the top three players a reward, and a new campaign begins."
+        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 6 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 tours pour se replier sur un territoire allié, sinon ils tombent.\n\nSi l'attaque échoue contre une autre faction jouable, le territoire devient insaisissable pendant 4 heures et sa faction gagne +25 % de puissance d'attaque sur les territoires ennemis voisins (contre-attaque). Les Serpents des Ténèbres et l'Église de Seiros ne déclenchent pas cet effet.\n\nUn joueur tombé peut revenir : en payant 100 or, en sacrifiant un niveau de renommée, ou en demandant à un allié de payer pour lui. Il réapparaît dans la capitale de sa faction, ou sur un de ses territoires au hasard si elle est tombée.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager un bataillon en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nHors jeu, tu peux prendre les armes comme Exilé sous la bannière d'une autre faction jusqu'à la fin de la campagne, mais avec 25 % d'or et d'expérience en moins sur tes gains. Les factions qui dominent la carte refusent les exilés, sauf les Loups de cendre ; l'Église de Seiros en accueille tant qu'elle tient Garreg-Mach. Ta série de missions du jour est gelée, et des missions d'exil te sont réservées. Ceux qui ont combattu avant la chute de leur faction reçoivent une prime d'or et la distinction Vétéran ; le dernier défenseur gagne le titre de Dernier rempart.\n\nLa campagne se termine quand une faction tient tous les territoires (hors territoires annexes) ou qu'il ne reste qu'une faction en jeu. Les factions reçoivent alors des points, les trois meilleurs joueurs une récompense, puis une nouvelle campagne commence.",
+        "en": "You gain 1 action every 10 minutes, up to 6 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 turns to retreat to an allied territory, otherwise they fall.\n\nIf the attack fails against another playable faction, the territory becomes untouchable for 4 hours and its faction gets +25% attack power against neighbouring enemy territories (counter-attack). Those Who Slither In The Dark and The Church of Seiros do not trigger this effect.\n\nA fallen player can come back: by paying 100 gold, by sacrificing one renown level, or by asking an ally to pay. They reappear in their faction's capital, or on one of its territories at random if the capital has fallen.\n\nWith no action left, you can still weigh on a battle with your gold: hire a battalion when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nWhen out, you can take up arms as an Exile under another faction's banner until the end of the campaign, but with 25% less gold and experience on your gains. Factions that dominate the map refuse exiles, except the Ashen Wolves; the Church of Seiros takes them in as long as it holds Garreg-Mach. Your daily mission streak is frozen, and exile missions are reserved for you. Those who fought before their faction fell receive a gold bonus and the Battle-Scarred distinction; the last defender earns the Last Stand title.\n\nThe campaign ends when one faction holds every territory (annex territories aside) or when only one faction is still in play. Factions then receive points, the top three players a reward, and a new campaign begins."
       }
     }
   ],
@@ -212,12 +212,12 @@
         {
           "kind": "power",
           "side": "attack",
-          "pct": 5
+          "pct": 7
         }
       ],
       "effectText": {
-        "fr": "+5 % de pouvoir d'attaque.",
-        "en": "+5% attack power."
+        "fr": "+7 % de pouvoir d'attaque.",
+        "en": "+7% attack power."
       }
     },
     {
@@ -237,12 +237,12 @@
         {
           "kind": "power",
           "side": "defense",
-          "pct": 5
+          "pct": 7
         }
       ],
       "effectText": {
-        "fr": "+5 % de pouvoir de défense.",
-        "en": "+5% defence power."
+        "fr": "+7 % de pouvoir de défense.",
+        "en": "+7% defence power."
       }
     },
     {
@@ -261,13 +261,13 @@
       "effects": [
         {
           "kind": "streak",
-          "pct": 1.5,
+          "pct": 2,
           "max": 20
         }
       ],
       "effectText": {
-        "fr": "Les actions de combat consécutives sur le même territoire augmentent à chaque fois de +1,5 % (maximum +20 %).",
-        "en": "Consecutive combat actions on the same territory each add +1.5% (maximum +20%)."
+        "fr": "Les actions de combat consécutives sur le même territoire augmentent à chaque fois de +2 % (maximum +20 %).",
+        "en": "Consecutive combat actions on the same territory each add +2% (maximum +20%)."
       }
     },
     {
@@ -287,12 +287,12 @@
         {
           "kind": "aura",
           "range": "adjacent",
-          "pct": 3
+          "pct": 4
         }
       ],
       "effectText": {
-        "fr": "Donne +3 % de pouvoir d'attaque ou de défense aux alliés présents sur son territoire et sur les territoires voisins.",
-        "en": "Gives +3% attack or defence power to allies on its territory and neighbouring territories."
+        "fr": "Donne +4 % de pouvoir d'attaque ou de défense aux alliés présents sur son territoire et sur les territoires voisins.",
+        "en": "Gives +4% attack or defence power to allies on its territory and neighbouring territories."
       }
     },
     {
@@ -1251,15 +1251,16 @@
       "effects": [
         {
           "kind": "conquests",
-          "pct": 1
+          "pct": 1,
+          "max": 50
         },
         {
           "kind": "enemyMove"
         }
       ],
       "effectText": {
-        "fr": "+1 % de pouvoir d'attaque ou de défense par territoire pris ou défense réussie de sa faction dans la campagne en cours, sans limite. Une fois par bataille, rejoint sans dépenser d'action le territoire ennemi voisin où sa faction attaque.",
-        "en": "+1% attack or defence power for each territory taken or successful defence by its faction in the current campaign, with no limit. Once per battle, joins without spending an action the neighbouring enemy territory where its faction is attacking."
+        "fr": "+1 % de pouvoir d'attaque ou de défense par territoire pris ou défense réussie de sa faction dans la campagne en cours (maximum +50 %). Une fois par bataille, rejoint sans dépenser d'action le territoire ennemi voisin où sa faction attaque.",
+        "en": "+1% attack or defence power for each territory taken or successful defence by its faction in the current campaign (maximum +50%). Once per battle, joins without spending an action the neighbouring enemy territory where its faction is attacking."
       }
     }
   ],
@@ -1538,6 +1539,10 @@
     ],
     "classEffects": {
       "auraCap": 25
+    },
+    "counter": {
+      "minutes": 240,
+      "attackBonus": 25
     }
   },
   "daily": {
@@ -1686,6 +1691,174 @@
         "en": "Fought until its faction fell."
       },
       "avatar": "mission-02.svg"
+    }
+  ],
+  "patches": [
+    {
+      "id": "1.1",
+      "date": "2026-11-16",
+      "title": {
+        "fr": "Patch 1.1",
+        "en": "Patch 1.1"
+      },
+      "intro": {
+        "fr": "La campagne est lancée : actions, batailles, classes aux effets réels… Voici tout ce qui a changé.",
+        "en": "The campaign is live: actions, battles, classes with real effects… here is everything that changed."
+      },
+      "sections": [
+        {
+          "title": {
+            "fr": "Contre-attaque",
+            "en": "Counter-attack"
+          },
+          "items": [
+            {
+              "fr": "Un territoire qui repousse l'attaque d'une autre faction devient insaisissable pendant 4 heures : plus personne ne peut l'attaquer.",
+              "en": "A territory that repels an attack from another faction becomes untouchable for 4 hours: nobody can attack it."
+            },
+            {
+              "fr": "Pendant ce temps, sa faction gagne +25 % de puissance d'attaque sur les territoires ennemis voisins.",
+              "en": "During that time, its faction gets +25% attack power against neighbouring enemy territories."
+            },
+            {
+              "fr": "Les attaques des Serpents des Ténèbres et les territoires de l'Église de Seiros ne déclenchent pas cet effet.",
+              "en": "Attacks by Those Who Slither In The Dark and territories of The Church of Seiros do not trigger this effect."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Campagne",
+            "en": "Campaign"
+          },
+          "items": [
+            {
+              "fr": "Une action toutes les 10 minutes (6 au maximum) : se déplacer, attaquer, défendre ou récolter.",
+              "en": "One action every 10 minutes (6 at most): move, attack, defend or gather."
+            },
+            {
+              "fr": "Batailles de 6 tours, chances de victoire selon les forces en présence, replis, retour en jeu et chute des factions.",
+              "en": "6-turn battles, odds based on the forces involved, retreats, coming back into play and fallen factions."
+            },
+            {
+              "fr": "Renforts payés en or (bataillons en attaque, fortifications en défense) et appel à l'aide.",
+              "en": "Reinforcements paid in gold (battalions when attacking, fortifications when defending) and calls for help."
+            },
+            {
+              "fr": "Points de faction, classement des joueurs, titres, journal du monde et fin de campagne.",
+              "en": "Faction points, player ranking, titles, world journal and campaign end."
+            },
+            {
+              "fr": "Les Serpents des Ténèbres lancent parfois un mini-boss sur un territoire (7 % par tour, jamais entre minuit et 6 h).",
+              "en": "Those Who Slither In The Dark sometimes send a mini-boss against a territory (7% per turn, never between midnight and 6 am)."
+            },
+            {
+              "fr": "Les Loups de cendre ont leurs propres avantages : refuge, force du petit nombre, gains accrus.",
+              "en": "The Ashen Wolves have their own perks: refuge, strength of the few, increased gains."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Exil",
+            "en": "Exile"
+          },
+          "items": [
+            {
+              "fr": "Quand sa faction tombe, on peut s'exiler sous la bannière d'une autre jusqu'à la fin de la campagne, avec des gains réduits.",
+              "en": "When your faction falls you can go into exile under another banner until the campaign ends, with reduced gains."
+            },
+            {
+              "fr": "L'Église de Seiros n'accueille des exilés que tant qu'elle tient Garreg-Mach ; les Loups de cendre en accueillent toujours.",
+              "en": "The Church of Seiros only takes in exiles while it holds Garreg Mach; the Ashen Wolves always do."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Classes",
+            "en": "Classes"
+          },
+          "items": [
+            {
+              "fr": "Chaque classe a maintenant un effet, et les effets de toutes les classes traversées se cumulent (arbre de classes). Ils sont affichés dans le menu, l'arbre et les règles.",
+              "en": "Every class now has an effect, and the effects of every class you went through add up (class tree). They are shown in the menu, the tree and the rules."
+            },
+            {
+              "fr": "Noms français officiels des classes, et le Guerrier mène désormais au Maître de guerre et au Lord wyverne.",
+              "en": "Official French class names, and the Warrior now leads to the War Master and the Wyvern Lord."
+            },
+            {
+              "fr": "Classes de base renforcées : Soldat et Épéiste à 7 %, Combattant à 2 % par action, Moine à 4 %.",
+              "en": "Base classes strengthened: Soldier and Myrmidon at 7%, Fighter at 2% per action, Monk at 4%."
+            },
+            {
+              "fr": "Assassin renforcé : +12 % d'attaque et 20 or volés de plus à chaque défenseur.",
+              "en": "Assassin strengthened: +12% attack and 20 more gold stolen from each defender."
+            },
+            {
+              "fr": "Gremory : ses auras portent jusqu'à deux territoires, renforcées de 50 % de l'aura du plus fort allié sur son territoire.",
+              "en": "Gremory: its auras reach up to two territories, boosted by 50% of the strongest ally aura on its territory."
+            },
+            {
+              "fr": "Paladin noir : +1 % par territoire pris ou défense réussie de sa faction (maximum +50 %), et rejoint sans action une bataille voisine, une fois par bataille.",
+              "en": "Dark Knight: +1% per territory taken or successful defence by its faction (maximum +50%), and joins a neighbouring battle without spending an action, once per battle."
+            },
+            {
+              "fr": "Mage noir et Évêque noir se débloquent en repoussant 3 et 15 attaques des Serpents des Ténèbres.",
+              "en": "Dark Mage and Dark Bishop unlock after repelling 3 and 15 attacks by Those Who Slither In The Dark."
+            },
+            {
+              "fr": "L'Évêque noir peut se téléporter pour 500 or ; ses récompenses sont réduites de moitié pendant 10 actions.",
+              "en": "The Dark Bishop can teleport for 500 gold; rewards are halved for the next 10 actions."
+            },
+            {
+              "fr": "Mage noir : puissance doublée, ou ×2,5 si aucun ennemi n'a Moine dans son arbre.",
+              "en": "Dark Mage: power doubled, or ×2.5 if no enemy has Monk in their tree."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Missions",
+            "en": "Missions"
+          },
+          "items": [
+            {
+              "fr": "Missions du jour avec série de jours consécutifs : chaque jour de série ajoute 10 % d'or, jusqu'à une limite.",
+              "en": "Daily missions with a streak of consecutive days: each streak day adds 10% gold, up to a limit."
+            },
+            {
+              "fr": "Missions d'exil pour les joueurs dont la faction est tombée.",
+              "en": "Exile missions for players whose faction has fallen."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Carte et interface",
+            "en": "Map and interface"
+          },
+          "items": [
+            {
+              "fr": "Carte de Fódlan interactive : 59 territoires cliquables colorés selon leur faction, voisins corrigés, ajout de Dagda.",
+              "en": "Interactive map of Fódlan: 59 clickable territories coloured by faction, fixed neighbours, Dagda added."
+            },
+            {
+              "fr": "Chaque territoire démarre sous sa faction d'origine ; l'Église de Seiros tient Garreg-Mach.",
+              "en": "Every territory starts under its original faction; The Church of Seiros holds Garreg Mach."
+            },
+            {
+              "fr": "Nouveau titre de l'écran de connexion, règles du jeu complétées, bouton pour effacer les notifications, notifications traduites au changement de langue.",
+              "en": "New login screen title, completed rules, button to clear notifications, notifications translated when the language changes."
+            },
+            {
+              "fr": "Nouvel onglet « Mises à jour » avec les notes de patch.",
+              "en": "New \"Updates\" tab with the patch notes."
+            }
+          ]
+        }
+      ]
     }
   ]
 }

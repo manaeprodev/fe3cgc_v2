@@ -139,6 +139,8 @@ const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'eve
   // Langue choisie par le joueur (servira aussi aux futurs emails).
   const ucols = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name);
   if (!ucols.includes('lang')) db.exec('ALTER TABLE users ADD COLUMN lang TEXT');
+  // Dernière mise à jour (patch) lue par le joueur ; vide = jamais lue.
+  if (!ucols.includes('patch_seen')) db.exec('ALTER TABLE users ADD COLUMN patch_seen TEXT');
   // Journal des changements de classe.
   db.exec(`CREATE TABLE IF NOT EXISTS class_changes (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -235,6 +237,8 @@ const q = {
   insertNotif: db.prepare("INSERT INTO notifications (user_id, title, body, type, params, created_at) VALUES (?, ?, '', ?, ?, ?)"),
   notifs: db.prepare('SELECT id, title, body, type, params, created_at, read_at IS NOT NULL AS read FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 50'),
   setLang: db.prepare('UPDATE users SET lang = ? WHERE id = ?'),
+  patchSeen: db.prepare('SELECT patch_seen FROM users WHERE id = ?'),
+  setPatchSeen: db.prepare('UPDATE users SET patch_seen = ? WHERE id = ?'),
   // Échecs de connexion récents sur un email, depuis sa dernière connexion réussie.
   recentFails: db.prepare(`SELECT count(*) AS n FROM login_events
     WHERE email = ? AND event = 'login' AND success = 0 AND created_at > ?
@@ -520,6 +524,9 @@ function missionState(userId) {
 // Compteurs durables du joueur (exploits, actions comptées pour les missions et les conditions de classe).
 const statOf = (userId, event) => q.events.all(userId).find((r) => r.event === event)?.count || 0;
 
+// Dernière mise à jour publiée (la première de la liste « patches » de game.json).
+const LATEST_PATCH = (config.patches || [])[0]?.id || null;
+
 function mePayload(user) {
   const ch = q.character.get(user.id);
   const claimable = missionState(user.id).filter((m) => m.status === 'done').length + (ch ? daily.claimable(user.id) : 0);
@@ -529,6 +536,8 @@ function mePayload(user) {
     character: ch ? (({ class_path: _p, ...rest }) => ({ ...rest, path: fx.pathOf(ch), renown: renown(ch.xp) }))(ch) : null,
     unread: q.unread.get(user.id).n,
     claimable,
+    // Mise à jour la plus récente et celle que le joueur a lue en dernier (différentes : pastille sur « Mises à jour »).
+    patch: { latest: LATEST_PATCH, seen: q.patchSeen.get(user.id)?.patch_seen || null },
     // Position, actions disponibles et état du joueur dans la campagne en cours.
     player: ch ? campaign.playerPayload(user.id) : null,
     // Distinctions gagnées (titres), avec leur nombre.
@@ -578,6 +587,8 @@ const routes = {
     const salt = crypto.randomBytes(16).toString('hex');
     const info = q.insertUser.run(mail, hashPassword(password, salt), salt, now(), now());
     const userId = Number(info.lastInsertRowid);
+    // Un nouveau joueur n'a pas à être prévenu des changements passés.
+    if (LATEST_PATCH) q.setPatchSeen.run(LATEST_PATCH, userId);
     q.logEvent.run(userId, mail, 'register', 1, ip, ua, now());
     createSession(req, res, userId);
     send(res, 201, mePayload({ id: userId, email: mail }));
@@ -714,6 +725,15 @@ const routes = {
   },
 
   // Mémorise la langue choisie par le joueur.
+  // Le joueur a lu les notes de la mise à jour la plus récente.
+  'POST /api/patch/seen': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    await readJson(req);
+    if (LATEST_PATCH) q.setPatchSeen.run(LATEST_PATCH, user.id);
+    send(res, 200, mePayload(user));
+  },
+
   'POST /api/lang': async (req, res) => {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');

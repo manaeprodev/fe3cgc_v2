@@ -302,5 +302,12 @@
   "notif.robbed.title": "Thief!",
   "notif.robbed.body": "A thief took {gold} gold from you while the territory was taken.",
   "notif.sniped.title": "Fine",
-  "notif.sniped.body": "You did not retreat in time: you lose {gold} gold."
+  "notif.sniped.body": "You did not retreat in time: you lose {gold} gold.",
+  "menu.patches": "Updates",
+  "patch.title": "Updates",
+  "patch.new": "New",
+  "patch.empty": "No updates yet.",
+  "camp.untouchable": "Untouchable: this territory has just repelled an attack and cannot be attacked for {time}.",
+  "camp.counter": "Counter-attack: +{pct}% attack power against this territory.",
+  "error.untouchable": "This territory has just repelled an attack: it is untouchable for now."
 }

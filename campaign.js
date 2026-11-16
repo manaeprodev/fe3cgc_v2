@@ -15,6 +15,9 @@ module.exports = function createCampaign(ctx) {
     capitals: {}, homeBases: {}, annex: [],
     gather: { gold: 40, xp: 10 }, attackRewards: { gold: 150, xp: 60 }, defenseRewards: { gold: 60, xp: 25 },
     baseDefense: 2, npcDefense: {}, tierPower: {}, renownPower: 0.05, minChance: 0.05, maxChance: 0.95,
+    // Contre-attaque : un territoire qui repousse une attaque devient insaisissable `minutes` minutes, et sa faction gagne
+    // `attackBonus` % de puissance d'attaque sur les territoires ennemis voisins pendant ce temps (hors Serpents et Église).
+    counter: { minutes: 240, attackBonus: 25 },
     boss: { faction: 'serpents', chancePerTurn: 0.07, max: 1, power: 3, quietHours: { from: 0, to: 6, timezone: 'Europe/Paris' } },
     points: { win: 100, territory: 10, survivor: 5, loserTerritory: 2, loserSurvivor: 3 },
     cadenceGold: 10,
@@ -198,6 +201,8 @@ module.exports = function createCampaign(ctx) {
     // Territoires pris et défenses réussies par une faction dans la campagne en cours (Paladin noir).
     factionWins: db.prepare(`SELECT count(*) AS n FROM battles WHERE campaign_id = ? AND resolved_at IS NOT NULL
                              AND ((attacker = ? AND success = 1) OR (defender = ? AND success = 0))`),
+    // Défenses réussies récentes (insaisissable et contre-attaque).
+    recentDefenses: db.prepare('SELECT territory, attacker, defender, resolved_at FROM battles WHERE campaign_id = ? AND success = 0 AND resolved_at >= ?'),
     freeMoveUsed: db.prepare('SELECT 1 AS used FROM battle_free_moves WHERE battle_id = ? AND user_id = ?'),
     addFreeMove: db.prepare('INSERT OR IGNORE INTO battle_free_moves (battle_id, user_id) VALUES (?, ?)'),
     openBattles: db.prepare('SELECT * FROM battles WHERE resolved_at IS NULL'),
@@ -439,6 +444,22 @@ module.exports = function createCampaign(ctx) {
   // Un joueur correspond-il à un filtre d'effet ? { flying: true } : classe volante ; { lineage: [...] } : une de ces classes dans son arbre.
   const matchesFilter = (f, p) => !f || ((!f.flying || fx.isFlying(p.classId)) && (!f.lineage || p.path.some((c) => f.lineage.includes(c))));
 
+  // ------------------------------------------------------------ Contre-attaque
+  // Une défense réussie contre une autre faction jouable rend le territoire insaisissable et donne à sa faction un bonus
+  // d'attaque sur les territoires ennemis voisins, pendant `counter.minutes` minutes de jeu.
+  const COUNTER_MS = Math.round(C.counter.minutes * TURN_MS / C.turnMinutes);
+  const defensesAt = (at) => q.recentDefenses.all(currentCampaign().id, at - COUNTER_MS)
+    .filter((r) => r.resolved_at <= at && PLAYABLE.has(r.attacker) && PLAYABLE.has(r.defender));
+  // Fin de l'insaisissable d'un territoire (0 s'il ne l'est pas).
+  function shieldUntil(territory, owners, t) {
+    let end = 0;
+    for (const r of defensesAt(t)) if (r.territory === territory && owners.get(territory) === r.defender) end = Math.max(end, r.resolved_at + COUNTER_MS);
+    return end > t ? end : 0;
+  }
+  // La faction attaque-t-elle ce territoire ennemi en contre-attaque (voisin d'un de ses territoires qui vient de repousser une attaque) ?
+  const counterOn = (faction, target, owners, at) => PLAYABLE.has(faction) && owners.get(target) !== faction
+    && defensesAt(at).some((r) => r.defender === faction && owners.get(r.territory) === faction && neighbors(r.territory).includes(target));
+
   // Force des deux camps dans une bataille, effets de classe compris.
   // Elle dépend de qui est présent sur le territoire et autour à cet instant : on la calcule donc à la demande, pas à l'action.
   // Chances de réussite de l'attaque : force des attaquants / (attaquants + défense). La défense part d'une base proportionnelle
@@ -497,7 +518,7 @@ module.exports = function createCampaign(ctx) {
             if (enemies.length && levels.length && me.level >= Math.max(...levels)) add += e.pct;
           } else if (e.kind === 'holyKnight' && b.defender !== boss) {
             add += Math.min(e.repelledMax ?? 100, (e.repelledPct || 0) * statOf(me.id, `${boss}_repelled`));
-          } else if (e.kind === 'conquests') add += e.pct * winsOf(me.faction);
+          } else if (e.kind === 'conquests') add += Math.min(e.max ?? Infinity, e.pct * winsOf(me.faction));
         }
         // Auras des alliés présents : chaque porteur compte une fois par effet, dans la limite de auraCap.
         // Gremory : ses auras portent jusqu'à deux cases (effet « reach »), et sur son territoire elles gagnent
@@ -551,10 +572,12 @@ module.exports = function createCampaign(ctx) {
     let bossPower = b.boss_power;
     const holy = here.defense.flatMap((p) => p.effects).find((e) => e.kind === 'holyKnight');
     if (holy && bossPower > 0) bossPower /= holy.bossDivisor || 1;
-    const attack = bossPower + sums.attack;
+    // Contre-attaque : évaluée à l'ouverture de la bataille.
+    const counter = b.boss_power === 0 && counterOn(b.attacker, T, ownersMap(), b.started_at);
+    const attack = bossPower + sums.attack * (counter ? 1 + C.counter.attackBonus / 100 : 1);
     const defense = C.baseDefense * importance(T) + (C.npcDefense[b.defender] || 0) + sums.defense;
     const chance = Math.min(C.maxChance, Math.max(C.minChance, attack / (attack + defense)));
-    return { chance, attack, defense, attackers: who.attack.size, defenders: who.defense.size, perUser };
+    return { chance, counter, attack, defense, attackers: who.attack.size, defenders: who.defense.size, perUser };
   }
   const battleInfo = (b) => battleDetail(b);
 
@@ -690,7 +713,7 @@ module.exports = function createCampaign(ctx) {
       if (open.filter((b) => b.boss_power > 0).length >= C.boss.max) return;
       const owners = ownersMap();
       const busy = new Set(open.map((b) => b.territory));
-      const targets = TERR.filter((x) => !ANNEX.has(x.id) && !busy.has(x.id) && PLAYABLE.has(owners.get(x.id)));
+      const targets = TERR.filter((x) => !ANNEX.has(x.id) && !busy.has(x.id) && PLAYABLE.has(owners.get(x.id)) && !shieldUntil(x.id, owners, t));
       if (!targets.length) return;
       const target = targets[Math.floor(Math.random() * targets.length)];
       startBattle(target.id, C.boss.faction, owners.get(target.id), t, C.boss.power * importance(target.id));
@@ -837,10 +860,12 @@ module.exports = function createCampaign(ctx) {
         const info = b ? battleInfo(b) : null;
         return {
           id: x.id, name: x.name, neighbors: neighbors(x.id), faction: owners.get(x.id) || null,
+          untouchableUntil: shieldUntil(x.id, owners, t) || null,
+          counter: !!side && counterOn(side, x.id, owners, t),
           importance: importance(x.id), annex: ANNEX.has(x.id), players: presence.get(x.id) || {},
           battle: b ? {
             attacker: b.attacker, defender: b.defender, boss: b.boss_power > 0, endsAt: b.ends_at,
-            chance: Math.round(info.chance * 100), attackers: info.attackers, defenders: info.defenders,
+            counter: info.counter, chance: Math.round(info.chance * 100), attackers: info.attackers, defenders: info.defenders,
             power: { attack: Math.round(info.attack * 100) / 100, defense: Math.round(info.defense * 100) / 100 },
             mine: q.myContribution.get(b.id, userId)?.side || null,
             rallied: !!q.rallied.get(b.id, userId),
@@ -921,6 +946,7 @@ module.exports = function createCampaign(ctx) {
       if (action === 'attack') {
         if (owner === ch.faction) throw new HttpError(409, 'invalid_action');
         if (battle && battle.attacker !== ch.faction) throw new HttpError(409, 'battle_busy');
+        if (shieldUntil(here, owners, t)) throw new HttpError(409, 'untouchable');
         bonus = spend(ps, t);
         const b = battle || startBattle(here, ch.faction, owner, t);
         q.setStreak.run(here, streak + 1, user.id);

@@ -302,5 +302,12 @@
   "notif.robbed.title": "Voleur !",
   "notif.robbed.body": "Un voleur t'a pris {gold} or pendant la prise du territoire.",
   "notif.sniped.title": "Amende",
-  "notif.sniped.body": "Tu ne t'es pas replié à temps : tu perds {gold} or."
+  "notif.sniped.body": "Tu ne t'es pas replié à temps : tu perds {gold} or.",
+  "menu.patches": "Mises à jour",
+  "patch.title": "Mises à jour",
+  "patch.new": "Nouveau",
+  "patch.empty": "Aucune mise à jour pour le moment.",
+  "camp.untouchable": "Insaisissable : ce territoire vient de repousser une attaque, il ne peut plus être attaqué pendant {time}.",
+  "camp.counter": "Contre-attaque : +{pct} % de puissance d'attaque contre ce territoire.",
+  "error.untouchable": "Ce territoire vient de repousser une attaque : il est insaisissable pour le moment."
 }

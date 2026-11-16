@@ -344,8 +344,11 @@ function renderFaction() {
 }
 
 // ------------------------------------------------------------ Jeu
+// Une mise à jour est-elle sortie sans que le joueur l'ait lue ?
+const patchUnread = () => { const p = state.me?.patch; return !!(p && p.latest && p.latest !== p.seen); };
+
 // Onglets principaux : map, menu. Écrans secondaires : notifs, missions, rules.
-const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses, avatars: renderAvatars, journal: renderJournal };
+const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses, avatars: renderAvatars, journal: renderJournal, patches: renderPatches };
 
 function go(tab) {
   if (['map', 'menu', 'journal'].includes(state.tab)) state.back = state.tab;
@@ -354,14 +357,14 @@ function go(tab) {
 }
 
 function renderGame() {
-  const menuSide = ['menu', 'rules', 'classes', 'avatars'].includes(state.tab);
+  const menuSide = ['menu', 'rules', 'classes', 'avatars', 'patches'].includes(state.tab);
   app.innerHTML = `
     <header class="topbar" id="topbar"></header>
     <main class="view" id="view"></main>
     <nav class="tabbar">
       <button type="button" data-tab="map" class="${state.tab === 'map' ? 'active' : ''}">${esc(t('tab.map'))}</button>
       <button type="button" data-tab="journal" class="${state.tab === 'journal' ? 'active' : ''}">${esc(t('tab.journal'))}</button>
-      <button type="button" data-tab="menu" class="${menuSide ? 'active' : ''}">${esc(t('tab.menu'))}</button>
+      <button type="button" data-tab="menu" class="${menuSide ? 'active' : ''}">${esc(t('tab.menu'))}${patchUnread() ? '<span class="new-dot"></span>' : ''}</button>
     </nav>`;
   app.querySelectorAll('.tabbar [data-tab]').forEach((b) => b.addEventListener('click', () => go(b.dataset.tab)));
   drawTopbar();
@@ -446,7 +449,7 @@ function drawTopbar() {
 
 // Met à jour le joueur (ressources, pastilles) à partir d'une réponse de l'API.
 function setMe(me) {
-  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable, player: me.player, distinctions: me.distinctions || [], stats: me.stats || {} };
+  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable, player: me.player, distinctions: me.distinctions || [], stats: me.stats || {}, patch: me.patch || null };
   syncClock(me.player);
   // On ne redessine pas le bandeau pendant que le joueur manipule le sélecteur de langue.
   if (!document.activeElement || !document.activeElement.matches('#topbar [data-lang]')) drawTopbar();
@@ -469,7 +472,7 @@ function panelHead(title, extra = '') {
 function bindClose(view) {
   view.querySelector('[data-close]').addEventListener('click', () => {
     if (state.tab === 'classes' && state.classesFrom === 'rules') return go('rules');
-    go(['rules', 'classes', 'avatars'].includes(state.tab) ? 'menu' : state.back || 'map');
+    go(['rules', 'classes', 'avatars', 'patches'].includes(state.tab) ? 'menu' : state.back || 'map');
   });
 }
 
@@ -582,6 +585,8 @@ async function renderMap() {
     const b = st.battle;
     const here = p.territory === tr.id;
     const noAct = !(p.actions > 0);
+    const shielded = !!st.untouchableUntil && st.untouchableUntil > serverNow();
+    const counterBonus = state.config.campaign?.counter?.attackBonus || 0;
     const tags = [st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : ''].filter(Boolean);
     const present = Object.entries(st.players || {}).map(([f, n]) => `<span class="who-here" title="${esc(loc(faction(f)?.name))}">
       <span class="dot" style="--c:${esc(faction(f)?.color || '#888')}"></span>${n}</span>`).join('');
@@ -592,7 +597,7 @@ async function renderMap() {
       if (isHome(tr.id)) actions = btn('retreat', t('camp.retreat'), false);
     } else if (p.status === 'alive') {
       if (here && st.faction === myFaction()) actions = btn('defend', t('camp.defend'), noAct) + btn('gather', t('camp.gather'), noAct || !!b);
-      else if (here) actions = btn('attack', t('camp.attack'), noAct || (b && b.attacker !== myFaction()));
+      else if (here) actions = btn('attack', t('camp.attack'), noAct || (b && b.attacker !== myFaction()) || shielded);
       else if (near.includes(p.territory)) {
         actions = canEnter(tr.id) ? btn('move', t('camp.move'), noAct) : `<p class="muted small">${esc(t('camp.cantEnter'))}</p>`;
       }
@@ -619,6 +624,8 @@ async function renderMap() {
     : esc(t('map.neutral'))}${tags.length ? ' · ' + esc(tags.join(' · ')) : ''}${present ? ` · ${present}` : ''}</p>
       ${b ? `<p class="small battle-line">${withTimer(numKey('camp.battle', b.attacker), { attacker: loc(faction(b.attacker)?.name), chance: b.chance }, b.endsAt)}
         · ${esc(t('camp.forces', { attackers: b.attackers, defenders: b.defenders }))}</p>` : ''}
+      ${shielded ? `<p class="small note">${withTimer('camp.untouchable', {}, st.untouchableUntil)}</p>` : ''}
+      ${st.counter && !shielded ? `<p class="small note">${esc(t('camp.counter', { pct: counterBonus }))}</p>` : ''}
       ${actionError ? `<p class="error" role="alert">${esc(actionError)}</p>` : ''}
       ${actionNote ? `<p class="small note">${esc(actionNote)}</p>` : ''}
       ${p.rewardDebuff > 0 ? `<p class="small note">${esc(t('camp.rewardDebuff', { n: p.rewardDebuff }))}</p>` : ''}
@@ -729,6 +736,7 @@ async function renderMenu() {
       || state.players.some((p) => p.faction === x.id));
     view.innerHTML = `
       <button class="btn ghost" type="button" data-rules>${esc(t('menu.rules'))}</button>
+      <button class="btn ghost" type="button" data-patches>${esc(t('menu.patches'))}${patchUnread() ? `<span class="new-dot" title="${esc(t('patch.new'))}"></span>` : ''}</button>
 
       <section class="card">
         <h2>${esc(t('menu.character'))}</h2>
@@ -813,6 +821,7 @@ async function renderMenu() {
       <button class="btn danger" type="button" data-logout>${esc(t('common.logout'))}</button>`;
     view.querySelector('[data-logout]').addEventListener('click', logout);
     view.querySelector('[data-rules]').addEventListener('click', () => go('rules'));
+    view.querySelector('[data-patches]').addEventListener('click', () => go('patches'));
     view.querySelector('[data-avatars]').addEventListener('click', () => go('avatars'));
     view.querySelector('[data-classes]').addEventListener('click', () => {
       state.classesFrom = 'menu';
@@ -1052,6 +1061,27 @@ function renderRules() {
     go('classes');
   });
   track('rules_read');
+}
+
+// Notes de mise à jour : les plus récentes d'abord. Les ouvrir les marque comme lues (la pastille disparaît).
+function renderPatches() {
+  const view = document.getElementById('view');
+  view.className = 'view scroll';
+  const patches = state.config.patches || [];
+  const fmt = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
+  view.innerHTML = panelHead(t('patch.title')) + (patches.length ? patches.map((pt) => `
+    <section class="card patch">
+      <h2>${esc(loc(pt.title))}${pt.date ? ` <span class="muted small">· ${esc(fmt(pt.date))}</span>` : ''}</h2>
+      ${pt.intro ? `<p class="muted">${esc(loc(pt.intro))}</p>` : ''}
+      ${(pt.sections || []).map((sec) => `<h3>${esc(loc(sec.title))}</h3>
+        <ul class="patch-list">${(sec.items || []).map((i) => `<li>${esc(loc(i))}</li>`).join('')}</ul>`).join('')}
+    </section>`).join('') : `<p class="muted">${esc(t('patch.empty'))}</p>`);
+  bindClose(view);
+  if (patchUnread()) {
+    state.me.patch = { ...state.me.patch, seen: state.me.patch.latest };
+    document.querySelector('.tabbar .new-dot')?.remove();
+    api('/patch/seen', {}).catch(() => {});
+  }
 }
 
 // Choix de l'avatar : avatars disponibles, avatars à acheter, avatars à gagner en mission.

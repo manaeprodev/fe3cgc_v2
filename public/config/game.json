@@ -212,12 +212,12 @@
         {
           "kind": "power",
           "side": "attack",
-          "pct": 3
+          "pct": 5
         }
       ],
       "effectText": {
-        "fr": "+3 % de pouvoir d'attaque.",
-        "en": "+3% attack power."
+        "fr": "+5 % de pouvoir d'attaque.",
+        "en": "+5% attack power."
       }
     },
     {
@@ -237,12 +237,12 @@
         {
           "kind": "power",
           "side": "defense",
-          "pct": 3
+          "pct": 5
         }
       ],
       "effectText": {
-        "fr": "+3 % de pouvoir de défense.",
-        "en": "+3% defence power."
+        "fr": "+5 % de pouvoir de défense.",
+        "en": "+5% defence power."
       }
     },
     {
@@ -261,13 +261,13 @@
       "effects": [
         {
           "kind": "streak",
-          "pct": 1,
+          "pct": 1.5,
           "max": 20
         }
       ],
       "effectText": {
-        "fr": "Les actions de combat consécutives sur le même territoire augmentent à chaque fois de +1 % (maximum +20 %).",
-        "en": "Consecutive combat actions on the same territory each add +1% (maximum +20%)."
+        "fr": "Les actions de combat consécutives sur le même territoire augmentent à chaque fois de +1,5 % (maximum +20 %).",
+        "en": "Consecutive combat actions on the same territory each add +1.5% (maximum +20%)."
       }
     },
     {
@@ -287,12 +287,12 @@
         {
           "kind": "aura",
           "range": "adjacent",
-          "pct": 2
+          "pct": 3
         }
       ],
       "effectText": {
-        "fr": "Donne +2 % de pouvoir d'attaque ou de défense aux alliés présents sur son territoire et sur les territoires voisins.",
-        "en": "Gives +2% attack or defence power to allies on its territory and neighbouring territories."
+        "fr": "Donne +3 % de pouvoir d'attaque ou de défense aux alliés présents sur son territoire et sur les territoires voisins.",
+        "en": "Gives +3% attack or defence power to allies on its territory and neighbouring territories."
       }
     },
     {
@@ -596,12 +596,16 @@
         {
           "kind": "power",
           "side": "attack",
-          "pct": 5
+          "pct": 12
+        },
+        {
+          "kind": "steal",
+          "gold": 20
         }
       ],
       "effectText": {
-        "fr": "+5 % de pouvoir d'attaque.",
-        "en": "+5% attack power."
+        "fr": "+12 % de pouvoir d'attaque, et vole 20 or de plus à chaque défenseur quand l'attaque réussit.",
+        "en": "+12% attack power, and steals 20 more gold from each defender when the attack succeeds."
       }
     },
     {
@@ -851,12 +855,14 @@
       },
       "effects": [
         {
-          "kind": "darkMage"
+          "kind": "darkMage",
+          "factor": 2,
+          "freeFactor": 2.5
         }
       ],
       "effectText": {
-        "fr": "Double la puissance d'attaque ou de défense s'il n'y a aucun autre allié ayant {c:monk} dans son arbre de classes sur le territoire ; triplée si aucun ennemi n'en a non plus.",
-        "en": "Doubles attack or defence power if no other ally with {c:monk} in their class tree is on the territory; tripled if no enemy has it either."
+        "fr": "Double la puissance d'attaque ou de défense s'il n'y a aucun autre allié ayant {c:monk} dans son arbre de classes sur le territoire ; multipliée par 2,5 si aucun ennemi n'en a non plus.",
+        "en": "Doubles attack or defence power if no other ally with {c:monk} in their class tree is on the territory; multiplied by 2.5 if no enemy has it either."
       }
     },
     {
@@ -1178,7 +1184,20 @@
         "en": ""
       },
       "icon": "assets/classes/gremory.svg",
-      "effects": []
+      "effects": [
+        {
+          "kind": "reach",
+          "distance": 2
+        },
+        {
+          "kind": "auraBoost",
+          "pct": 50
+        }
+      ],
+      "effectText": {
+        "fr": "Ses auras de classe portent jusqu'à deux territoires de distance. Sur son territoire, elles sont renforcées de 50 % de l'aura de l'allié le plus fort présent (elle comprise).",
+        "en": "Its class auras reach up to two territories away. On its own territory they are boosted by 50% of the strongest aura among the allies present (itself included)."
+      }
     },
     {
       "id": "dark-bishop",
@@ -1229,7 +1248,19 @@
         "en": ""
       },
       "icon": "assets/classes/dark-knight.svg",
-      "effects": []
+      "effects": [
+        {
+          "kind": "conquests",
+          "pct": 1
+        },
+        {
+          "kind": "enemyMove"
+        }
+      ],
+      "effectText": {
+        "fr": "+1 % de pouvoir d'attaque ou de défense par territoire pris ou défense réussie de sa faction dans la campagne en cours, sans limite. Une fois par bataille, rejoint sans dépenser d'action le territoire ennemi voisin où sa faction attaque.",
+        "en": "+1% attack or defence power for each territory taken or successful defence by its faction in the current campaign, with no limit. Once per battle, joins without spending an action the neighbouring enemy territory where its faction is attacking."
+      }
     }
   ],
   "factions": [

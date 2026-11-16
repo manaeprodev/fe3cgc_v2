@@ -79,6 +79,12 @@ module.exports = function createCampaign(ctx) {
       chance      REAL
     );
     CREATE INDEX IF NOT EXISTS battles_open ON battles (resolved_at, territory);
+    -- Déplacements gratuits du Paladin noir : un par bataille.
+    CREATE TABLE IF NOT EXISTS battle_free_moves (
+      battle_id INTEGER NOT NULL,
+      user_id   INTEGER NOT NULL,
+      PRIMARY KEY (battle_id, user_id)
+    );
     -- Une ligne par action Attaquer ou Défendre, ou par renfort payé (kind = 'hire').
     -- battle_id vide = garnison posée hors bataille (expire).
     CREATE TABLE IF NOT EXISTS contributions (
@@ -189,6 +195,11 @@ module.exports = function createCampaign(ctx) {
     aliveByFaction: db.prepare(`SELECT COALESCE(p.exile_faction, c.faction) AS faction, count(*) AS n, sum(p.status != 'dead') AS alive
                                 FROM player_state p JOIN characters c ON c.user_id = p.user_id GROUP BY COALESCE(p.exile_faction, c.faction)`),
     openBattle: db.prepare('SELECT * FROM battles WHERE territory = ? AND resolved_at IS NULL'),
+    // Territoires pris et défenses réussies par une faction dans la campagne en cours (Paladin noir).
+    factionWins: db.prepare(`SELECT count(*) AS n FROM battles WHERE campaign_id = ? AND resolved_at IS NOT NULL
+                             AND ((attacker = ? AND success = 1) OR (defender = ? AND success = 0))`),
+    freeMoveUsed: db.prepare('SELECT 1 AS used FROM battle_free_moves WHERE battle_id = ? AND user_id = ?'),
+    addFreeMove: db.prepare('INSERT OR IGNORE INTO battle_free_moves (battle_id, user_id) VALUES (?, ?)'),
     openBattles: db.prepare('SELECT * FROM battles WHERE resolved_at IS NULL'),
     dueBattles: db.prepare('SELECT * FROM battles WHERE resolved_at IS NULL AND ends_at <= ? ORDER BY ends_at'),
     insertBattle: db.prepare('INSERT INTO battles (campaign_id, territory, attacker, defender, boss_power, started_at, ends_at) VALUES (?, ?, ?, ?, ?, ?, ?)'),
@@ -445,7 +456,7 @@ module.exports = function createCampaign(ctx) {
       if (ch) people.set(r.user_id, person({ ...ch, territory: null, faction: r.faction }));
     }
     const camp = { attack: b.attacker, defense: b.defender };
-    const presentOf = (f, wide) => (f ? [...people.values()].filter((p) => p.faction === f && p.territory && (wide ? around.has(p.territory) : p.territory === T)) : []);
+    const presentOf = (f, wide, zone = around) => (f ? [...people.values()].filter((p) => p.faction === f && p.territory && (wide ? zone.has(p.territory) : p.territory === T)) : []);
     const here = { attack: presentOf(camp.attack, false), defense: presentOf(camp.defense, false) };
     const near = { attack: presentOf(camp.attack, true), defense: presentOf(camp.defense, true) };
     const boss = C.boss.faction;
@@ -454,6 +465,14 @@ module.exports = function createCampaign(ctx) {
       return [...here[other].map((p) => p.level), ...rows.filter((r) => r.side === other && people.get(r.user_id)).map((r) => people.get(r.user_id).level)];
     };
 
+    // Territoires pris et défenses réussies de chaque faction (calculé une fois, seulement si un Paladin noir est là).
+    const winsCache = new Map();
+    const winsOf = (f) => { if (!winsCache.has(f)) winsCache.set(f, q.factionWins.get(currentCampaign().id, f, f).n); return winsCache.get(f); };
+    // Territoires à portée de deux cases (auras de la Gremory).
+    const around2 = new Set(around);
+    for (const n of around) for (const m of neighbors(n)) around2.add(m);
+    const dist = (id) => (id === T ? 0 : around.has(id) ? 1 : around2.has(id) ? 2 : 9);
+    const within2 = { attack: presentOf(camp.attack, true, around2), defense: presentOf(camp.defense, true, around2) };
     const sums = { attack: 0, defense: 0 };
     const who = { attack: new Set(), defense: new Set() };
     const perUser = new Map();
@@ -478,17 +497,28 @@ module.exports = function createCampaign(ctx) {
             if (enemies.length && levels.length && me.level >= Math.max(...levels)) add += e.pct;
           } else if (e.kind === 'holyKnight' && b.defender !== boss) {
             add += Math.min(e.repelledMax ?? 100, (e.repelledPct || 0) * statOf(me.id, `${boss}_repelled`));
-          }
+          } else if (e.kind === 'conquests') add += e.pct * winsOf(me.faction);
         }
         // Auras des alliés présents : chaque porteur compte une fois par effet, dans la limite de auraCap.
+        // Gremory : ses auras portent jusqu'à deux cases (effet « reach »), et sur son territoire elles gagnent
+        // un pourcentage de l'aura de l'allié le plus fort présent (elle comprise).
         let aura = 0;
-        for (const s of near[side]) {
+        for (const s of within2[side]) {
+          const reach = Math.max(0, ...s.effects.filter((e) => e.kind === 'reach').map((e) => e.distance || 0));
+          const d = dist(s.territory);
           for (const a of s.effects) {
             if (a.kind !== 'aura') continue;
-            if (a.range === 'territory' && s.territory !== T) continue;
+            if (d > Math.max(a.range === 'territory' ? 0 : 1, reach)) continue;
             if (a.targets && !me.path.some((c) => a.targets.includes(c))) continue;
             if (a.except && me.path.includes(a.except)) continue;
             aura += a.pct;
+          }
+          if (d === 0) {
+            const boost = s.effects.find((e) => e.kind === 'auraBoost');
+            if (boost) {
+              const strongest = Math.max(0, ...allies.map((p) => fx.sumOf(p.effects, 'aura')));
+              aura += (boost.pct / 100) * strongest;
+            }
           }
         }
         add += Math.min(AURA_CAP, aura);
@@ -506,7 +536,8 @@ module.exports = function createCampaign(ctx) {
         mult = Math.max(0.1, mult - cut / 100);
         // Mage noir : doublé sans autre allié « Moine » sur place, triplé si aucun ennemi n'en a non plus.
         if (me.effects.some((e) => e.kind === 'darkMage') && !allies.some((p) => p.id !== me.id && p.path.includes('monk'))) {
-          mult *= enemies.length && enemies.every((p) => !p.path.includes('monk')) ? 3 : 2;
+          const dm = me.effects.find((e) => e.kind === 'darkMage');
+          mult *= enemies.length && enemies.every((p) => !p.path.includes('monk')) ? (dm.freeFactor || 3) : (dm.factor || 2);
         }
         // Chevalier sacré : sa puissance est multipliée sur un territoire conquis par les Serpents.
         const hk = me.effects.find((e) => e.kind === 'holyKnight');
@@ -860,9 +891,14 @@ module.exports = function createCampaign(ctx) {
       if (!terr(to)) throw new HttpError(400, 'invalid_territory');
       if (!NEIGHBORS.get(ps.territory)?.has(to)) throw new HttpError(409, 'not_neighbor');
       if (!canEnter(ch.faction, to, owners)) throw new HttpError(409, 'cannot_enter');
+      // Paladin noir : rejoindre sans action une bataille menée par sa faction sur un territoire ennemi voisin, une fois par bataille.
+      const dest = q.openBattle.get(to);
+      const raid = dest && owners.get(to) !== ch.faction && (dest.attacker === ch.faction || dest.defender === ch.faction)
+        && effectsOfUser(user.id).some((e) => e.kind === 'enemyMove') && !q.freeMoveUsed.get(dest.id, user.id);
       // Il faut au moins une action pour tenter un déplacement ; il peut alors ne rien coûter.
-      if (settle(ps, t).actions < 1) throw new HttpError(409, 'no_actions');
-      const free = moveRoll() * 100 < freeMoveChance(user.id);
+      if (!raid && settle(ps, t).actions < 1) throw new HttpError(409, 'no_actions');
+      if (raid) q.addFreeMove.run(dest.id, user.id);
+      const free = raid || moveRoll() * 100 < freeMoveChance(user.id);
       const bonus = free ? 0 : spend(ps, t);
       q.setTerritory.run(to, user.id);
       q.tickDebuff.run(user.id);

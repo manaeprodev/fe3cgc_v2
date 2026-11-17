@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <rect width="256" height="256" fill="hsl(180 50% 22%)"/>
-  <circle cx="128" cy="104" r="46" fill="hsl(180 60% 78%)"/>
-  <path d="M40 256c0-58 40-92 88-92s88 34 88 92z" fill="hsl(180 60% 78%)"/>
-  <path d="M208 20l9 20 22 3-16 15 4 22-19-11-19 11 4-22-16-15 22-3z" fill="#ffd95e" stroke="#8a5a00" stroke-width="3"/>
-  <rect x="6" y="6" width="244" height="244" fill="none" stroke="hsl(180 70% 60%)" stroke-width="12"/>
-</svg>

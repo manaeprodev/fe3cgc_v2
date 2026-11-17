@@ -140,6 +140,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
   width: 100%;
   aspect-ratio: 1 / 1;      /* toujours carré, quelle que soit l'image source */
   object-fit: cover;
+  object-position: 50% 18%; /* les visages sont en haut des portraits */
   border-radius: 12px;
   background: var(--panel-2);
 }
@@ -185,7 +186,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 .faction-desc { display: block; color: var(--muted); font-size: .9rem; }
 
 /* ---------- Classes : icônes pixel, dépliant des règles, arbre ---------- */
-.class-icon { width: 32px; height: 32px; flex: none; image-rendering: pixelated; }
+.class-icon { width: 32px; height: 32px; flex: none; object-fit: contain; }
 .topbar .who .class-icon { display: inline-block; width: 20px; height: 20px; margin-right: 4px; vertical-align: -5px; }
 .choice.with-icon { display: flex; align-items: center; gap: 10px; }
 .fold > summary { cursor: pointer; font-weight: 600; padding: 2px 0; }
@@ -356,7 +357,7 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 .terr.selected { fill: #fff; fill-opacity: .28; stroke: #fff; stroke-opacity: 1; stroke-width: 3; stroke-dasharray: none; }
 .terr.selected.owned { fill-opacity: .45; }
 /* Hauteur fixe : la carte garde la même taille quel que soit le nombre de voisins affichés. */
-.map-info { flex: none; height: 264px; display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+.map-info { flex: none; height: 300px; scrollbar-width: thin; scrollbar-color: #4a5068 transparent; display: flex; flex-direction: column; gap: 4px; overflow-x: hidden; overflow-y: auto; }
 .map-info > * { flex: none; }
 .terr-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .who-here { display: inline-flex; align-items: center; gap: 3px; margin-right: 6px; }
@@ -461,3 +462,19 @@ input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); ou
 .new-dot { display: inline-block; width: 9px; height: 9px; margin-left: 8px; border-radius: 50%; background: #e5484d; vertical-align: middle; }
 .patch h3 { margin: 16px 0 6px; font-size: 1rem; }
 .patch-list { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+/* Joueurs présents sur le territoire choisi : une ligne qui défile, chaque membre aux couleurs de sa faction. */
+.present-list { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; scrollbar-color: #4a5068 transparent; }
+.present-list .who { display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 3px 8px 3px 3px; border-radius: 999px; background: var(--panel-2); border: 2px solid var(--c); }
+.present-list .who.me { background: color-mix(in srgb, var(--c) 28%, var(--panel-2)); }
+.present-list img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+.present-list .who span { display: flex; flex-direction: column; line-height: 1.15; }
+.present-list .who small { color: var(--muted); font-size: .68rem; }
+.shield-shine { filter: drop-shadow(0 0 3px #ffe27a); animation: shield-shine 1.8s ease-in-out infinite; }
+@keyframes shield-shine { 50% { filter: drop-shadow(0 0 7px #fff3b0) brightness(1.3); } }
+@media (prefers-reduced-motion: reduce) { .shield-shine { animation: none; } }
+
+.specials summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; }
+.specials .special { display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.specials .special .avatar { width: 56px; border-radius: 10px; }
+.specials .special:not(.done) .avatar { filter: grayscale(.6) brightness(.75); }
+.reward-avatar { width: 22px; height: 22px; aspect-ratio: 1 / 1; object-fit: cover; object-position: 50% 18%; }

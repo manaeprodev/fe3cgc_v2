@@ -159,7 +159,7 @@
   "camp.retreat": "Se replier ici",
   "camp.battle": "Bataille : {attacker} attaque · {chance} % de chances · fin dans {time}",
   "camp.forces": "{attackers} attaquant(s), {defenders} défenseur(s)",
-  "camp.present": "Joueurs présents : {list}",
+  "camp.present": "Joueurs présents",
   "camp.importance": "Importance {n}",
   "camp.annex": "Territoire annexe",
   "camp.cantEnter": "Aucun territoire de ta faction ne touche ce territoire.",
@@ -308,6 +308,11 @@
   "patch.new": "Nouveau",
   "patch.empty": "Aucune mise à jour pour le moment.",
   "camp.untouchable": "Insaisissable : ce territoire vient de repousser une attaque, il ne peut plus être attaqué pendant {time}.",
-  "camp.counter": "Contre-attaque : +{pct} % de puissance d'attaque contre ce territoire.",
-  "error.untouchable": "Ce territoire vient de repousser une attaque : il est insaisissable pour le moment."
+  "camp.counter": "On Fire ! Contre-attaque : +{pct} % de puissance d'attaque contre ce territoire.",
+  "error.untouchable": "Ce territoire vient de repousser une attaque : il est insaisissable pour le moment.",
+  "camp.retreatingTag": "en repli",
+  "perk.hidden": "Invisibles sur la carte à {place} tant que vous n'y attaquez ni n'y défendez.",
+  "missions.specials": "Missions spéciales",
+  "missions.specialsHint": "Chaque exploit débloque un avatar, automatiquement.",
+  "missions.obtained": "Avatar débloqué"
 }

@@ -111,9 +111,13 @@ const MISSIONS = Array.isArray(config.missions) ? config.missions : [];
 // Un rang fixe la renommée minimale et le prix en or pour y accéder ; un rang sans prix est verrouillé.
 const TIERS = Array.isArray(config.classTiers) ? config.classTiers : [];
 const BASE_TIER = TIERS[0]?.id;
-// Avatars bloqués : déclarés dans config.avatars.locked ({ file, unlock: "mission" | "gold", price }).
-// Tout autre fichier du dossier assets/avatars est libre.
+// Avatars : `free` (libres, dans l'ordre d'affichage), `locked` ({ file, unlock: "mission" | "gold", price }) et `special`
+// (missions spéciales qui débloquent un avatar). Un fichier du dossier assets/avatars qui n'est dans aucune liste n'est pas proposé.
+const FREE_AVATARS = config.avatars?.free || [];
 const LOCKED_AVATARS = new Map((config.avatars?.locked || []).map((a) => [a.file, a]));
+const SPECIALS = config.avatars?.special || [];
+// Compteurs durables suivis pour les missions spéciales (actions constatées par le serveur, jamais déclarées par l'app).
+const SPECIAL_EVENTS = new Set(SPECIALS.map((m) => m.stat).filter(Boolean));
 const classById = (id) => config.classes.find((c) => c.id === id);
 const tierById = (id) => TIERS.find((t) => t.id === id);
 const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'event').map((m) => m.condition.event));
@@ -258,8 +262,35 @@ const q = {
   events: db.prepare('SELECT event, count FROM player_events WHERE user_id = ?'),
   bumpEvent: db.prepare(`INSERT INTO player_events (user_id, event, count) VALUES (?, ?, 1)
                          ON CONFLICT (user_id, event) DO UPDATE SET count = count + 1`),
+  addEvent: db.prepare(`INSERT INTO player_events (user_id, event, count) VALUES (?, ?, ?)
+                        ON CONFLICT (user_id, event) DO UPDATE SET count = count + excluded.count`),
+  setEvent: db.prepare(`INSERT INTO player_events (user_id, event, count) VALUES (?, ?, ?)
+                        ON CONFLICT (user_id, event) DO UPDATE SET count = excluded.count`),
+  refund: db.prepare('UPDATE characters SET gold = gold + ? WHERE user_id = ?'),
+  allUnlocked: db.prepare('SELECT user_id, avatar, source FROM unlocked_avatars'),
+  dropUnlocked: db.prepare('DELETE FROM unlocked_avatars WHERE user_id = ? AND avatar = ?'),
+  allChars: db.prepare('SELECT user_id, avatar FROM characters'),
 };
 q.purgeSessions.run(now());
+
+// Migration : les anciens avatars provisoires (avatar-0N.svg, shop-0N.svg, mission-0N.svg) n'existent plus.
+// Les joueurs qui les utilisaient reçoivent un avatar libre, et les achats sont remboursés au prix payé à l'époque.
+{
+  const known = new Set([...FREE_AVATARS, ...LOCKED_AVATARS.keys()]);
+  const OLD_PRICES = { 'shop-01.svg': 600, 'shop-02.svg': 600, 'shop-03.svg': 600, 'shop-04.svg': 900, 'shop-05.svg': 900, 'shop-06.svg': 1500 };
+  if (FREE_AVATARS.length && known.size) {
+    for (const r of q.allUnlocked.all()) {
+      if (known.has(r.avatar)) continue;
+      if (r.source === 'gold' && OLD_PRICES[r.avatar]) q.refund.run(OLD_PRICES[r.avatar], r.user_id);
+      q.dropUnlocked.run(r.user_id, r.avatar);
+    }
+    for (const r of q.allChars.all()) {
+      if (known.has(r.avatar)) continue;
+      const n = Number((/\d+/.exec(r.avatar) || [1])[0]);
+      q.setAvatar.run(FREE_AVATARS[(Math.max(1, n) - 1) % FREE_AVATARS.length], r.user_id);
+    }
+  }
+}
 
 // ---------------------------------------------------------------- Utilitaires
 const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
@@ -419,12 +450,11 @@ setInterval(() => {
 }, 60_000).unref();
 setInterval(() => q.purgeSessions.run(now()), 600_000).unref();
 
+// Avatars proposés : les libres, puis les verrouillés, dans l'ordre de game.json, à condition que le fichier existe.
 function listAvatars() {
-  try {
-    return fs.readdirSync(AVATAR_DIR)
-      .filter((f) => IMAGE_EXT.has(path.extname(f).toLowerCase()))
-      .sort((a, b) => a.localeCompare(b, 'fr', { numeric: true }));
-  } catch { return []; }
+  let files;
+  try { files = new Set(fs.readdirSync(AVATAR_DIR).filter((f) => IMAGE_EXT.has(path.extname(f).toLowerCase()))); } catch { return []; }
+  return [...FREE_AVATARS, ...LOCKED_AVATARS.keys()].filter((f) => files.has(f));
 }
 
 // Avatars vus par un joueur : libres, achetables ou à gagner en mission, avec ceux qu'il possède.
@@ -554,15 +584,36 @@ const daily = require('./daily')({ db, config, grant, HttpError, fallenState: (u
 const unlockAvatar = (userId, file, source) => {
   if (LOCKED_AVATARS.has(file) && q.unlockAvatar.run(userId, file, source, now()).changes === 1) notify(userId, 'avatar_unlocked', { avatar: file });
 };
+// Compteur durable : ajoute n, puis vérifie les missions spéciales.
+function statAdd(userId, key, n = 1) {
+  if (n > 0) q.addEvent.run(userId, key, n);
+  specialState(userId);
+}
+// Missions spéciales : chacune débloque un avatar quand son compteur atteint l'objectif (déblocage automatique).
+function specialState(userId) {
+  if (!SPECIALS.length || !q.character.get(userId)) return [];
+  const events = new Map(q.events.all(userId).map((r) => [r.event, r.count]));
+  const owned = new Set(q.ownedAvatars.all(userId).map((r) => r.avatar));
+  return SPECIALS.map((m) => {
+    const target = m.count || 1;
+    let current = m.stat ? events.get(m.stat) || 0 : 0;
+    if (m.distinction) current = (campaign.distinctionsOf(userId).find((d) => d.id === m.distinction)?.count || 0) > 0 ? 1 : 0;
+    const done = owned.has(m.avatar) || current >= target;
+    if (done && !owned.has(m.avatar)) unlockAvatar(userId, m.avatar, `special:${m.id}`);
+    return { id: m.id, avatar: m.avatar, title: m.title, description: m.description, current: Math.min(current, target), target, done };
+  });
+}
 const campaign = require('./campaign')({
   db, config, notify, grant, renown, HttpError, currentUser, readJson, send, startFaction, NEIGHBORS, mePayload,
   unlockAvatar, freezeStreaks: (userIds) => daily.freeze(userIds),
-  countStat: (userId, key) => q.bumpEvent.run(userId, key),
+  countStat: (userId, key, n = 1) => statAdd(userId, key, n),
+  setStat: (userId, key, value) => { q.setEvent.run(userId, key, value); specialState(userId); },
   fx, statOf: (userId, event) => statOf(userId, event),
   // Actions de jeu constatées par le serveur : elles font avancer les missions du jour et les missions classiques.
   onEvent: (userId, event) => {
     daily.bump(userId, event);
     if (MISSION_EVENTS.has(event)) q.bumpEvent.run(userId, event);
+    if (SPECIAL_EVENTS.has(event)) statAdd(userId, event);
   },
 });
 // À partir de maintenant, les gains d'or et d'expérience tiennent compte des effets de classe.
@@ -665,6 +716,7 @@ const routes = {
     // L'or n'est débité que s'il y en a assez (vérifié dans la même requête).
     if (q.buyAvatar.run(a.file, a.price, user.id, a.price).changes !== 1) throw new HttpError(409, 'not_enough_gold');
     q.unlockAvatar.run(user.id, a.file, 'gold', now());
+    statAdd(user.id, 'gold_spent', a.price);
     send(res, 200, { ...mePayload(user), avatars: avatarList(user.id) });
   },
 
@@ -719,6 +771,7 @@ const routes = {
     // L'or n'est débité que s'il y en a assez (vérifié dans la même requête).
     // La lignée garde les classes traversées : leurs effets restent acquis (une classe de base la remet à zéro).
     if (q.changeClass.run(cls.id, JSON.stringify(fx.nextPath(ch, cls.id)), tier.cost, user.id, tier.cost).changes !== 1) throw new HttpError(409, 'class_gold');
+    statAdd(user.id, 'gold_spent', tier.cost);
     q.logClass.run(user.id, ch.class, cls.id, tier.cost, now());
     notify(user.id, 'class_changed', { class: cls.id });
     send(res, 200, mePayload(user));
@@ -763,7 +816,7 @@ const routes = {
   'GET /api/missions': async (req, res) => {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
-    send(res, 200, { missions: missionState(user.id), daily: daily.state(user.id) });
+    send(res, 200, { missions: missionState(user.id), daily: daily.state(user.id), specials: specialState(user.id) });
   },
 
   'POST /api/missions/daily/claim': async (req, res) => {

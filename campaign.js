@@ -17,7 +17,9 @@ module.exports = function createCampaign(ctx) {
     baseDefense: 2, npcDefense: {}, tierPower: {}, renownPower: 0.05, minChance: 0.05, maxChance: 0.95,
     // Contre-attaque : un territoire qui repousse une attaque devient insaisissable `minutes` minutes, et sa faction gagne
     // `attackBonus` % de puissance d'attaque sur les territoires ennemis voisins pendant ce temps (hors Serpents et Église).
-    counter: { minutes: 240, attackBonus: 25 },
+    counter: { minutes: 240, attackBonus: 25, factionBonus: {} },
+    // Factions qui défendent comme chez elles les territoires d'une autre (Loups de cendre : Église de Seiros).
+    guardians: {},
     boss: { faction: 'serpents', chancePerTurn: 0.07, max: 1, power: 3, quietHours: { from: 0, to: 6, timezone: 'Europe/Paris' } },
     points: { win: 100, territory: 10, survivor: 5, loserTerritory: 2, loserSurvivor: 3 },
     cadenceGold: 10,
@@ -121,6 +123,7 @@ module.exports = function createCampaign(ctx) {
       campaign_id INTEGER NOT NULL,
       user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       score       INTEGER NOT NULL DEFAULT 0,
+      deaths      INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (campaign_id, user_id)
     );
     -- Distinctions gagnées par un joueur (une par campagne et par type).
@@ -144,6 +147,9 @@ module.exports = function createCampaign(ctx) {
     if (!cols('player_state').includes('streak_count')) db.exec('ALTER TABLE player_state ADD COLUMN streak_count INTEGER NOT NULL DEFAULT 0');
     if (!cols('player_state').includes('reward_debuff')) db.exec('ALTER TABLE player_state ADD COLUMN reward_debuff INTEGER NOT NULL DEFAULT 0');
     if (!cols('player_state').includes('retreat_penalty')) db.exec('ALTER TABLE player_state ADD COLUMN retreat_penalty INTEGER NOT NULL DEFAULT 0');
+    // Faction créditée d'une défense réussie quand ce n'est pas le propriétaire (Loups de cendre pour l'Église de Seiros).
+    if (!cols('battles').includes('credit')) db.exec('ALTER TABLE battles ADD COLUMN credit TEXT');
+    if (!cols('campaign_scores').includes('deaths')) db.exec('ALTER TABLE campaign_scores ADD COLUMN deaths INTEGER NOT NULL DEFAULT 0');
     if (!cols('contributions').includes('streak')) db.exec('ALTER TABLE contributions ADD COLUMN streak INTEGER NOT NULL DEFAULT 0');
   }
 
@@ -195,6 +201,11 @@ module.exports = function createCampaign(ctx) {
     // Un exilé compte dans la faction qu'il a rejointe.
     presence: db.prepare(`SELECT p.territory, COALESCE(p.exile_faction, c.faction) AS faction, count(*) AS n FROM player_state p JOIN characters c ON c.user_id = p.user_id
                           WHERE p.status != 'dead' GROUP BY p.territory, COALESCE(p.exile_faction, c.faction)`),
+    // Joueurs en vie avec leur position, et ceux qui attaquent ou défendent là où ils se trouvent (bataille en cours ou garnison).
+    occupants: db.prepare(`SELECT p.user_id, p.territory, p.status, COALESCE(p.exile_faction, c.faction) AS faction, c.pseudo, c.avatar, c.class, c.xp
+                           FROM player_state p JOIN characters c ON c.user_id = p.user_id WHERE p.status != 'dead' AND p.territory != ''`),
+    engaged: db.prepare(`SELECT DISTINCT k.user_id, k.territory FROM contributions k LEFT JOIN battles b ON b.id = k.battle_id
+                         WHERE k.kind = 'action' AND ((b.id IS NOT NULL AND b.resolved_at IS NULL) OR (k.battle_id IS NULL AND k.expires_at > ?))`),
     aliveByFaction: db.prepare(`SELECT COALESCE(p.exile_faction, c.faction) AS faction, count(*) AS n, sum(p.status != 'dead') AS alive
                                 FROM player_state p JOIN characters c ON c.user_id = p.user_id GROUP BY COALESCE(p.exile_faction, c.faction)`),
     openBattle: db.prepare('SELECT * FROM battles WHERE territory = ? AND resolved_at IS NULL'),
@@ -202,12 +213,14 @@ module.exports = function createCampaign(ctx) {
     factionWins: db.prepare(`SELECT count(*) AS n FROM battles WHERE campaign_id = ? AND resolved_at IS NOT NULL
                              AND ((attacker = ? AND success = 1) OR (defender = ? AND success = 0))`),
     // Défenses réussies récentes (insaisissable et contre-attaque).
-    recentDefenses: db.prepare('SELECT territory, attacker, defender, resolved_at FROM battles WHERE campaign_id = ? AND success = 0 AND resolved_at >= ?'),
+    recentDefenses: db.prepare('SELECT territory, attacker, defender, credit, resolved_at FROM battles WHERE campaign_id = ? AND success = 0 AND resolved_at >= ?'),
     freeMoveUsed: db.prepare('SELECT 1 AS used FROM battle_free_moves WHERE battle_id = ? AND user_id = ?'),
     addFreeMove: db.prepare('INSERT OR IGNORE INTO battle_free_moves (battle_id, user_id) VALUES (?, ?)'),
     openBattles: db.prepare('SELECT * FROM battles WHERE resolved_at IS NULL'),
     dueBattles: db.prepare('SELECT * FROM battles WHERE resolved_at IS NULL AND ends_at <= ? ORDER BY ends_at'),
     insertBattle: db.prepare('INSERT INTO battles (campaign_id, territory, attacker, defender, boss_power, started_at, ends_at) VALUES (?, ?, ?, ?, ?, ?, ?)'),
+    setCredit: db.prepare('UPDATE battles SET credit = ? WHERE id = ?'),
+    defenderFactions: db.prepare("SELECT DISTINCT faction FROM contributions WHERE battle_id = ? AND side = 'defense' AND kind = 'action'"),
     closeBattle: db.prepare('UPDATE battles SET resolved_at = ?, success = ?, chance = ? WHERE id = ?'),
     closeAllBattles: db.prepare('UPDATE battles SET resolved_at = ? WHERE resolved_at IS NULL'),
     addContribution: db.prepare('INSERT INTO contributions (battle_id, territory, user_id, faction, side, power, created_at, expires_at, kind, streak) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
@@ -237,6 +250,12 @@ module.exports = function createCampaign(ctx) {
     ranking: db.prepare(`SELECT s.user_id, s.score, c.pseudo, c.faction, c.avatar FROM campaign_scores s
                          JOIN characters c ON c.user_id = s.user_id WHERE s.campaign_id = ? AND s.score > 0
                          ORDER BY s.score DESC, s.user_id LIMIT ?`),
+    addDeath: db.prepare(`INSERT INTO campaign_scores (campaign_id, user_id, score, deaths) VALUES (?, ?, 0, 1)
+                          ON CONFLICT (campaign_id, user_id) DO UPDATE SET deaths = deaths + 1`),
+    flawless: db.prepare('SELECT user_id FROM campaign_scores WHERE campaign_id = ? AND score > 0 AND deaths = 0'),
+    mvp: db.prepare(`SELECT s.user_id FROM campaign_scores s JOIN characters c ON c.user_id = s.user_id
+                     WHERE s.campaign_id = ? AND s.score > 0 AND c.faction = ? ORDER BY s.score DESC, s.user_id LIMIT 1`),
+    sideActors: db.prepare("SELECT DISTINCT user_id FROM contributions WHERE battle_id = ? AND side = ? AND kind = 'action'"),
     myScore: db.prepare('SELECT score FROM campaign_scores WHERE campaign_id = ? AND user_id = ?'),
     betterScores: db.prepare('SELECT count(*) AS n FROM campaign_scores WHERE campaign_id = ? AND score > ?'),
   };
@@ -248,6 +267,26 @@ module.exports = function createCampaign(ctx) {
     return c;
   };
   const journal = (type, params = {}, t = Date.now()) => q.addEvent.run(currentCampaign().id, type, JSON.stringify(params), t);
+  // Un joueur tombe. Seule une fenêtre de repli écoulée est une vraie mort, comptée pour la campagne en cours
+  // (mission spéciale « finir sans mourir ») ; la chute de sa faction ne compte pas, il peut s'exiler.
+  const markDead = (uid, died = false) => {
+    if (died && q.state.get(uid)?.status !== 'dead') q.addDeath.run(currentCampaign().id, uid);
+    q.setDead.run(uid);
+  };
+  // Paiement en or d'un joueur (refusé s'il n'a pas assez) ; le total dépensé alimente une mission spéciale.
+  const pay = (userId, cost) => {
+    if (q.payGold.run(cost, userId, cost).changes !== 1) return false;
+    if (ctx.countStat) ctx.countStat(userId, 'gold_spent', cost);
+    return true;
+  };
+  // Série de victoires ou de défaites d'un joueur (attaques ou défenses) et sa meilleure série (missions spéciales).
+  function streak(uid, key, won) {
+    if (!ctx.setStat || !ctx.statOf) return;
+    if (!won) { ctx.setStat(uid, key, 0); return; }
+    const v = ctx.statOf(uid, key) + 1;
+    ctx.setStat(uid, key, v);
+    if (v > ctx.statOf(uid, `best_${key}`)) ctx.setStat(uid, `best_${key}`, v);
+  }
   const score = (userId, n) => { if (n) q.addScore.run(currentCampaign().id, userId, n); };
 
   // ------------------------------------------------------------ Factions et joueurs
@@ -264,13 +303,13 @@ module.exports = function createCampaign(ctx) {
       q.setMeta.run(`out:${f}`, '1');
       journal('faction_out', { faction: f }, t);
       for (const { user_id: uid } of q.factionAll.all(f)) {
-        if (q.state.get(uid)) q.setDead.run(uid);
+        if (q.state.get(uid)) markDead(uid);
         notify(uid, 'faction_out', { faction: f });
       }
       // Les exilés qui combattaient sous sa bannière tombent aussi, mais peuvent en choisir une autre.
       for (const { user_id: uid } of q.exilesOf.all(f)) {
         q.clearExile.run(uid);
-        q.setDead.run(uid);
+        markDead(uid);
         notify(uid, 'exile_lost', { faction: f });
       }
       honorDefeated(f);
@@ -449,7 +488,14 @@ module.exports = function createCampaign(ctx) {
   // d'attaque sur les territoires ennemis voisins, pendant `counter.minutes` minutes de jeu.
   const COUNTER_MS = Math.round(C.counter.minutes * TURN_MS / C.turnMinutes);
   const defensesAt = (at) => q.recentDefenses.all(currentCampaign().id, at - COUNTER_MS)
-    .filter((r) => r.resolved_at <= at && PLAYABLE.has(r.attacker) && PLAYABLE.has(r.defender));
+    .map((r) => ({ ...r, winner: r.credit || r.defender }))
+    .filter((r) => r.resolved_at <= at && PLAYABLE.has(r.attacker) && PLAYABLE.has(r.winner));
+  const counterBonus = (faction) => C.counter.factionBonus?.[faction] ?? C.counter.attackBonus;
+  const guardians = C.guardians || {};
+  // Camps qui défendent un territoire : son propriétaire et ceux qui le défendent comme le leur.
+  const defenseCamps = (owner) => [owner, ...Object.entries(guardians).filter(([, target]) => target === owner).map(([f]) => f)].filter(Boolean);
+  // Cette faction défend-elle ce territoire pour un autre (bataille en cours contre le propriétaire) ?
+  const guarding = (faction, owner, battle) => !!battle && guardians[faction] === owner && battle.defender === owner;
   // Fin de l'insaisissable d'un territoire (0 s'il ne l'est pas).
   function shieldUntil(territory, owners, t) {
     let end = 0;
@@ -458,7 +504,7 @@ module.exports = function createCampaign(ctx) {
   }
   // La faction attaque-t-elle ce territoire ennemi en contre-attaque (voisin d'un de ses territoires qui vient de repousser une attaque) ?
   const counterOn = (faction, target, owners, at) => PLAYABLE.has(faction) && owners.get(target) !== faction
-    && defensesAt(at).some((r) => r.defender === faction && owners.get(r.territory) === faction && neighbors(r.territory).includes(target));
+    && defensesAt(at).some((r) => r.winner === faction && owners.get(r.territory) === r.defender && neighbors(r.territory).includes(target));
 
   // Force des deux camps dans une bataille, effets de classe compris.
   // Elle dépend de qui est présent sur le territoire et autour à cet instant : on la calcule donc à la demande, pas à l'action.
@@ -476,8 +522,8 @@ module.exports = function createCampaign(ctx) {
       const ch = q.char.get(r.user_id);
       if (ch) people.set(r.user_id, person({ ...ch, territory: null, faction: r.faction }));
     }
-    const camp = { attack: b.attacker, defense: b.defender };
-    const presentOf = (f, wide, zone = around) => (f ? [...people.values()].filter((p) => p.faction === f && p.territory && (wide ? zone.has(p.territory) : p.territory === T)) : []);
+    const camp = { attack: [b.attacker].filter(Boolean), defense: defenseCamps(b.defender) };
+    const presentOf = (fs, wide, zone = around) => [...people.values()].filter((p) => fs.includes(p.faction) && p.territory && (wide ? zone.has(p.territory) : p.territory === T));
     const here = { attack: presentOf(camp.attack, false), defense: presentOf(camp.defense, false) };
     const near = { attack: presentOf(camp.attack, true), defense: presentOf(camp.defense, true) };
     const boss = C.boss.faction;
@@ -574,7 +620,7 @@ module.exports = function createCampaign(ctx) {
     if (holy && bossPower > 0) bossPower /= holy.bossDivisor || 1;
     // Contre-attaque : évaluée à l'ouverture de la bataille.
     const counter = b.boss_power === 0 && counterOn(b.attacker, T, ownersMap(), b.started_at);
-    const attack = bossPower + sums.attack * (counter ? 1 + C.counter.attackBonus / 100 : 1);
+    const attack = bossPower + sums.attack * (counter ? 1 + counterBonus(b.attacker) / 100 : 1);
     const defense = C.baseDefense * importance(T) + (C.npcDefense[b.defender] || 0) + sums.defense;
     const chance = Math.min(C.maxChance, Math.max(C.minChance, attack / (attack + defense)));
     return { chance, counter, attack, defense, attackers: who.attack.size, defenders: who.defense.size, perUser };
@@ -586,7 +632,7 @@ module.exports = function createCampaign(ctx) {
     const id = Number(info.lastInsertRowid);
     // Les garnisons posées avant l'attaque comptent dans la bataille.
     if (defender) q.attachGarrison.run(id, territory, defender, t);
-    if (defender) for (const p of q.factionPlayers.all(defender)) notify(p.user_id, 'territory_attacked', { territory, faction: attacker });
+    for (const f of defenseCamps(defender)) for (const p of q.factionPlayers.all(f)) notify(p.user_id, 'territory_attacked', { territory, faction: attacker });
     journal('battle_started', { territory, attacker, defender }, t);
     return q.openBattle.get(territory);
   }
@@ -644,6 +690,11 @@ module.exports = function createCampaign(ctx) {
         notify(uid, 'territory_conquered', { territory: b.territory, ...paid });
       }
       stealGold(b, attackers);
+      // Séries et exploits en solo (missions spéciales) : seules les actions d'attaque ou de défense comptent, pas les renforts payés.
+      const atk = q.sideActors.all(b.id, 'attack').map((r) => r.user_id);
+      for (const uid of atk) streak(uid, 'atk_streak', true);
+      if (atk.length === 1 && ctx.countStat) ctx.countStat(atk[0], 'solo_attacks');
+      for (const { user_id: uid } of q.sideActors.all(b.id, 'defense')) streak(uid, 'def_streak', false);
       // Dernier territoire d'une faction : ceux qui l'ont défendu reçoivent la distinction « Dernier rempart ».
       if (b.defender && PLAYABLE.has(b.defender) && !perks(b.defender).neverOut) {
         const left = ownersMap();
@@ -674,8 +725,15 @@ module.exports = function createCampaign(ctx) {
         }
       }
     } else {
-      journal('attack_repelled', { territory: b.territory, attacker: b.attacker, faction: b.defender }, t);
+      // Défense assurée en partie par les gardiens du territoire (Loups de cendre pour l'Église) : c'est eux qui en profitent.
+      const guard = Object.keys(guardians).find((f) => guardians[f] === b.defender && q.defenderFactions.all(b.id).some((r) => r.faction === f));
+      if (guard) q.setCredit.run(guard, b.id);
+      journal('attack_repelled', { territory: b.territory, attacker: b.attacker, faction: guard || b.defender }, t);
       for (const { user_id: uid } of q.sideUsers.all(b.id, 'attack')) notify(uid, 'attack_failed', { territory: b.territory });
+      for (const { user_id: uid } of q.sideActors.all(b.id, 'attack')) streak(uid, 'atk_streak', false);
+      const def = q.sideActors.all(b.id, 'defense').map((r) => r.user_id);
+      for (const uid of def) streak(uid, 'def_streak', true);
+      if (def.length === 1 && ctx.countStat) ctx.countStat(def[0], 'solo_defenses');
       const reward = { gold: C.defenseRewards.gold * scale, xp: C.defenseRewards.xp * scale };
       for (const { user_id: uid } of q.sideUsers.all(b.id, 'defense')) {
         const paid = payout(uid, reward, false);
@@ -750,6 +808,19 @@ module.exports = function createCampaign(ctx) {
       grant(r.user_id, C.ranking.rewards[i], 0);
       notify(r.user_id, 'campaign_rank', { rank: i + 1, gold: C.ranking.rewards[i] });
     });
+    // Exploits de fin de campagne (missions spéciales).
+    if (ctx.countStat) {
+      if (winner) {
+        for (const { user_id: uid } of q.participants.all(campaign.id, winner)) {
+          ctx.countStat(uid, 'campaigns_won');
+          if (reason === 'conquest') ctx.countStat(uid, 'campaigns_conquest');
+        }
+        const best = q.mvp.get(campaign.id, winner);
+        if (best) ctx.countStat(best.user_id, 'campaigns_mvp');
+      }
+      for (const r of q.ranking.all(campaign.id, 3)) ctx.countStat(r.user_id, 'campaigns_top3');
+      for (const r of q.flawless.all(campaign.id)) ctx.countStat(r.user_id, 'campaigns_flawless');
+    }
     q.endCampaign.run(iso(), winner, JSON.stringify({ reason, points: gained }), campaign.id);
     for (const c of q.chars.all()) {
       notify(c.user_id, winner ? 'campaign_end' : 'campaign_end_draw', { faction: winner, points: gained[c.faction] || 0 });
@@ -777,7 +848,7 @@ module.exports = function createCampaign(ctx) {
       currentCampaign();
       for (const b of q.dueBattles.all(t)) resolveBattle(b, t);
       for (const { user_id: uid, retreat_penalty: fine } of q.retreatDue.all(t)) {
-        q.setDead.run(uid);
+        markDead(uid, true);
         notify(uid, 'fallen', {});
         // Un Archer d'élite a vaincu ce joueur : il perd de l'or s'il ne s'est pas replié à temps.
         const taken = Math.min(fine || 0, q.gold.get(uid)?.gold || 0);
@@ -826,11 +897,19 @@ module.exports = function createCampaign(ctx) {
   function mapPayload(userId, t = Date.now()) {
     const owners = ownersMap();
     const battles = new Map(q.openBattles.all().map((b) => [b.territory, b]));
+    // Joueurs présents sur chaque territoire. Les factions à « hiddenAtBase » (Loups de cendre) sont invisibles sur leur base
+    // tant que leurs membres n'y attaquent ni n'y défendent, sauf pour le joueur lui-même.
+    const hidden = new Set(Object.entries(C.underdogs).filter(([, u]) => u.hiddenAtBase).map(([f]) => `${f}:${C.homeBases[f]}`));
+    const engaged = new Set(q.engaged.all(t).map((r) => `${r.user_id}:${r.territory}`));
+    const occupants = new Map();
     const presence = new Map();
-    for (const r of q.presence.all()) {
-      if (!presence.has(r.territory)) presence.set(r.territory, {});
-      presence.get(r.territory)[r.faction] = r.n;
+    for (const r of q.occupants.all()) {
+      if (r.user_id !== userId && hidden.has(`${r.faction}:${r.territory}`) && !engaged.has(`${r.user_id}:${r.territory}`)) continue;
+      if (!occupants.has(r.territory)) { occupants.set(r.territory, []); presence.set(r.territory, {}); }
+      occupants.get(r.territory).push({ pseudo: r.pseudo, avatar: r.avatar, faction: r.faction, class: r.class, level: renown(r.xp).level, me: r.user_id === userId, retreating: r.status === 'retreating' });
+      presence.get(r.territory)[r.faction] = (presence.get(r.territory)[r.faction] || 0) + 1;
     }
+    for (const list of occupants.values()) list.sort((a, b) => (b.me - a.me) || (b.level - a.level) || a.pseudo.localeCompare(b.pseudo));
     const campaign = currentCampaign();
     const ch = q.char.get(userId);
     const here = q.state.get(userId)?.territory;
@@ -841,6 +920,7 @@ module.exports = function createCampaign(ctx) {
       campaign: { id: campaign.id, startedAt: campaign.started_at },
       player: playerPayload(userId, t),
       homeBases: C.homeBases,
+      guardians,
       // hire : bataillon en attaque ; fortify : fortification en défense (moitié prix pour un Prêtre) ; teleport : Évêque noir.
       costs: {
         hire: C.hire.gold, fortify: ch ? fortifyCost(userId) : C.hire.gold, hireMax: C.hire.perBattle,
@@ -862,7 +942,8 @@ module.exports = function createCampaign(ctx) {
           id: x.id, name: x.name, neighbors: neighbors(x.id), faction: owners.get(x.id) || null,
           untouchableUntil: shieldUntil(x.id, owners, t) || null,
           counter: !!side && counterOn(side, x.id, owners, t),
-          importance: importance(x.id), annex: ANNEX.has(x.id), players: presence.get(x.id) || {},
+          counterPct: side ? counterBonus(side) : 0,
+          importance: importance(x.id), annex: ANNEX.has(x.id), players: presence.get(x.id) || {}, occupants: occupants.get(x.id) || [],
           battle: b ? {
             attacker: b.attacker, defender: b.defender, boss: b.boss_power > 0, endsAt: b.ends_at,
             counter: info.counter, chance: Math.round(info.chance * 100), attackers: info.attackers, defenders: info.defenders,
@@ -928,6 +1009,9 @@ module.exports = function createCampaign(ctx) {
       q.setTerritory.run(to, user.id);
       q.tickDebuff.run(user.id);
       onEvent(user.id, 'move');
+      // Territoire ennemi : tenu par une autre faction, et ni refuge de la faction ni territoire qu'elle garde.
+      const ruler = owners.get(to);
+      if (ruler && ruler !== ch.faction && C.homeBases[ch.faction] !== to && guardians[ch.faction] !== ruler) onEvent(user.id, 'enemy_move');
       reply(res, user, { bonus, free });
     },
 
@@ -944,7 +1028,7 @@ module.exports = function createCampaign(ctx) {
       const streak = ps.streak_territory === here ? ps.streak_count : 0;
       let bonus = 0;
       if (action === 'attack') {
-        if (owner === ch.faction) throw new HttpError(409, 'invalid_action');
+        if (owner === ch.faction || guardians[ch.faction] === owner) throw new HttpError(409, 'invalid_action');
         if (battle && battle.attacker !== ch.faction) throw new HttpError(409, 'battle_busy');
         if (shieldUntil(here, owners, t)) throw new HttpError(409, 'untouchable');
         bonus = spend(ps, t);
@@ -956,7 +1040,7 @@ module.exports = function createCampaign(ctx) {
         if (ps.exile_faction) onEvent(user.id, 'exile_combat');
         q.tickDebuff.run(user.id);
       } else if (action === 'defend') {
-        if (owner !== ch.faction) throw new HttpError(409, 'invalid_action');
+        if (owner !== ch.faction && !guarding(ch.faction, owner, battle)) throw new HttpError(409, 'invalid_action');
         bonus = spend(ps, t);
         // Pendant une bataille, l'action renforce la défense ; sinon elle pose une garnison qui tient le temps d'une bataille.
         q.setStreak.run(here, streak + 1, user.id);
@@ -978,16 +1062,17 @@ module.exports = function createCampaign(ctx) {
       } else if (action === 'hire') {
         // Sur son territoire : fortification (moitié prix pour le Prêtre, plus efficace pour l'Évêque).
         // Ailleurs : bataillon, seulement dans une bataille lancée par sa faction.
-        const side = owner === ch.faction ? 'defense' : 'attack';
+        const side = owner === ch.faction || guarding(ch.faction, owner, battle) ? 'defense' : 'attack';
         if (side === 'attack' && (!battle || battle.attacker !== ch.faction)) throw new HttpError(409, 'invalid_action');
         const already = battle ? q.hiredInBattle.get(user.id, battle.id).n : q.hiredGarrison.get(user.id, here, t).n;
         if (already >= C.hire.perBattle) throw new HttpError(409, 'hire_limit');
         const cost = side === 'defense' ? fortifyCost(user.id) : C.hire.gold;
         const strength = side === 'defense' ? fortifyPower(user.id) : C.hire.power;
-        if (q.payGold.run(cost, user.id, cost).changes !== 1) throw new HttpError(409, 'not_enough_gold');
+        if (!pay(user.id, cost)) throw new HttpError(409, 'not_enough_gold');
         q.addContribution.run(battle ? battle.id : null, here, user.id, ch.faction, side, strength, t,
           battle ? null : t + C.battleTurns * TURN_MS, 'hire', 0);
         score(user.id, C.ranking.combat);
+        if (side === 'attack') onEvent(user.id, 'battalion');
       } else throw new HttpError(400, 'invalid_action');
       reply(res, user, { bonus });
     },
@@ -1003,7 +1088,7 @@ module.exports = function createCampaign(ctx) {
       if (!terr(to)) throw new HttpError(400, 'invalid_territory');
       if (to === ps.territory) throw new HttpError(409, 'invalid_action');
       if (!canEnter(ch.faction, to, owners)) throw new HttpError(409, 'cannot_enter');
-      if (q.payGold.run(tp.gold, user.id, tp.gold).changes !== 1) throw new HttpError(409, 'not_enough_gold');
+      if (!pay(user.id, tp.gold)) throw new HttpError(409, 'not_enough_gold');
       q.setTerritory.run(to, user.id);
       q.setRewardDebuff.run(tp.actions, user.id);
       reply(res, user);
@@ -1015,7 +1100,7 @@ module.exports = function createCampaign(ctx) {
       const { user, ps, ch, t } = actor(req);
       mustBeAlive(ps);
       const battle = q.openBattle.get(ps.territory);
-      if (!battle || (battle.attacker !== ch.faction && battle.defender !== ch.faction)) throw new HttpError(409, 'invalid_action');
+      if (!battle || (battle.attacker !== ch.faction && battle.defender !== ch.faction && !guarding(ch.faction, battle.defender, battle))) throw new HttpError(409, 'invalid_action');
       if (q.addRally.run(battle.id, user.id).changes !== 1) throw new HttpError(409, 'rally_done');
       for (const p of q.factionPlayers.all(ch.faction)) {
         if (p.user_id !== user.id) notify(p.user_id, 'rally', { pseudo: ch.pseudo, territory: ps.territory });
@@ -1044,7 +1129,7 @@ module.exports = function createCampaign(ctx) {
       if (isOut(ch.faction)) throw new HttpError(409, 'faction_out');
       if (mode === 'gold') {
         const cost = reviveCost(ch.faction);
-        if (q.payGold.run(cost, user.id, cost).changes !== 1) throw new HttpError(409, 'not_enough_gold');
+        if (!pay(user.id, cost)) throw new HttpError(409, 'not_enough_gold');
         revive(user.id, ch.faction);
       } else if (mode === 'renown') {
         const level = renown(ch.xp).level;
@@ -1070,7 +1155,7 @@ module.exports = function createCampaign(ctx) {
       if (!target) throw new HttpError(409, 'invalid_action');
       if (isOut(ch.faction)) throw new HttpError(409, 'faction_out');
       const cost = reviveCost(ch.faction);
-      if (q.payGold.run(cost, user.id, cost).changes !== 1) throw new HttpError(409, 'not_enough_gold');
+      if (!pay(user.id, cost)) throw new HttpError(409, 'not_enough_gold');
       revive(target.user_id, ch.faction);
       notify(target.user_id, 'revived_by', { pseudo: ch.pseudo });
       reply(res, user);

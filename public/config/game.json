@@ -143,7 +143,7 @@
       "rewards": {
         "gold": 200,
         "xp": 0,
-        "avatar": "mission-01.svg"
+        "avatar": "avatar_35.webp"
       }
     }
   ],
@@ -207,7 +207,7 @@
         "fr": "Offensif",
         "en": "Offensive"
       },
-      "icon": "assets/classes/myrmidon.svg",
+      "icon": "assets/classes/myrmidon.webp",
       "effects": [
         {
           "kind": "power",
@@ -232,7 +232,7 @@
         "fr": "Défensif",
         "en": "Defensive"
       },
-      "icon": "assets/classes/soldier.svg",
+      "icon": "assets/classes/soldier.webp",
       "effects": [
         {
           "kind": "power",
@@ -257,7 +257,7 @@
         "fr": "Adaptable",
         "en": "Adaptable"
       },
-      "icon": "assets/classes/fighter.svg",
+      "icon": "assets/classes/fighter.webp",
       "effects": [
         {
           "kind": "streak",
@@ -282,7 +282,7 @@
         "fr": "Soutien",
         "en": "Support"
       },
-      "icon": "assets/classes/monk.svg",
+      "icon": "assets/classes/monk.webp",
       "effects": [
         {
           "kind": "aura",
@@ -309,7 +309,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/thief.svg",
+      "icon": "assets/classes/thief.webp",
       "effects": [
         {
           "kind": "steal",
@@ -335,7 +335,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/mercenary.svg",
+      "icon": "assets/classes/mercenary.webp",
       "effects": [
         {
           "kind": "goldBonus",
@@ -361,7 +361,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/pegasus-knight.svg",
+      "icon": "assets/classes/pegasus-knight.webp",
       "effects": [
         {
           "kind": "freeMove",
@@ -387,7 +387,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/cavalier.svg",
+      "icon": "assets/classes/cavalier.webp",
       "effects": [
         {
           "kind": "xpBonus",
@@ -413,7 +413,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/armored-knight.svg",
+      "icon": "assets/classes/armored-knight.webp",
       "effects": [
         {
           "kind": "power",
@@ -440,7 +440,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/brigand.svg",
+      "icon": "assets/classes/brigand.webp",
       "effects": [
         {
           "kind": "conquestGold",
@@ -466,7 +466,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/archer.svg",
+      "icon": "assets/classes/archer.webp",
       "effects": [
         {
           "kind": "retreat",
@@ -501,7 +501,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/brawler.svg",
+      "icon": "assets/classes/brawler.webp",
       "effects": [
         {
           "kind": "debuff",
@@ -533,7 +533,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/priest.svg",
+      "icon": "assets/classes/priest.webp",
       "effects": [
         {
           "kind": "fortifyCost",
@@ -559,7 +559,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/mage.svg",
+      "icon": "assets/classes/mage.webp",
       "effects": [
         {
           "kind": "aura",
@@ -591,7 +591,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/assassin.svg",
+      "icon": "assets/classes/assassin.webp",
       "effects": [
         {
           "kind": "power",
@@ -622,7 +622,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/swordsmaster.svg",
+      "icon": "assets/classes/swordsmaster.webp",
       "effects": [
         {
           "kind": "aura",
@@ -653,7 +653,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/paladin.svg",
+      "icon": "assets/classes/paladin.webp",
       "effects": [
         {
           "kind": "aura",
@@ -684,7 +684,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/wyvern-rider.svg",
+      "icon": "assets/classes/wyvern-rider.webp",
       "effects": [
         {
           "kind": "actionStock",
@@ -711,7 +711,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/fortress-knight.svg",
+      "icon": "assets/classes/fortress-knight.webp",
       "effects": [
         {
           "kind": "power",
@@ -738,7 +738,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/warrior.svg",
+      "icon": "assets/classes/warrior.webp",
       "effects": [
         {
           "kind": "renownPerWin",
@@ -764,7 +764,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/sniper.svg",
+      "icon": "assets/classes/sniper.webp",
       "effects": [
         {
           "kind": "sniper",
@@ -790,7 +790,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/grappler.svg",
+      "icon": "assets/classes/grappler.webp",
       "effects": [
         {
           "kind": "debuff",
@@ -822,7 +822,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/bishop.svg",
+      "icon": "assets/classes/bishop.webp",
       "effects": [
         {
           "kind": "fortifyPower",
@@ -848,7 +848,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/dark-mage.svg",
+      "icon": "assets/classes/dark-mage.webp",
       "unlock": {
         "event": "serpents_repelled",
         "count": 3
@@ -879,7 +879,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/warlock.svg",
+      "icon": "assets/classes/warlock.webp",
       "effects": [
         {
           "kind": "debuff",
@@ -913,7 +913,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/trickster.svg",
+      "icon": "assets/classes/trickster.webp",
       "effects": [
         {
           "kind": "outnumbered",
@@ -940,7 +940,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/dancer.svg",
+      "icon": "assets/classes/dancer.webp",
       "effects": [
         {
           "kind": "aura",
@@ -968,7 +968,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/mortal-savant.svg",
+      "icon": "assets/classes/mortal-savant.webp",
       "effects": [
         {
           "kind": "perAlly",
@@ -998,7 +998,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/falcon-knight.svg",
+      "icon": "assets/classes/falcon-knight.webp",
       "effects": [
         {
           "kind": "freeMove",
@@ -1030,7 +1030,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/wyvern-knight.svg",
+      "icon": "assets/classes/wyvern-knight.webp",
       "effects": [
         {
           "kind": "actionStock",
@@ -1057,7 +1057,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/great-knight.svg",
+      "icon": "assets/classes/great-knight.webp",
       "effects": [
         {
           "kind": "power",
@@ -1084,7 +1084,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/bow-knight.svg",
+      "icon": "assets/classes/bow-knight.webp",
       "effects": [
         {
           "kind": "debuff",
@@ -1123,7 +1123,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/war-master.svg",
+      "icon": "assets/classes/war-master.webp",
       "effects": [
         {
           "kind": "warMaster",
@@ -1150,7 +1150,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/holy-knight.svg",
+      "icon": "assets/classes/holy-knight.webp",
       "effects": [
         {
           "kind": "holyKnight",
@@ -1183,7 +1183,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/gremory.svg",
+      "icon": "assets/classes/gremory.webp",
       "effects": [
         {
           "kind": "reach",
@@ -1213,7 +1213,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/dark-bishop.svg",
+      "icon": "assets/classes/dark-bishop.webp",
       "unlock": {
         "event": "serpents_repelled",
         "count": 15
@@ -1247,7 +1247,7 @@
         "fr": "",
         "en": ""
       },
-      "icon": "assets/classes/dark-knight.svg",
+      "icon": "assets/classes/dark-knight.webp",
       "effects": [
         {
           "kind": "conquests",
@@ -1356,68 +1356,425 @@
     }
   ],
   "avatars": {
+    "free": [
+      "avatar_1.webp",
+      "avatar_25.webp",
+      "avatar_23.webp",
+      "avatar_4.webp",
+      "avatar_3.webp",
+      "avatar_5.webp",
+      "avatar_8.webp",
+      "avatar_2.webp"
+    ],
     "locked": [
       {
-        "file": "mission-01.svg",
-        "unlock": "mission"
-      },
-      {
-        "file": "mission-02.svg",
-        "unlock": "mission"
-      },
-      {
-        "file": "mission-03.svg",
-        "unlock": "mission"
-      },
-      {
-        "file": "mission-04.svg",
-        "unlock": "mission"
-      },
-      {
-        "file": "mission-05.svg",
-        "unlock": "mission"
-      },
-      {
-        "file": "mission-06.svg",
-        "unlock": "mission"
-      },
-      {
-        "file": "mission-07.svg",
-        "unlock": "mission"
-      },
-      {
-        "file": "mission-08.svg",
-        "unlock": "mission"
-      },
-      {
-        "file": "shop-01.svg",
+        "file": "avatar_20.webp",
         "unlock": "gold",
-        "price": 600
+        "price": 400
       },
       {
-        "file": "shop-02.svg",
+        "file": "avatar_21.webp",
         "unlock": "gold",
-        "price": 600
+        "price": 400
       },
       {
-        "file": "shop-03.svg",
+        "file": "avatar_22.webp",
         "unlock": "gold",
-        "price": 600
+        "price": 400
       },
       {
-        "file": "shop-04.svg",
+        "file": "avatar_26.webp",
         "unlock": "gold",
-        "price": 900
+        "price": 400
       },
       {
-        "file": "shop-05.svg",
+        "file": "avatar_32.webp",
         "unlock": "gold",
-        "price": 900
+        "price": 400
       },
       {
-        "file": "shop-06.svg",
+        "file": "avatar_33.webp",
         "unlock": "gold",
-        "price": 1500
+        "price": 400
+      },
+      {
+        "file": "avatar_13.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_14.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_15.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_16.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_17.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_18.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_19.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_28.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_29.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_30.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_31.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_34.webp",
+        "unlock": "gold",
+        "price": 1200
+      },
+      {
+        "file": "avatar_7.webp",
+        "unlock": "gold",
+        "price": 3000
+      },
+      {
+        "file": "avatar_9.webp",
+        "unlock": "gold",
+        "price": 3000
+      },
+      {
+        "file": "avatar_10.webp",
+        "unlock": "gold",
+        "price": 3000
+      },
+      {
+        "file": "avatar_11.webp",
+        "unlock": "gold",
+        "price": 3000
+      },
+      {
+        "file": "avatar_24.webp",
+        "unlock": "gold",
+        "price": 3000
+      },
+      {
+        "file": "avatar_27.webp",
+        "unlock": "gold",
+        "price": 3000
+      },
+      {
+        "file": "avatar_37.webp",
+        "unlock": "gold",
+        "price": 20000
+      },
+      {
+        "file": "avatar_38.webp",
+        "unlock": "gold",
+        "price": 20000
+      },
+      {
+        "file": "avatar_12.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_6.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_39.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_41.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_40.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_42.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_43.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_44.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_45.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_46.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_47.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_48.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_49.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_50.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_51.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_35.webp",
+        "unlock": "mission"
+      },
+      {
+        "file": "avatar_36.webp",
+        "unlock": "mission"
+      }
+    ],
+    "special": [
+      {
+        "id": "serpents-100",
+        "stat": "serpents_repelled",
+        "count": 100,
+        "title": {
+          "fr": "Fléau des serpents",
+          "en": "Bane of the Serpents"
+        },
+        "description": {
+          "fr": "Repousser les Serpents des Ténèbres 100 fois.",
+          "en": "Repel Those Who Slither In The Dark 100 times."
+        },
+        "avatar": "avatar_12.webp"
+      },
+      {
+        "id": "gold-12000",
+        "stat": "gold_spent",
+        "count": 12000,
+        "title": {
+          "fr": "Grand dépensier",
+          "en": "Big spender"
+        },
+        "description": {
+          "fr": "Dépenser un total de 12 000 or.",
+          "en": "Spend a total of 12,000 gold."
+        },
+        "avatar": "avatar_6.webp"
+      },
+      {
+        "id": "campaign-won",
+        "stat": "campaigns_won",
+        "count": 1,
+        "title": {
+          "fr": "Victoire de campagne",
+          "en": "Campaign victory"
+        },
+        "description": {
+          "fr": "Ta faction a gagné 1 campagne.",
+          "en": "Your faction won 1 campaign."
+        },
+        "avatar": "avatar_39.webp"
+      },
+      {
+        "id": "campaign-mvp",
+        "stat": "campaigns_mvp",
+        "count": 1,
+        "title": {
+          "fr": "MVP de la campagne",
+          "en": "Campaign MVP"
+        },
+        "description": {
+          "fr": "Avoir été le MVP d'une campagne gagnée par ta faction.",
+          "en": "Be the MVP of a campaign your faction won."
+        },
+        "avatar": "avatar_41.webp"
+      },
+      {
+        "id": "campaign-conquest",
+        "stat": "campaigns_conquest",
+        "count": 1,
+        "title": {
+          "fr": "Conquête totale",
+          "en": "Total conquest"
+        },
+        "description": {
+          "fr": "Ta faction a gagné une campagne en ayant conquis tous les territoires de la carte.",
+          "en": "Your faction won a campaign by conquering every territory on the map."
+        },
+        "avatar": "avatar_40.webp"
+      },
+      {
+        "id": "veteran",
+        "distinction": "veteran",
+        "title": {
+          "fr": "Vétéran",
+          "en": "Battle-Scarred"
+        },
+        "description": {
+          "fr": "Obtenir la distinction Vétéran : avoir combattu jusqu'à la chute de sa faction.",
+          "en": "Earn the Battle-Scarred distinction: fight until your faction falls."
+        },
+        "avatar": "avatar_42.webp"
+      },
+      {
+        "id": "flawless",
+        "stat": "campaigns_flawless",
+        "count": 1,
+        "title": {
+          "fr": "Intouchable",
+          "en": "Untouchable"
+        },
+        "description": {
+          "fr": "Finir une campagne sans être mort une seule fois.",
+          "en": "Finish a campaign without dying once."
+        },
+        "avatar": "avatar_43.webp"
+      },
+      {
+        "id": "enemy-moves",
+        "stat": "enemy_move",
+        "count": 70,
+        "title": {
+          "fr": "Éclaireur",
+          "en": "Scout"
+        },
+        "description": {
+          "fr": "Se déplacer dans un territoire ennemi 70 fois.",
+          "en": "Move into an enemy territory 70 times."
+        },
+        "avatar": "avatar_44.webp"
+      },
+      {
+        "id": "solo-attacks",
+        "stat": "solo_attacks",
+        "count": 20,
+        "title": {
+          "fr": "Loup solitaire",
+          "en": "Lone wolf"
+        },
+        "description": {
+          "fr": "Réussir 20 attaques en étant le seul attaquant de ta faction.",
+          "en": "Win 20 attacks as the only attacker of your faction."
+        },
+        "avatar": "avatar_45.webp"
+      },
+      {
+        "id": "solo-defenses",
+        "stat": "solo_defenses",
+        "count": 20,
+        "title": {
+          "fr": "Dernier rempart solitaire",
+          "en": "Lone bulwark"
+        },
+        "description": {
+          "fr": "Réussir 20 défenses en étant le seul défenseur de ta faction.",
+          "en": "Win 20 defences as the only defender of your faction."
+        },
+        "avatar": "avatar_46.webp"
+      },
+      {
+        "id": "gather-100",
+        "stat": "gather",
+        "count": 100,
+        "title": {
+          "fr": "Bon gestionnaire",
+          "en": "Good steward"
+        },
+        "description": {
+          "fr": "Avoir utilisé l'action Récolter 100 fois.",
+          "en": "Use the Gather action 100 times."
+        },
+        "avatar": "avatar_47.webp"
+      },
+      {
+        "id": "battalion-80",
+        "stat": "battalion",
+        "count": 80,
+        "title": {
+          "fr": "Chef de bataillons",
+          "en": "Battalion chief"
+        },
+        "description": {
+          "fr": "Avoir utilisé l'action Bataillon 80 fois.",
+          "en": "Use the Battalion action 80 times."
+        },
+        "avatar": "avatar_48.webp"
+      },
+      {
+        "id": "defense-streak",
+        "stat": "best_def_streak",
+        "count": 10,
+        "title": {
+          "fr": "Mur infranchissable",
+          "en": "Unbreakable wall"
+        },
+        "description": {
+          "fr": "Réussir 10 défenses successives.",
+          "en": "Win 10 defences in a row."
+        },
+        "avatar": "avatar_49.webp"
+      },
+      {
+        "id": "attack-streak",
+        "stat": "best_atk_streak",
+        "count": 10,
+        "title": {
+          "fr": "Marche triomphale",
+          "en": "Triumphant march"
+        },
+        "description": {
+          "fr": "Réussir 10 attaques successives.",
+          "en": "Win 10 attacks in a row."
+        },
+        "avatar": "avatar_50.webp"
+      },
+      {
+        "id": "top3-15",
+        "stat": "campaigns_top3",
+        "count": 15,
+        "title": {
+          "fr": "Habitué du podium",
+          "en": "Regular on the podium"
+        },
+        "description": {
+          "fr": "Finir dans le top 3 d'une campagne 15 fois.",
+          "en": "Finish in the top 3 of a campaign 15 times."
+        },
+        "avatar": "avatar_51.webp"
       }
     ]
   },
@@ -1515,7 +1872,8 @@
         "freeRevive": true,
         "outnumberedMax": 3,
         "rewardMultiplier": 2,
-        "pointsMultiplier": 3
+        "pointsMultiplier": 3,
+        "hiddenAtBase": true
       }
     },
     "exile": {
@@ -1542,7 +1900,13 @@
     },
     "counter": {
       "minutes": 240,
-      "attackBonus": 25
+      "attackBonus": 25,
+      "factionBonus": {
+        "violette": 40
+      }
+    },
+    "guardians": {
+      "violette": "eglise"
     }
   },
   "daily": {
@@ -1678,7 +2042,7 @@
         "fr": "A défendu le dernier territoire de sa faction.",
         "en": "Defended the last territory of its faction."
       },
-      "avatar": "mission-03.svg"
+      "avatar": "avatar_36.webp"
     },
     {
       "id": "veteran",
@@ -1690,10 +2054,104 @@
         "fr": "A combattu jusqu'à la chute de sa faction.",
         "en": "Fought until its faction fell."
       },
-      "avatar": "mission-02.svg"
+      "avatar": "avatar_42.webp"
     }
   ],
   "patches": [
+    {
+      "id": "1.2",
+      "date": "2026-11-17",
+      "title": {
+        "fr": "Patch 1.2",
+        "en": "Patch 1.2"
+      },
+      "intro": {
+        "fr": "De nouveaux avatars à débloquer, des missions spéciales, de nouvelles illustrations de classes et une carte plus vivante.",
+        "en": "New avatars to unlock, special missions, new class artwork and a livelier map."
+      },
+      "sections": [
+        {
+          "title": {
+            "fr": "Avatars et missions spéciales",
+            "en": "Avatars and special missions"
+          },
+          "items": [
+            {
+              "fr": "Nouveaux avatars : 8 sont libres et changeables à tout moment, 26 s'achètent en boutique (400, 1 200, 3 000 ou 20 000 or) et 17 se gagnent.",
+              "en": "New avatars: 8 are free and can be changed at any time, 26 can be bought in the shop (400, 1,200, 3,000 or 20,000 gold) and 17 are earned."
+            },
+            {
+              "fr": "Nouvelle section « Missions spéciales » dans l'onglet Missions : chaque exploit débloque automatiquement un avatar (Serpents repoussés, or dépensé, campagnes gagnées, séries de victoires…).",
+              "en": "New \"Special missions\" section in the Missions tab: each feat unlocks an avatar automatically (Serpents repelled, gold spent, campaigns won, winning streaks…)."
+            },
+            {
+              "fr": "Les anciens avatars provisoires sont remplacés : les joueurs qui les utilisaient reçoivent un avatar libre et leurs achats sont remboursés.",
+              "en": "The old placeholder avatars are replaced: players who used them get a free avatar and their purchases are refunded."
+            },
+            {
+              "fr": "Les avatars « Renommée 1 » et « Dernier rempart » ont chacun un nouveau visage.",
+              "en": "The \"Renown 1\" and \"Last Stand\" avatars each have a new portrait."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Carte",
+            "en": "Map"
+          },
+          "items": [
+            {
+              "fr": "Un bouclier doré qui brille signale les territoires insaisissables, et un bouclier brisé ceux où une contre-attaque est possible pour ta faction.",
+              "en": "A shining golden shield marks untouchable territories, and a broken shield marks those where your faction can counter-attack."
+            },
+            {
+              "fr": "Les joueurs présents apparaissent sur la carte, aux couleurs de leur faction : jusqu'à 3 pastilles superposées, plus une pastille « + » au-delà.",
+              "en": "Players now appear on the map in their faction colours: up to 3 stacked icons, plus a \"+\" icon beyond that."
+            },
+            {
+              "fr": "Le détail des joueurs présents sur un territoire s'affiche sous la carte quand on le sélectionne.",
+              "en": "The details of the players on a territory are shown under the map when you select it."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Loups de cendre",
+            "en": "Ashen Wolves"
+          },
+          "items": [
+            {
+              "fr": "Les Loups de cendre sont invisibles à Garreg-Mach tant qu'ils n'y attaquent ni n'y défendent.",
+              "en": "The Ashen Wolves are hidden at Garreg Mach as long as they are not attacking or defending there."
+            },
+            {
+              "fr": "Quand une faction attaque Garreg-Mach, ils défendent l'Église de Seiros comme leur propre territoire. S'ils repoussent l'attaque, Garreg-Mach devient insaisissable et ce sont eux qui gagnent la contre-attaque.",
+              "en": "When a faction attacks Garreg Mach, they defend The Church of Seiros as their own territory. If they repel the attack, Garreg Mach becomes untouchable and they get the counter-attack."
+            },
+            {
+              "fr": "Leur bonus de contre-attaque est de +40 % au lieu de +25 %.",
+              "en": "Their counter-attack bonus is +40% instead of +25%."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Interface",
+            "en": "Interface"
+          },
+          "items": [
+            {
+              "fr": "Nouvelles illustrations pour toutes les classes.",
+              "en": "New artwork for every class."
+            },
+            {
+              "fr": "La contre-attaque s'appelle désormais « On Fire! ».",
+              "en": "Counter-attack is now called \"On Fire!\"."
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "1.1",
       "date": "2026-11-16",

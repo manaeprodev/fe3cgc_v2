@@ -82,7 +82,7 @@ const isPlural = (id) => faction(id)?.plural?.[state.lang] !== false;
 const numKey = (key, id) => (isPlural(id) && hasText(`${key}.pl`) ? `${key}.pl` : key);
 const klass = (id) => state.config.classes.find((c) => c.id === id);
 const className = (id) => loc(klass(id)?.name) || id;
-const classIcon = (c) => `<img class="class-icon" src="${esc(c?.icon || 'assets/classes/' + (c?.id || '') + '.svg')}" alt="">`;
+const classIcon = (c) => `<img class="class-icon" src="${esc(c?.icon || 'assets/classes/' + (c?.id || '') + '.webp')}" alt="">`;
 // Rangs de classes qui contiennent au moins une classe (un rang vide, ex. légendaire, reste caché).
 const classTiers = () => (state.config.classTiers || []).filter((tr) => state.config.classes.some((c) => c.tier === tr.id));
 const tierOf = (c) => (state.config.classTiers || []).find((tr) => tr.id === c.tier);
@@ -532,16 +532,66 @@ async function renderMap() {
   const markers = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   markers.setAttribute('class', 'markers');
   svg.appendChild(markers);
+  // Boucliers (insaisissable : doré qui brille ; contre-offensive possible : brisé) et pastilles des joueurs présents.
+  const SHIELD = 'M12 2.5 4 5.5v5.8c0 4.6 3.2 8.4 8 10.2 4.8-1.8 8-5.6 8-10.2V5.5z';
+  const SHIELD_L = 'M12 2.5 4 5.5v5.8c0 4.6 3.2 8.4 8 10.2L10.5 16 13 12 10.5 8z';
+  const SHIELD_R = 'M12 2.5 20 5.5v5.8c0 4.6-3.2 8.4-8 10.2L10.5 16 13 12 10.5 8z';
+  const shieldAt = (x, y, k, inner) => `<g transform="translate(${x} ${y}) scale(${k}) translate(-12 -12)">${inner}</g>`;
   const drawMarkers = () => {
     const u = m.width / (inner.getBoundingClientRect().width || m.width); // unités de carte par pixel d'écran
     const parts = [];
+    const now = serverNow();
     for (const st of state.territories) {
       const s = shape(st.id);
-      if (!s || !st.battle) continue;
-      const k = 4 * u;
-      parts.push(`<g class="battle-mark" transform="translate(${s.x} ${s.y - 16 * u})">
+      if (!s) continue;
+      if (st.battle) {
+        const k = 4 * u;
+        parts.push(`<g class="battle-mark" transform="translate(${s.x} ${s.y - 20 * u})">
         <circle r="${9 * u}" fill="${esc(faction(st.battle.attacker)?.color || '#e5484d')}" stroke="#fff" stroke-width="${1.5 * u}"/>
         <path d="M${-k} ${-k}L${k} ${k}M${k} ${-k}L${-k} ${k}" stroke="#fff" stroke-width="${2 * u}" stroke-linecap="round"/></g>`);
+      }
+      const shielded = st.untouchableUntil && st.untouchableUntil > now;
+      if (shielded) {
+        parts.push(`<g class="shield-shine">${shieldAt(s.x - 24 * u, s.y - 18 * u, 1.0 * u, `<path d="${SHIELD}" fill="#f6c945" stroke="#fff" stroke-width="1.8"/>
+          <path d="M12 6.5v12M7.5 11h9" stroke="#fff6cf" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>
+          <path d="M19 1.5l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z" fill="#fff"/>`)}</g>`);
+      } else if (st.counter) {
+        parts.push(`<g class="shield-broken">${shieldAt(s.x + 24 * u, s.y - 18 * u, 1.0 * u, `
+          <path d="${SHIELD_L}" fill="#e5484d" stroke="#fff" stroke-width="1.8" transform="translate(-1.6 0) rotate(-5 12 12)"/>
+          <path d="${SHIELD_R}" fill="#e5484d" stroke="#fff" stroke-width="1.8" transform="translate(1.6 .6) rotate(5 12 12)"/>`)}</g>`);
+      }
+      // Autres joueurs présents : jusqu'à 3 pastilles superposées, puis une pastille « + » s'il y en a plus de 3.
+      // Les factions alternent dans la pile, pour que plusieurs camps restent visibles d'un coup d'œil.
+      const groups = new Map();
+      for (const o of (st.occupants || []).filter((x) => !x.me)) { if (!groups.has(o.faction)) groups.set(o.faction, []); groups.get(o.faction).push(o); }
+      const others = [];
+      for (let i = 0; others.length < (st.occupants || []).length; i += 1) {
+        let added = false;
+        for (const g of groups.values()) if (g[i]) { others.push(g[i]); added = true; }
+        if (!added) break;
+      }
+      if (others.length) {
+        const shown = others.slice(0, 3);
+        const extra = others.length > 3;
+        const slots = shown.length + (extra ? 1 : 0);
+        const r = 8 * u, step = 11 * u;
+        const y = s.y + 21 * u;
+        const x0 = s.x - ((slots - 1) * step) / 2;
+        shown.forEach((o, i) => {
+          const cx = x0 + i * step;
+          const id = `pin-${st.id}-${i}`;
+          parts.push(`<g class="pin"><clipPath id="${esc(id)}"><circle cx="${cx}" cy="${y}" r="${r}"/></clipPath>
+            <circle cx="${cx}" cy="${y}" r="${r + 1.2 * u}" fill="#fff"/>
+            <image href="${avatarUrl(o.avatar)}" x="${cx - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" clip-path="url(#${esc(id)})" preserveAspectRatio="xMidYMin slice"/>
+            <circle cx="${cx}" cy="${y}" r="${r - 0.6 * u}" fill="none" stroke="${esc(faction(o.faction)?.color || '#888')}" stroke-width="${2.6 * u}"/></g>`);
+        });
+        if (extra) {
+          const cx = x0 + shown.length * step;
+          const k = 3.6 * u;
+          parts.push(`<g class="pin pin-more"><circle cx="${cx}" cy="${y}" r="${r + 1.2 * u}" fill="#fff"/><circle cx="${cx}" cy="${y}" r="${r}" fill="#1b2030"/>
+            <path d="M${cx - k} ${y}H${cx + k}M${cx} ${y - k}V${y + k}" stroke="#fff" stroke-width="${1.8 * u}" stroke-linecap="round"/></g>`);
+        }
+      }
     }
     const p = me();
     const s = p.territory && shape(p.territory);
@@ -585,6 +635,8 @@ async function renderMap() {
     const b = st.battle;
     const here = p.territory === tr.id;
     const noAct = !(p.actions > 0);
+    // Gardiens : défendre comme chez soi le territoire d'une autre faction attaqué (Loups de cendre pour l'Église de Seiros).
+    const guarding = !!b && state.map?.guardians?.[myFaction()] === st.faction && b.defender === st.faction;
     const shielded = !!st.untouchableUntil && st.untouchableUntil > serverNow();
     const counterBonus = state.config.campaign?.counter?.attackBonus || 0;
     const tags = [st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : ''].filter(Boolean);
@@ -597,13 +649,14 @@ async function renderMap() {
       if (isHome(tr.id)) actions = btn('retreat', t('camp.retreat'), false);
     } else if (p.status === 'alive') {
       if (here && st.faction === myFaction()) actions = btn('defend', t('camp.defend'), noAct) + btn('gather', t('camp.gather'), noAct || !!b);
+      else if (here && guarding) actions = btn('defend', t('camp.defend'), noAct);
       else if (here) actions = btn('attack', t('camp.attack'), noAct || (b && b.attacker !== myFaction()) || shielded);
       else if (near.includes(p.territory)) {
         actions = canEnter(tr.id) ? btn('move', t('camp.move'), noAct) : `<p class="muted small">${esc(t('camp.cantEnter'))}</p>`;
       }
       if (here) {
         // Sans dépenser d'action : payer un renfort (fortification chez soi, bataillon dans une attaque de sa faction)…
-        const home = st.faction === myFaction();
+        const home = st.faction === myFaction() || guarding;
         if (home || (b && b.attacker === myFaction())) {
           const hired = b ? b.hired : st.garrisonHired;
           const price = home ? costs.fortify : costs.hire; // le Prêtre fortifie à moitié prix
@@ -622,10 +675,16 @@ async function renderMap() {
       <p class="muted small">${owner
     ? `${esc(t('map.owned'))} <span style="color:${esc(owner.color)}">${esc(loc(owner.name))}</span>`
     : esc(t('map.neutral'))}${tags.length ? ' · ' + esc(tags.join(' · ')) : ''}${present ? ` · ${present}` : ''}</p>
+      ${(st.occupants || []).length ? `<div class="present-list" aria-label="${esc(t('camp.present'))}">${st.occupants.map((o) => {
+    const of = faction(o.faction);
+    return `<span class="who ${o.me ? 'me' : ''}" style="--c:${esc(of?.color || '#888')}">
+        <img src="${avatarUrl(o.avatar)}" alt=""><span><b>${esc(o.pseudo)}</b>
+        <small>${esc(of ? loc(of.name) : o.faction)} · ${esc(className(o.class))} · ${esc(t('menu.playerRenown', { level: o.level }))}${o.retreating ? ' · ' + esc(t('camp.retreatingTag')) : ''}</small></span></span>`;
+  }).join('')}</div>` : ''}
       ${b ? `<p class="small battle-line">${withTimer(numKey('camp.battle', b.attacker), { attacker: loc(faction(b.attacker)?.name), chance: b.chance }, b.endsAt)}
         · ${esc(t('camp.forces', { attackers: b.attackers, defenders: b.defenders }))}</p>` : ''}
       ${shielded ? `<p class="small note">${withTimer('camp.untouchable', {}, st.untouchableUntil)}</p>` : ''}
-      ${st.counter && !shielded ? `<p class="small note">${esc(t('camp.counter', { pct: counterBonus }))}</p>` : ''}
+      ${st.counter && !shielded ? `<p class="small note">${esc(t('camp.counter', { pct: st.counterPct || counterBonus }))}</p>` : ''}
       ${actionError ? `<p class="error" role="alert">${esc(actionError)}</p>` : ''}
       ${actionNote ? `<p class="small note">${esc(actionNote)}</p>` : ''}
       ${p.rewardDebuff > 0 ? `<p class="small note">${esc(t('camp.rewardDebuff', { n: p.rewardDebuff }))}</p>` : ''}
@@ -778,6 +837,7 @@ async function renderMenu() {
           ${pk.autoRetreat ? `<li>${esc(t('perk.autoRetreat'))}</li>` : ''}
           ${pk.freeRevive ? `<li>${esc(t('perk.freeRevive'))}</li>` : ''}
           ${pk.rewardMultiplier > 1 ? `<li>${esc(t('perk.rewards', { n: pk.rewardMultiplier }))}</li>` : ''}
+          ${pk.hiddenAtBase ? `<li>${esc(t('perk.hidden', { place: loc(state.config.map.territories.find((x) => x.id === state.map.homeBases[ch.faction])?.name) }))}</li>` : ''}
           ${pk.pointsMultiplier > 1 ? `<li>${esc(t('perk.points', { n: pk.pointsMultiplier }))}</li>` : ''}
         </ul>` : ''}
       </section>
@@ -918,7 +978,7 @@ async function renderMissions() {
   const sorted = (list) => [...list].sort((a, b) => order[a.status] - order[b.status]);
   // data : { missions, daily } tel que renvoyé par le serveur.
   const draw = (data, error) => {
-    const { missions = [], daily } = data;
+    const { missions = [], daily, specials = [] } = data;
     view.innerHTML = panelHead(t('missions.title'))
       + (error ? `<p class="error" role="alert">${esc(error)}</p>` : '')
       + (daily && daily.missions.length ? `
@@ -931,7 +991,19 @@ async function renderMissions() {
           <p class="muted small">${esc(t('daily.exileHint'))}</p>
           ${sorted(daily.exile).map((m) => card(m, 'data-claim-daily')).join('')}` : ''}
         <div class="section-head"><h2>${esc(t('missions.main'))}</h2></div>` : '')
-      + (missions.length ? sorted(missions).map((m) => card(m, 'data-claim')).join('') : (error ? '' : `<p class="muted">${esc(t('missions.empty'))}</p>`));
+      + (missions.length ? sorted(missions).map((m) => card(m, 'data-claim')).join('') : (error ? '' : `<p class="muted">${esc(t('missions.empty'))}</p>`))
+      + (specials.length ? `<details class="card specials" ${state.specialsOpen ? 'open' : ''}>
+          <summary><strong>${esc(t('missions.specials'))}</strong>
+            <span class="pill">${specials.filter((x) => x.done).length} / ${specials.length}</span></summary>
+          <p class="muted small">${esc(t('missions.specialsHint'))}</p>
+          ${specials.map((x) => `<div class="special ${x.done ? 'done' : ''}">
+            <img class="avatar" src="${avatarUrl(x.avatar)}" alt="">
+            <div><strong>${esc(loc(x.title))}</strong><p class="muted small">${esc(loc(x.description))}</p>
+              ${x.done ? `<small class="muted">${esc(t('missions.obtained'))}</small>`
+    : `<div class="progress"><span class="xpbar"><i style="width:${(x.current / x.target) * 100}%"></i></span><small class="muted">${fmtNum(x.current)} / ${fmtNum(x.target)}</small></div>`}</div>
+          </div>`).join('')}
+        </details>` : '');
+    view.querySelector('.specials')?.addEventListener('toggle', (e) => { state.specialsOpen = e.target.open; });
     bindClose(view);
     const claim = (attr, path) => view.querySelectorAll(`[${attr}]`).forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true;

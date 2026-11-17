@@ -159,7 +159,7 @@
   "camp.retreat": "Retreat here",
   "camp.battle": "Battle: {attacker} is attacking · {chance}% odds · ends in {time}",
   "camp.forces": "{attackers} attacker(s), {defenders} defender(s)",
-  "camp.present": "Players here: {list}",
+  "camp.present": "Players here",
   "camp.importance": "Importance {n}",
   "camp.annex": "Annex territory",
   "camp.cantEnter": "None of your faction's territories touches this one.",
@@ -308,6 +308,11 @@
   "patch.new": "New",
   "patch.empty": "No updates yet.",
   "camp.untouchable": "Untouchable: this territory has just repelled an attack and cannot be attacked for {time}.",
-  "camp.counter": "Counter-attack: +{pct}% attack power against this territory.",
-  "error.untouchable": "This territory has just repelled an attack: it is untouchable for now."
+  "camp.counter": "On Fire! Counter-attack: +{pct}% attack power against this territory.",
+  "error.untouchable": "This territory has just repelled an attack: it is untouchable for now.",
+  "camp.retreatingTag": "retreating",
+  "perk.hidden": "Hidden on the map at {place} as long as you are not attacking or defending there.",
+  "missions.specials": "Special missions",
+  "missions.specialsHint": "Each feat unlocks an avatar, automatically.",
+  "missions.obtained": "Avatar unlocked"
 }

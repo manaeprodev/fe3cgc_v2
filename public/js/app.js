@@ -82,6 +82,14 @@ const isPlural = (id) => faction(id)?.plural?.[state.lang] !== false;
 const numKey = (key, id) => (isPlural(id) && hasText(`${key}.pl`) ? `${key}.pl` : key);
 const klass = (id) => state.config.classes.find((c) => c.id === id);
 const className = (id) => loc(klass(id)?.name) || id;
+// Carte de faction : drapeau de la maison, drapeau de sa nation en fondu à l'arrière-plan, et le seigneur en pied à droite.
+const factionHero = (f, extra = '') => `<span class="faction-hero" style="--c:${esc(f.color)}">
+  ${f.nation ? `<img class="fh-nation" src="${esc(f.nation)}" alt="" loading="lazy">` : ''}
+  <img class="fh-flag" src="${esc(f.logo)}" alt="${esc(loc(f.name))}">
+  <span class="fh-text">${extra}</span>
+  ${f.lord ? `<img class="fh-lord" src="${esc(f.lord)}" alt="" loading="lazy">` : ''}</span>`;
+// Petit drapeau de faction pour les listes et pastilles.
+const flag = (id) => { const f = faction(id); return f?.logo ? `<img class="flag" src="${esc(f.logo)}" alt="">` : ''; };
 const classIcon = (c) => `<img class="class-icon" src="${esc(c?.icon || 'assets/classes/' + (c?.id || '') + '.webp')}" alt="">`;
 // Rangs de classes qui contiennent au moins une classe (un rang vide, ex. légendaire, reste caché).
 const classTiers = () => (state.config.classTiers || []).filter((tr) => state.config.classes.some((c) => c.tier === tr.id));
@@ -308,8 +316,7 @@ function renderFaction() {
       <div class="factions">
         ${visible.map((f) => `
           <button type="button" class="faction-card ${d.faction === f.id ? 'selected' : ''}" style="--c:${esc(f.color)}" data-faction="${esc(f.id)}" aria-pressed="${d.faction === f.id}">
-            <img class="faction-logo" src="${esc(f.logo)}" alt="">
-            <span><strong class="faction-name">${esc(loc(f.name))}</strong><span class="faction-desc">${esc(loc(f.description))}</span></span>
+            ${factionHero(f, `<strong class="faction-name">${esc(loc(f.name))}</strong><span class="faction-desc">${esc(loc(f.description))}</span>`)}
           </button>`).join('')}
       </div>
       <p class="error" role="alert"></p>
@@ -424,7 +431,7 @@ function drawTopbar() {
     <div class="topbar-row">
       <img class="avatar" src="${avatarUrl(ch.avatar)}" alt="">
       <div class="who"><strong>${esc(ch.pseudo)}${pl?.exile ? ` <span class="tag">${esc(t('exile.tag'))}</span>` : ''}</strong>
-        <span class="muted small">${classIcon(klass(ch.class))}${esc(className(ch.class))} · <span style="color:${esc(f.color)}">${esc(loc(f.name))}</span></span></div>
+        <span class="muted small">${classIcon(klass(ch.class))}${esc(className(ch.class))} · <img class="top-flag" src="${esc(f.logo)}" alt="${esc(loc(f.name))}" title="${esc(loc(f.name))}"></span></div>
       ${langPicker()}
       <button type="button" class="icon-btn ${state.tab === 'notifs' ? 'active' : ''}" data-go="notifs"
         aria-label="${esc(unread ? t('top.notifsUnread', { n: unread }) : t('top.notifs'))}">
@@ -641,7 +648,7 @@ async function renderMap() {
     const counterBonus = state.config.campaign?.counter?.attackBonus || 0;
     const tags = [st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : ''].filter(Boolean);
     const present = Object.entries(st.players || {}).map(([f, n]) => `<span class="who-here" title="${esc(loc(faction(f)?.name))}">
-      <span class="dot" style="--c:${esc(faction(f)?.color || '#888')}"></span>${n}</span>`).join('');
+      ${flag(f) || `<span class="dot" style="--c:${esc(faction(f)?.color || '#888')}"></span>`}${n}</span>`).join('');
 
     // Ce que je peux faire ici : agir sur mon territoire, m'y déplacer s'il est voisin, ou m'y replier.
     let actions = '';
@@ -673,13 +680,13 @@ async function renderMap() {
     box.innerHTML = `${banner}
       <div class="terr-head"><h3>${esc(loc(tr.name))}</h3>${here ? `<span class="pill">${esc(t('camp.you'))}</span>` : ''}</div>
       <p class="muted small">${owner
-    ? `${esc(t('map.owned'))} <span style="color:${esc(owner.color)}">${esc(loc(owner.name))}</span>`
+    ? `${esc(t('map.owned'))} ${flag(owner.id)}<span style="color:${esc(owner.color)}">${esc(loc(owner.name))}</span>`
     : esc(t('map.neutral'))}${tags.length ? ' · ' + esc(tags.join(' · ')) : ''}${present ? ` · ${present}` : ''}</p>
       ${(st.occupants || []).length ? `<div class="present-list" aria-label="${esc(t('camp.present'))}">${st.occupants.map((o) => {
     const of = faction(o.faction);
     return `<span class="who ${o.me ? 'me' : ''}" style="--c:${esc(of?.color || '#888')}">
         <img src="${avatarUrl(o.avatar)}" alt=""><span><b>${esc(o.pseudo)}</b>
-        <small>${esc(of ? loc(of.name) : o.faction)} · ${esc(className(o.class))} · ${esc(t('menu.playerRenown', { level: o.level }))}${o.retreating ? ' · ' + esc(t('camp.retreatingTag')) : ''}</small></span></span>`;
+        <small>${flag(o.faction)}${esc(of ? loc(of.name) : o.faction)} · ${esc(className(o.class))} · ${esc(t('menu.playerRenown', { level: o.level }))}${o.retreating ? ' · ' + esc(t('camp.retreatingTag')) : ''}</small></span></span>`;
   }).join('')}</div>` : ''}
       ${b ? `<p class="small battle-line">${withTimer(numKey('camp.battle', b.attacker), { attacker: loc(faction(b.attacker)?.name), chance: b.chance }, b.endsAt)}
         · ${esc(t('camp.forces', { attackers: b.attackers, defenders: b.defenders }))}</p>` : ''}
@@ -691,7 +698,7 @@ async function renderMap() {
       ${actions ? `<div class="row act-row">${actions}</div>` : ''}
       ${near.length ? `<div class="chips">${near.map((id) => {
     const o = ownerOf(id) ? faction(ownerOf(id)) : null;
-    return `<button type="button" class="chip" data-goto="${esc(id)}"><span class="dot" style="--c:${esc(o ? o.color : '#6b7287')}"></span>${esc(loc(shape(id).name))}</button>`;
+    return `<button type="button" class="chip" data-goto="${esc(id)}">${o ? flag(ownerOf(id)) : `<span class="dot" style="--c:#6b7287"></span>`}${esc(loc(shape(id).name))}</button>`;
   }).join('')}</div>` : `<p class="muted small">${esc(t('map.noNeighbors'))}</p>`}`;
     box.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => select(el.dataset.goto, true)));
     bindActs(box);
@@ -801,7 +808,7 @@ async function renderMenu() {
         <h2>${esc(t('menu.character'))}</h2>
         <div class="profile">
           <img class="avatar" src="${avatarUrl(ch.avatar)}" alt="">
-          <div><h3>${esc(ch.pseudo)}</h3><span class="pill">${esc(loc(f.name))}</span>
+          <div><h3>${esc(ch.pseudo)}</h3><span class="pill">${flag(f.id)}${esc(loc(f.name))}</span>
             ${state.me.player?.exile ? `<span class="pill">${esc(t('exile.tag'))} · ${esc(loc(faction(effFaction()).name))}</span>` : ''}</div>
         </div>
         <dl class="kv">
@@ -827,10 +834,7 @@ async function renderMenu() {
 
       <section class="card">
         <h2>${esc(t('menu.faction'))}</h2>
-        <div class="faction-line">
-          <img class="faction-logo" src="${esc(f.logo)}" alt="">
-          <div><strong style="color:${esc(f.color)}">${esc(loc(f.name))}</strong><p class="muted small">${esc(loc(f.description))}</p></div>
-        </div>
+        <div class="faction-line">${factionHero(f, `<strong class="faction-name">${esc(loc(f.name))}</strong><span class="faction-desc">${esc(loc(f.description))}</span>`)}</div>
         ${pk ? `<ul class="perks">
           ${pk.outnumberedMax ? `<li>${esc(t('perk.outnumbered', { n: fmtNum(pk.powerBonus), max: pk.outnumberedMax }))}</li>` : ''}
           ${pk.neverOut ? `<li>${esc(t('perk.neverOut'))}</li>` : ''}
@@ -847,7 +851,7 @@ async function renderMenu() {
         ${state.map ? `<p><strong>${esc(t('camp.number', { n: state.map.campaign.id }))}</strong></p>` : ''}
         <p class="muted small">${esc(t('camp.points'))} — ${esc(t('camp.pointsHint'))}</p>
         ${[...playable].sort((a, b) => (points[b.id] || 0) - (points[a.id] || 0)).map((x) => `
-          <div class="score" style="--c:${esc(x.color)}"><span class="dot"></span>${esc(loc(x.name))}<span class="n">${esc(t('camp.pts', { n: fmtNum(points[x.id] || 0) }))}</span></div>`).join('')}
+          <div class="score" style="--c:${esc(x.color)}">${flag(x.id) || '<span class="dot"></span>'}${esc(loc(x.name))}<span class="n">${esc(t('camp.pts', { n: fmtNum(points[x.id] || 0) }))}</span></div>`).join('')}
       </section>
 
       ${rk ? `<section class="card">
@@ -855,7 +859,7 @@ async function renderMenu() {
         <p class="muted small">${esc(t('camp.rankingHint', { rewards: rk.rewards.map(fmtNum).join(' / ') }))}</p>
         ${rk.top.map((r) => `<div class="player rank ${r.me ? 'me' : ''}">
             <img class="avatar" src="${avatarUrl(r.avatar)}" alt="">
-            <div><strong>${r.rank}. ${esc(r.pseudo)}</strong><small style="color:${esc(faction(r.faction)?.color || '#888')}">${esc(loc(faction(r.faction)?.name))}</small></div>
+            <div><strong>${r.rank}. ${esc(r.pseudo)}</strong><small style="color:${esc(faction(r.faction)?.color || '#888')}">${flag(r.faction)}${esc(loc(faction(r.faction)?.name))}</small></div>
             <span class="n">${esc(t('camp.pts', { n: fmtNum(r.score) }))}</span></div>`).join('') || `<p class="muted small">${esc(t('camp.rankingEmpty'))}</p>`}
         <p class="small">${esc(rk.me.rank ? t('camp.myRank', { rank: rk.me.rank, score: fmtNum(rk.me.score) }) : t('camp.myRankNone'))}</p>
       </section>` : ''}
@@ -873,7 +877,7 @@ async function renderMenu() {
     return `<div class="player">
             <img class="avatar" src="${avatarUrl(p.avatar)}" alt="">
             <div><strong>${esc(p.pseudo)}</strong><small>${esc(className(p.class))} · ${esc(t('menu.playerRenown', { level: Number(p.renown) || 0 }))} · ${esc(fmtDate(p.birthday))}</small></div>
-            <span class="pill" style="--c:${esc(pf ? pf.color : '#888')}">${esc(pf ? loc(pf.name) : p.faction)}</span>
+            <span class="pill" style="--c:${esc(pf ? pf.color : '#888')}">${flag(p.faction)}${esc(pf ? loc(pf.name) : p.faction)}</span>
           </div>`;
   }).join('') || `<p class="muted small">${esc(t('common.loading'))}</p>`}
       </section>

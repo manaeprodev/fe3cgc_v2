@@ -1272,11 +1272,13 @@
         "en": "The Black Eagles"
       },
       "color": "#e5484d",
-      "logo": "assets/factions/rouge.svg",
+      "logo": "assets/banners/black_eagles.webp",
       "description": {
-        "fr": "Courte description de la faction rouge à écrire ici.",
-        "en": "Short description of the red faction to be written here."
-      }
+        "fr": "Dirigée par Edelgard von Hresvelg, héritière impériale et future dirigeante de l'Empire d'Adrestia. La maison rassemble principalement des nobles de l'Empire et se distingue par son ambition de remettre en question l'ordre établi de Fódlan.",
+        "en": "Led by Edelgard von Hresvelg, imperial heir and future ruler of the Adrestian Empire. The house mostly gathers nobles of the Empire and stands out for its ambition to challenge the established order of Fódlan."
+      },
+      "nation": "assets/banners/adrestia.webp",
+      "lord": "assets/characters/lords_full_sprites/edelgard.webp"
     },
     {
       "id": "bleue",
@@ -1285,11 +1287,13 @@
         "en": "The Blue Lions"
       },
       "color": "#3e8eff",
-      "logo": "assets/factions/bleue.svg",
+      "logo": "assets/banners/blue_lions.webp",
       "description": {
-        "fr": "Courte description de la faction bleue à écrire ici.",
-        "en": "Short description of the blue faction to be written here."
-      }
+        "fr": "Dirigée par Dimitri Alexandre Blaiddyd, prince héritier du Royaume Sacré de Faerghus. Ses membres sont majoritairement originaires du Royaume et sont attachés à ses traditions chevaleresques, à l'honneur et à la loyauté.",
+        "en": "Led by Dimitri Alexandre Blaiddyd, crown prince of the Holy Kingdom of Faerghus. Its members mostly come from the Kingdom and hold dear its chivalric traditions, honor and loyalty."
+      },
+      "nation": "assets/banners/faerghus.webp",
+      "lord": "assets/characters/lords_full_sprites/dimitri.webp"
     },
     {
       "id": "jaune",
@@ -1298,14 +1302,16 @@
         "en": "The Golden Deer"
       },
       "color": "#f5c518",
-      "logo": "assets/factions/jaune.svg",
+      "logo": "assets/banners/golden_deer.webp",
       "description": {
-        "fr": "Courte description de la faction jaune à écrire ici.",
-        "en": "Short description of the yellow faction to be written here."
+        "fr": "Dirigée par Claude von Riegan, héritier de la maison Riegan et futur dirigeant de l'Alliance de Leicester. Cette faction rassemble des nobles et des élèves issus d'un territoire indépendant, connu pour sa diversité culturelle, sa diplomatie et ses intrigues politiques.",
+        "en": "Led by Claude von Riegan, heir of House Riegan and future leader of the Leicester Alliance. This faction gathers nobles and students from an independent territory, known for its cultural diversity, diplomacy and political intrigue."
       },
       "plural": {
         "en": false
-      }
+      },
+      "nation": "assets/banners/leicester.webp",
+      "lord": "assets/characters/lords_full_sprites/claude.webp"
     },
     {
       "id": "violette",
@@ -1314,12 +1320,14 @@
         "en": "The Ashen Wolves"
       },
       "color": "#9d5cff",
-      "logo": "assets/factions/violette.svg",
+      "logo": "assets/banners/ashen_wolves.webp",
       "description": {
-        "fr": "Courte description de la faction secrète à écrire ici.",
-        "en": "Short description of the secret faction to be written here."
+        "fr": "Dirigée par Yuri Leclerc, cette maison secrète n'est rattachée à aucun pays et réside dans l'Abysse, une cité souterraine située sous le monastère de Garreg Mach. Elle rassemble des marginaux et des personnes rejetées par la société, unis par leur volonté de se protéger mutuellement.",
+        "en": "Led by Yuri Leclerc, this secret house belongs to no country and lives in Abyss, an underground city beneath Garreg Mach Monastery. It gathers outcasts and people rejected by society, united by their will to protect one another."
       },
-      "secret": true
+      "secret": true,
+      "nation": "assets/banners/church_of_seiros.webp",
+      "lord": "assets/characters/lords_full_sprites/yuri.webp"
     },
     {
       "id": "eglise",
@@ -1328,7 +1336,7 @@
         "en": "The Church of Seiros"
       },
       "color": "#ffffff",
-      "logo": "assets/factions/eglise.svg",
+      "logo": "assets/banners/church_of_seiros.webp",
       "description": {
         "fr": "Faction non jouable. Elle tient Garreg-Mach et le défend seule.",
         "en": "Non-playable faction. It holds Garreg-Mach and defends it alone."
@@ -1346,7 +1354,7 @@
         "en": "Those Who Slither in the Dark"
       },
       "color": "#1f9e8f",
-      "logo": "assets/factions/serpents.svg",
+      "logo": "assets/banners/twsitd.webp",
       "description": {
         "fr": "Faction ennemie, non jouable. Ses mini-boss surgissent au hasard pour attaquer les territoires.",
         "en": "Enemy faction, non-playable. Its mini-bosses appear at random to attack territories."
@@ -2058,6 +2066,40 @@
     }
   ],
   "patches": [
+    {
+      "id": "1.3",
+      "date": "2026-11-17",
+      "title": {
+        "fr": "Patch 1.3",
+        "en": "Patch 1.3"
+      },
+      "intro": {
+        "fr": "Les maisons arborent leurs couleurs.",
+        "en": "The houses show their colours."
+      },
+      "sections": [
+        {
+          "title": {
+            "fr": "Factions",
+            "en": "Factions"
+          },
+          "items": [
+            {
+              "fr": "Nouveaux drapeaux, nations et seigneurs pour chaque faction, sur l'écran de choix et dans le menu, avec une présentation de chaque maison.",
+              "en": "New flags, nations and lords for every faction, on the selection screen and in the menu, with a short presentation of each house."
+            },
+            {
+              "fr": "Le drapeau de la faction remplace son nom dans la barre du haut et apparaît en petit dans les listes et sur les territoires.",
+              "en": "The faction flag replaces its name in the top bar and appears in small size in lists and on territories."
+            },
+            {
+              "fr": "Chargement plus rapide : images allégées.",
+              "en": "Faster loading: lighter images."
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "1.2",
       "date": "2026-11-17",

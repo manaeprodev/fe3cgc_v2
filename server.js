@@ -310,7 +310,8 @@ const TRUST_PROXY = Math.max(0, parseInt(process.env.TRUST_PROXY || '0', 10) || 
 // ALLOWED_ORIGINS : origines supplémentaires autorisées à appeler l'API (séparées par des virgules).
 const ALLOWED_ORIGINS = new Set((process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean));
 // Requêtes autorisées par IP : toutes routes et API par minute, connexion et inscription par 10 minutes.
-const LIMITS = { all: 600, api: 120, auth: 10 };
+// static : fichiers (une page en charge des dizaines : avatars, classes, carte), compté à part pour ne pas bloquer le jeu.
+const LIMITS = { all: 600, api: 120, auth: 10, static: 3000 };
 // Blocage d'un compte après trop d'échecs de connexion.
 const LOCK_FAILS = 5;
 const LOCK_MINUTES = 15;
@@ -904,11 +905,12 @@ const server = http.createServer(async (req, res) => {
   let pathname;
   try { pathname = new URL(req.url, 'http://localhost').pathname; } catch { res.writeHead(400); return res.end(); }
   try {
-    limit(req, 'all', LIMITS.all, 60_000);
     if (!pathname.startsWith('/api/')) {
+      limit(req, 'static', LIMITS.static, 60_000);
       if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
       return serveStatic(req, res, pathname);
     }
+    limit(req, 'all', LIMITS.all, 60_000);
     limit(req, 'api', LIMITS.api, 60_000);
     checkOrigin(req);
     const handler = routes[`${req.method} ${pathname}`];

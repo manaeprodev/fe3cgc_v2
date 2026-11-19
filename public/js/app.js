@@ -80,7 +80,10 @@ const effFaction = () => state.me?.player?.faction || state.me?.character?.facti
 // variantes : la clé, et la même clé suivie de « .pl » pour le pluriel.
 const isPlural = (id) => faction(id)?.plural?.[state.lang] !== false;
 const numKey = (key, id) => (isPlural(id) && hasText(`${key}.pl`) ? `${key}.pl` : key);
-const klass = (id) => state.config.classes.find((c) => c.id === id);
+const klass = (id) => state.config.classes.find((c) => c.id === id) || (state.config.npcClasses || []).find((c) => c.id === id);
+// Généraux : personnages non joueurs (config « generals »), avec leur portrait.
+const generalName = (id) => (state.config.generals?.roster || []).find((g) => g.id === id)?.name || id;
+const occImg = (o) => (o.general ? esc(o.avatar) : avatarUrl(o.avatar));
 const className = (id) => loc(klass(id)?.name) || id;
 // Carte de faction : drapeau de la maison, drapeau de sa nation en fondu à l'arrière-plan, et le seigneur en pied à droite.
 const factionHero = (f, extra = '') => `<span class="faction-hero" style="--c:${esc(f.color)}">
@@ -165,6 +168,8 @@ async function signedIn(me) {
   state.me = me;
   if (!storedLang() && me.user.lang && me.user.lang !== state.lang) await setLang(me.user.lang);
   else if (me.user.lang !== state.lang) api('/lang', { lang: state.lang }).catch(() => {});
+  showResult();
+  maybeGameOver();
 }
 
 // Titre du jeu sur l'écran d'accueil : trois couronnes, puis le titre sur trois niveaux
@@ -355,7 +360,7 @@ function renderFaction() {
 const patchUnread = () => { const p = state.me?.patch; return !!(p && p.latest && p.latest !== p.seen); };
 
 // Onglets principaux : map, menu. Écrans secondaires : notifs, missions, rules.
-const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses, avatars: renderAvatars, journal: renderJournal, patches: renderPatches };
+const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses, avatars: renderAvatars, journal: renderJournal, patches: renderPatches, install: renderInstall, impact: renderImpact, pantheon: renderPantheon, pushsettings: renderPush };
 
 function go(tab) {
   if (['map', 'menu', 'journal'].includes(state.tab)) state.back = state.tab;
@@ -364,7 +369,7 @@ function go(tab) {
 }
 
 function renderGame() {
-  const menuSide = ['menu', 'rules', 'classes', 'avatars', 'patches'].includes(state.tab);
+  const menuSide = ['menu', 'rules', 'classes', 'avatars', 'patches', 'install', 'impact', 'pantheon', 'pushsettings'].includes(state.tab);
   app.innerHTML = `
     <header class="topbar" id="topbar"></header>
     <main class="view" id="view"></main>
@@ -398,6 +403,7 @@ function setMap(map) {
   state.territories = map.territories;
   syncClock(map);
   if (state.me && map.player) state.me.player = map.player;
+  maybeGameOver();
 }
 let mapView = null; // fonctions de l'écran Carte ouvert, pour le rafraîchir sans tout redessiner
 // Chaque seconde : met à jour les comptes à rebours ; à l'échéance, redemande l'état au serveur.
@@ -428,6 +434,7 @@ function drawTopbar() {
   const { unread, claimable } = state.me;
   const pl = state.me.player;
   bar.innerHTML = `
+    ${f.nation ? `<img class="top-nation" src="${esc(f.nation)}" alt="">` : ''}
     <div class="topbar-row">
       <img class="avatar" src="${avatarUrl(ch.avatar)}" alt="">
       <div class="who"><strong>${esc(ch.pseudo)}${pl?.exile ? ` <span class="tag">${esc(t('exile.tag'))}</span>` : ''}</strong>
@@ -456,8 +463,10 @@ function drawTopbar() {
 
 // Met à jour le joueur (ressources, pastilles) à partir d'une réponse de l'API.
 function setMe(me) {
-  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable, player: me.player, distinctions: me.distinctions || [], stats: me.stats || {}, patch: me.patch || null };
+  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable, player: me.player, distinctions: me.distinctions || [], stats: me.stats || {}, patch: me.patch || null, result: me.result || null, tutorial: me.tutorial || null };
   syncClock(me.player);
+  showResult();
+  maybeGameOver();
   // On ne redessine pas le bandeau pendant que le joueur manipule le sélecteur de langue.
   if (!document.activeElement || !document.activeElement.matches('#topbar [data-lang]')) drawTopbar();
 }
@@ -479,8 +488,36 @@ function panelHead(title, extra = '') {
 function bindClose(view) {
   view.querySelector('[data-close]').addEventListener('click', () => {
     if (state.tab === 'classes' && state.classesFrom === 'rules') return go('rules');
-    go(['rules', 'classes', 'avatars', 'patches'].includes(state.tab) ? 'menu' : state.back || 'map');
+    go(['rules', 'classes', 'avatars', 'patches', 'install', 'impact', 'pantheon', 'pushsettings'].includes(state.tab) ? 'menu' : state.back || 'map');
   });
+}
+
+// Premier pas : liste d'étapes à cocher (d'après les actions réelles), puis récompense à récupérer.
+function tutorialHtml() {
+  const tu = state.me?.tutorial;
+  if (!tu) return '';
+  const done = tu.steps.filter((x) => x.done).length;
+  const next = tu.steps.find((x) => !x.done);
+  return `<details class="tutorial" ${state.tutorialOpen ? 'open' : ''}><summary><strong>${esc(t('tutorial.title'))}</strong> <span class="pill">${esc(t('tutorial.progress', { done, total: tu.steps.length }))}</span>${next ? ` <small class="muted">${esc(loc(next.title))}</small>` : ''}</summary>
+    <ul>${tu.steps.map((x) => `<li class="${x.done ? 'done' : x === next ? 'next' : ''}"><span aria-hidden="true">${x.done ? '\u2713' : x === next ? '\u25B6' : '\u25CB'}</span> ${esc(loc(x.title))}${x === next ? `<p class="small muted">${esc(loc(x.description))}</p>` : ''}</li>`).join('')}</ul>
+    <div class="row">${tu.complete ? `<button type="button" class="btn compact" data-tut="claim">${esc(t('tutorial.claim', { gold: fmtNum(tu.rewards.gold), xp: fmtNum(tu.rewards.xp) }))}</button>` : ''}
+      <button type="button" class="btn compact ghost" data-tut="dismiss">${esc(t('tutorial.dismiss'))}</button></div></details>`;
+}
+function bindTutorial(view) {
+  view.querySelector('.tutorial')?.addEventListener('toggle', (e) => { state.tutorialOpen = e.target.open; });
+  view.querySelectorAll('[data-tut]').forEach((b) => b.addEventListener('click', async () => {
+    b.disabled = true;
+    try {
+      const res = await api(`/tutorial/${b.dataset.tut}`, {});
+      setMe(res);
+      if (b.dataset.tut === 'claim') flash(t('flash.reward'));
+      view.querySelector('.tutorial')?.remove();
+    } catch (err) {
+      if (err.status === 401) return sessionLost();
+      flash(err.message, 'error');
+      b.disabled = false;
+    }
+  }));
 }
 
 async function renderMap() {
@@ -502,8 +539,10 @@ async function renderMap() {
         <button type="button" data-zoom="-1" aria-label="${esc(t('map.zoomOut'))}">−</button>
       </div>
     </div>
+    ${tutorialHtml()}
     <section class="info map-info" aria-live="polite"></section>`;
 
+  bindTutorial(view);
   const inner = view.querySelector('.map-inner');
   const scroller = view.querySelector('.map-scroll');
   const svg = view.querySelector('svg.map');
@@ -549,14 +588,23 @@ async function renderMap() {
     const parts = [];
     const now = serverNow();
     for (const st of state.territories) {
-      const s = shape(st.id);
-      if (!s) continue;
+      const s0 = shape(st.id);
+      if (!s0) continue;
+      const s = { ...s0, x: s0.cx ?? s0.x, y: s0.cy ?? s0.y }; // cx, cy : centre visuel du territoire (map.json)
       if (st.battle) {
         const k = 4 * u;
         parts.push(`<g class="battle-mark" transform="translate(${s.x} ${s.y - 20 * u})">
         <circle r="${9 * u}" fill="${esc(faction(st.battle.attacker)?.color || '#e5484d')}" stroke="#fff" stroke-width="${1.5 * u}"/>
         <path d="M${-k} ${-k}L${k} ${k}M${k} ${-k}L${-k} ${k}" stroke="#fff" stroke-width="${2 * u}" stroke-linecap="round"/></g>`);
       }
+      // Capitale d'une faction : couronne dans sa couleur.
+      const capOf = Object.entries(state.map?.capitals || {}).find(([, id]) => id === st.id)?.[0];
+      if (capOf) {
+        parts.push(`<g class="capital-mark" transform="translate(${s.x} ${s.y - 34 * u}) scale(${u * 0.9})"><path d="M-9 4L-11 -6L-5 -1L0 -9L5 -1L11 -6L9 4Z" fill="${esc(faction(capOf)?.color || '#f6c945')}" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></g>`);
+      }
+      // Signalements de ma faction.
+      const pingsHere = (state.map?.pings || []).filter((x) => x.territory === st.id);
+      pingsHere.slice(0, 2).forEach((x, i) => parts.push(`<text class="ping-mark" x="${s.x + (24 + i * 17) * u}" y="${s.y + 4 * u}" font-size="${15 * u}" text-anchor="middle">${PING_ICON[x.kind] || '📍'}</text>`));
       const shielded = st.untouchableUntil && st.untouchableUntil > now;
       if (shielded) {
         parts.push(`<g class="shield-shine">${shieldAt(s.x - 24 * u, s.y - 18 * u, 1.0 * u, `<path d="${SHIELD}" fill="#f6c945" stroke="#fff" stroke-width="1.8"/>
@@ -589,7 +637,7 @@ async function renderMap() {
           const id = `pin-${st.id}-${i}`;
           parts.push(`<g class="pin"><clipPath id="${esc(id)}"><circle cx="${cx}" cy="${y}" r="${r}"/></clipPath>
             <circle cx="${cx}" cy="${y}" r="${r + 1.2 * u}" fill="#fff"/>
-            <image href="${avatarUrl(o.avatar)}" x="${cx - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" clip-path="url(#${esc(id)})" preserveAspectRatio="xMidYMin slice"/>
+            <image href="${occImg(o)}" x="${cx - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" clip-path="url(#${esc(id)})" preserveAspectRatio="xMidYMin slice"/>
             <circle cx="${cx}" cy="${y}" r="${r - 0.6 * u}" fill="none" stroke="${esc(faction(o.faction)?.color || '#888')}" stroke-width="${2.6 * u}"/></g>`);
         });
         if (extra) {
@@ -601,7 +649,8 @@ async function renderMap() {
       }
     }
     const p = me();
-    const s = p.territory && shape(p.territory);
+    const s0 = p.territory && shape(p.territory);
+    const s = s0 && { ...s0, x: s0.cx ?? s0.x, y: s0.cy ?? s0.y };
     if (s && p.status !== 'dead') {
       parts.push(`<g transform="translate(${s.x} ${s.y})"><circle r="${8 * u}" fill="${esc(faction(myFaction()).color)}" stroke="#fff" stroke-width="${3 * u}"/>
         <circle r="${2.5 * u}" fill="#fff"/></g>`);
@@ -641,12 +690,16 @@ async function renderMap() {
     const near = neighborsOf(tr.id);
     const b = st.battle;
     const here = p.territory === tr.id;
-    const noAct = !(p.actions > 0);
+    const phase = state.map?.campaign?.phase || 'open';
+    const noAct = !(p.actions > 0) || phase === 'break';
     // Gardiens : défendre comme chez soi le territoire d'une autre faction attaqué (Loups de cendre pour l'Église de Seiros).
     const guarding = !!b && state.map?.guardians?.[myFaction()] === st.faction && b.defender === st.faction;
     const shielded = !!st.untouchableUntil && st.untouchableUntil > serverNow();
     const counterBonus = state.config.campaign?.counter?.attackBonus || 0;
-    const tags = [st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : ''].filter(Boolean);
+    const capFaction = Object.entries(state.map?.capitals || {}).find(([, id]) => id === tr.id)?.[0];
+    const bsp0 = state.config.campaign?.build?.specs || {};
+    const tags = [capFaction ? `\u{1F451} ${t('camp.capital', { faction: loc(faction(capFaction)?.name) })}` : '', st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : '',
+      st.build ? t('build.current', { name: loc(bsp0[st.build.spec]?.name), level: st.build.level }) : ''].filter(Boolean);
     const present = Object.entries(st.players || {}).map(([f, n]) => `<span class="who-here" title="${esc(loc(faction(f)?.name))}">
       ${flag(f) || `<span class="dot" style="--c:${esc(faction(f)?.color || '#888')}"></span>`}${n}</span>`).join('');
 
@@ -657,7 +710,7 @@ async function renderMap() {
     } else if (p.status === 'alive') {
       if (here && st.faction === myFaction()) actions = btn('defend', t('camp.defend'), noAct) + btn('gather', t('camp.gather'), noAct || !!b);
       else if (here && guarding) actions = btn('defend', t('camp.defend'), noAct);
-      else if (here) actions = btn('attack', t('camp.attack'), noAct || (b && b.attacker !== myFaction()) || shielded);
+      else if (here) actions = btn('attack', t('camp.attack'), noAct || (b && b.attacker !== myFaction()) || shielded || phase === 'closing');
       else if (near.includes(p.territory)) {
         actions = canEnter(tr.id) ? btn('move', t('camp.move'), noAct) : `<p class="muted small">${esc(t('camp.cantEnter'))}</p>`;
       }
@@ -669,6 +722,13 @@ async function renderMap() {
           const price = home ? costs.fortify : costs.hire; // le Prêtre fortifie à moitié prix
           actions += btn('hire', t(home ? 'camp.hireDefense' : 'camp.hireAttack', { gold: fmtNum(price) }), hired >= costs.hireMax || mine.gold < price);
         }
+        // Construire sur son territoire (spécialité par territoire, jusqu'au niveau 3), hors bataille.
+        const bsp = state.config.campaign?.build?.specs || {};
+        if (st.faction === myFaction() && !b && costs.build) {
+          const lvl = st.build?.level || 0;
+          if (!st.build) actions += Object.entries(bsp).map(([id, sp]) => btn(`build:${id}`, t('build.build', { name: loc(sp.name), gold: fmtNum(costs.build[0]) }), noAct || mine.gold < costs.build[0])).join('');
+          else if (lvl < costs.buildMax) actions += btn(`build:${st.build.spec}`, t('build.upgrade', { name: loc(bsp[st.build.spec]?.name), level: lvl + 1, gold: fmtNum(costs.build[lvl]) }), noAct || mine.gold < costs.build[lvl]);
+        }
         // … et appeler sa faction à l'aide, une fois par bataille.
         if (b && (b.attacker === myFaction() || b.defender === myFaction())) actions += btn('rally', t(b.rallied ? 'camp.rallied' : 'camp.rally'), b.rallied);
       }
@@ -677,30 +737,78 @@ async function renderMap() {
         actions += btn('teleport', t('camp.teleport', { gold: fmtNum(costs.teleport) }), mine.gold < costs.teleport);
       }
     }
-    box.innerHTML = `${banner}
+    // Généraux vaincus par ma faction : les épargner (ils rejoignent ma faction) ou les faire mourir.
+    // Phase de la campagne, capacité du seigneur, objectif de la semaine, signalements de la faction.
+    const lordInfo = state.map?.lord;
+    const obj = state.map?.objective;
+    const lordHtml = lordInfo ? `<div class="strip lord ${lordInfo.activeUntil ? 'on' : ''}" title="${esc(loc(lordInfo.ability.description))}">
+        <img src="${esc(faction(lordInfo.faction)?.lord || '')}" alt=""><div><strong>${esc(loc(lordInfo.ability.title))}</strong>
+        ${lordInfo.activeUntil ? `<small>${withTimer('lord.active', { ability: loc(lordInfo.ability.title) }, lordInfo.activeUntil).replace(esc(loc(lordInfo.ability.title)) + ' ', '')}</small>`
+    : `<span class="xpbar"><i style="width:${Math.min(100, (lordInfo.gauge / lordInfo.max) * 100)}%"></i></span><small>${esc(t('lord.gauge', { n: lordInfo.gauge, max: lordInfo.max }))}</small>`}</div></div>` : '';
+    const objHtml = obj ? `<div class="strip objective ${obj.done ? 'done' : ''}"><span aria-hidden="true">\u{1F3AF}</span><div><strong>${esc(loc(obj.title))}</strong> <small>${obj.done ? esc(t('objective.done')) : `${obj.current} / ${obj.target}`}</small>
+        <p class="small muted">${esc(loc(obj.description))}</p></div></div>` : '';
+    const phaseHtml = phase === 'closing' ? `<p class="banner">${esc(t('camp.closing'))}</p>`
+      : phase === 'break' ? `<p class="banner">${withTimer('camp.break', {}, state.map.campaign.resetAt)}</p>` : '';
+    const pingHtml = (state.map?.pings || []).length ? `<div class="chips pings">${state.map.pings.map((x) => `<button type="button" class="chip ping-chip" data-goto="${esc(x.territory)}">${PING_ICON[x.kind] || ''} ${esc(x.pseudo)} · ${esc(loc(shape(x.territory)?.name))}</button>`).join('')}</div>` : '';
+    const pingBox = p.status !== 'dead' && (state.config.campaign?.pings?.kinds || []).length ? `<details class="ping-box"><summary>${esc(t('ping.title'))}</summary>
+        <div class="row">${state.config.campaign.pings.kinds.map((k) => `<button type="button" class="btn compact ghost" data-act="ping:${esc(k)}">${PING_ICON[k]} ${esc(t(`ping.${k}`))}</button>`).join('')}</div></details>` : '';
+    // Bataille : minuteur, chances de MON camp (jauge et libellé), force des deux côtés, victoire ou défaite certaine.
+    const battleHtml = (bt, stt) => {
+      const defMine = stt.faction === myFaction() || (state.map?.guardians?.[myFaction()] === stt.faction && bt.defender === stt.faction);
+      const pct = defMine ? 100 - bt.chance : bt.chance;
+      const sure = bt.decisive ? ((bt.decisive === 'win') === !defMine ? 'win' : 'lose') : null;
+      const label = sure === 'win' ? t('camp.decisiveWin') : sure === 'lose' ? t('camp.decisiveLose') : pct >= 60 ? t('camp.odds.good') : pct >= 40 ? t('camp.odds.even') : t('camp.odds.bad');
+      const tone = sure ? sure : pct >= 60 ? 'good' : pct >= 40 ? 'even' : 'bad';
+      return `<div class="small battle-line"><p>${bt.general
+        ? withTimer('camp.battleGeneral', { general: bt.general.name, attacker: loc(faction(bt.attacker)?.name), chance: bt.chance }, bt.endsAt)
+        : withTimer(numKey('camp.battle', bt.attacker), { attacker: loc(faction(bt.attacker)?.name), chance: bt.chance }, bt.endsAt)}
+        · ${esc(t('camp.forces', { attackers: bt.attackers, defenders: bt.defenders }))}</p>
+        <div class="odds ${tone}"><span class="odds-bar"><i style="width:${pct}%"></i></span><b>${esc(label)} · ${pct} %</b></div>
+        <p class="muted">${esc(t('camp.oddsLine', { attack: bt.power.attack, defense: bt.power.defense }))}</p></div>`;
+    };
+    const verdicts = (state.map?.verdicts || []).map((vd) => `<div class="verdict">
+        <img src="${esc(vd.avatar)}" alt="">
+        <div><strong>${esc(vd.name)}</strong> <small>${flag(vd.faction)}${esc(className(vd.class))} · ${esc(t('menu.playerRenown', { level: vd.level }))}</small>
+          <p class="small">${withTimer('camp.verdictHint', {}, vd.until)}</p>
+          <div class="row"><button type="button" class="btn compact" data-verdict="${esc(vd.id)}" data-spare="1">${esc(t('camp.spare'))}</button>
+            <button type="button" class="btn compact ghost" data-verdict="${esc(vd.id)}" data-spare="0">${esc(t('camp.execute'))}</button></div></div></div>`).join('');
+    box.innerHTML = `${banner}${phaseHtml}<div class="strips">${lordHtml}${objHtml}</div>${pingHtml}${verdicts ? `<section class="verdicts"><h3>${esc(t('camp.verdictTitle'))}</h3>${verdicts}</section>` : ''}
       <div class="terr-head"><h3>${esc(loc(tr.name))}</h3>${here ? `<span class="pill">${esc(t('camp.you'))}</span>` : ''}</div>
       <p class="muted small">${owner
     ? `${esc(t('map.owned'))} ${flag(owner.id)}<span style="color:${esc(owner.color)}">${esc(loc(owner.name))}</span>`
     : esc(t('map.neutral'))}${tags.length ? ' · ' + esc(tags.join(' · ')) : ''}${present ? ` · ${present}` : ''}</p>
       ${(st.occupants || []).length ? `<div class="present-list" aria-label="${esc(t('camp.present'))}">${st.occupants.map((o) => {
     const of = faction(o.faction);
-    return `<span class="who ${o.me ? 'me' : ''}" style="--c:${esc(of?.color || '#888')}">
-        <img src="${avatarUrl(o.avatar)}" alt=""><span><b>${esc(o.pseudo)}</b>
-        <small>${flag(o.faction)}${esc(of ? loc(of.name) : o.faction)} · ${esc(className(o.class))} · ${esc(t('menu.playerRenown', { level: o.level }))}${o.retreating ? ' · ' + esc(t('camp.retreatingTag')) : ''}</small></span></span>`;
+    return `<span class="who ${o.me ? 'me' : ''} ${o.general ? 'general' : ''}" style="--c:${esc(of?.color || '#888')}" title="${esc(of ? loc(of.name) : '')}">
+        <img src="${occImg(o)}" alt=""><span><b>${esc(o.pseudo)}</b>
+        <small>${flag(o.faction)}${o.general ? `<em>${esc(t('camp.general'))}</em> · ` : ''}${esc(className(o.class))} · ${esc(t('menu.playerRenown', { level: o.level }))}${o.retreating ? ' · ' + esc(t('camp.retreatingTag')) : ''}</small></span></span>`;
   }).join('')}</div>` : ''}
-      ${b ? `<p class="small battle-line">${withTimer(numKey('camp.battle', b.attacker), { attacker: loc(faction(b.attacker)?.name), chance: b.chance }, b.endsAt)}
-        · ${esc(t('camp.forces', { attackers: b.attackers, defenders: b.defenders }))}</p>` : ''}
+      ${b ? battleHtml(b, st) : ''}
       ${shielded ? `<p class="small note">${withTimer('camp.untouchable', {}, st.untouchableUntil)}</p>` : ''}
       ${st.counter && !shielded ? `<p class="small note">${esc(t('camp.counter', { pct: st.counterPct || counterBonus }))}</p>` : ''}
-      ${actionError ? `<p class="error" role="alert">${esc(actionError)}</p>` : ''}
-      ${actionNote ? `<p class="small note">${esc(actionNote)}</p>` : ''}
       ${p.rewardDebuff > 0 ? `<p class="small note">${esc(t('camp.rewardDebuff', { n: p.rewardDebuff }))}</p>` : ''}
       ${actions ? `<div class="row act-row">${actions}</div>` : ''}
+      ${pingBox}
       ${near.length ? `<div class="chips">${near.map((id) => {
     const o = ownerOf(id) ? faction(ownerOf(id)) : null;
     return `<button type="button" class="chip" data-goto="${esc(id)}">${o ? flag(ownerOf(id)) : `<span class="dot" style="--c:#6b7287"></span>`}${esc(loc(shape(id).name))}</button>`;
   }).join('')}</div>` : `<p class="muted small">${esc(t('map.noNeighbors'))}</p>`}`;
     box.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => select(el.dataset.goto, true)));
+    box.querySelectorAll('[data-verdict]').forEach((el) => el.addEventListener('click', async () => {
+      box.querySelectorAll('[data-verdict]').forEach((x) => { x.disabled = true; });
+      actionError = '';
+      try {
+        const spare = el.dataset.spare === '1';
+        const res = await api('/general/verdict', { general: el.dataset.verdict, spare });
+        setMe(res);
+        setMap(res.map);
+        flash(t(spare ? 'flash.verdictSpare' : 'flash.verdictKill'));
+      } catch (err) {
+        if (err.status === 401) return sessionLost();
+        flash(err.message, 'error');
+      }
+      if (state.tab === 'map' && inner.isConnected) refresh();
+    }));
     bindActs(box);
   };
   // Colore chaque territoire selon sa faction, et met en évidence le territoire choisi et ses voisins.
@@ -734,20 +842,23 @@ async function renderMap() {
       : act === 'retreat' ? ['/retreat', { to: state.selected }]
         : act === 'teleport' ? ['/teleport', { to: state.selected }]
         : act === 'rally' ? ['/rally', {}]
-          : act.startsWith('revive-') ? ['/revive', { mode: act.slice(7) }] : ['/act', { action: act }];
+          : act.startsWith('revive-') ? ['/revive', { mode: act.slice(7) }]
+            : act.startsWith('build:') ? ['/act', { action: 'build', spec: act.slice(6) }]
+              : act.startsWith('ping:') ? ['/ping', { territory: state.selected, kind: act.slice(5) }] : ['/act', { action: act }];
     actionError = '';
     actionNote = '';
     try {
       const res = await api(path, body);
       setMe(res);
       setMap(res.map);
-      if (res.bonus) actionNote = t('camp.bonus', { gold: res.bonus });
-      if (res.free) actionNote = t('camp.freeMove'); // déplacement gratuit (Chevalier pégase, Chevalier faucon)
+      if (res.bonus) flash(t('camp.bonus', { gold: res.bonus }));
+      if (res.free) flash(t('camp.freeMove')); // déplacement gratuit (Chevalier pégase, Chevalier faucon)
+      if (act.startsWith('ping:')) flash(t('ping.sent'));
       // De retour en jeu : la carte se place sur le territoire où l'on réapparaît.
       if (act.startsWith('revive-') && res.player.status === 'alive') state.selected = res.player.territory;
     } catch (err) {
       if (err.status === 401) return sessionLost();
-      actionError = err.message;
+      flash(err.message, 'error');
     }
     if (state.tab === 'map' && inner.isConnected) refresh();
   };
@@ -777,6 +888,17 @@ async function renderMap() {
   view.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', drawMarkers));
   refresh();
   await reload();
+  // À l'arrivée sur la carte : déjà un peu zoomée, et centrée sur ma position (ou sur la carte si je n'en ai pas).
+  if (inner.isConnected) {
+    state.zoom = Math.max(state.zoom, 2.5);
+    applyZoom();
+    const here = me().territory && shape(me().territory);
+    const fx = here ? (here.cx ?? here.x) / m.width : 0.5;
+    const fy = here ? (here.cy ?? here.y) / m.height : 0.5;
+    scroller.scrollLeft = fx * scroller.scrollWidth - scroller.clientWidth / 2;
+    scroller.scrollTop = fy * scroller.scrollHeight - scroller.clientHeight / 2;
+    drawMarkers();
+  }
 }
 
 async function renderMenu() {
@@ -802,6 +924,10 @@ async function renderMenu() {
       || state.players.some((p) => p.faction === x.id));
     view.innerHTML = `
       <button class="btn ghost" type="button" data-rules>${esc(t('menu.rules'))}</button>
+      <button class="btn ghost" type="button" data-impact>${esc(t('menu.impact'))}</button>
+      <button class="btn ghost" type="button" data-pantheon>${esc(t('menu.pantheon'))}</button>
+      <button class="btn ghost" type="button" data-pushsettings>${esc(t('menu.notifications'))}</button>
+      <button class="btn ghost" type="button" data-install>${esc(t('menu.install'))}</button>
       <button class="btn ghost" type="button" data-patches>${esc(t('menu.patches'))}${patchUnread() ? `<span class="new-dot" title="${esc(t('patch.new'))}"></span>` : ''}</button>
 
       <section class="card">
@@ -835,12 +961,17 @@ async function renderMenu() {
       <section class="card">
         <h2>${esc(t('menu.faction'))}</h2>
         <div class="faction-line">${factionHero(f, `<strong class="faction-name">${esc(loc(f.name))}</strong><span class="faction-desc">${esc(loc(f.description))}</span>`)}</div>
+        ${state.map?.objective ? `<div class="strip objective ${state.map.objective.done ? 'done' : ''}"><span aria-hidden="true">\u{1F3AF}</span><div><strong>${esc(t('objective.title'))} : ${esc(loc(state.map.objective.title))}</strong>
+            <p class="small">${esc(loc(state.map.objective.description))}</p>
+            <div class="progress"><span class="xpbar"><i style="width:${(state.map.objective.current / state.map.objective.target) * 100}%"></i></span><small class="muted">${state.map.objective.done ? esc(t('objective.done')) : `${state.map.objective.current} / ${state.map.objective.target}`}</small></div>
+            <small class="muted">${esc(t('objective.reward', { points: state.map.objective.points, gold: state.map.objective.gold }))}</small></div></div>` : ''}
         ${pk ? `<ul class="perks">
           ${pk.outnumberedMax ? `<li>${esc(t('perk.outnumbered', { n: fmtNum(pk.powerBonus), max: pk.outnumberedMax }))}</li>` : ''}
           ${pk.neverOut ? `<li>${esc(t('perk.neverOut'))}</li>` : ''}
           ${pk.autoRetreat ? `<li>${esc(t('perk.autoRetreat'))}</li>` : ''}
           ${pk.freeRevive ? `<li>${esc(t('perk.freeRevive'))}</li>` : ''}
           ${pk.rewardMultiplier > 1 ? `<li>${esc(t('perk.rewards', { n: pk.rewardMultiplier }))}</li>` : ''}
+          ${pk.efficiency ? `<li>${esc(t('perk.efficiency'))}</li>` : ''}
           ${pk.hiddenAtBase ? `<li>${esc(t('perk.hidden', { place: loc(state.config.map.territories.find((x) => x.id === state.map.homeBases[ch.faction])?.name) }))}</li>` : ''}
           ${pk.pointsMultiplier > 1 ? `<li>${esc(t('perk.points', { n: pk.pointsMultiplier }))}</li>` : ''}
         </ul>` : ''}
@@ -849,6 +980,7 @@ async function renderMenu() {
       <section class="card">
         <h2>${esc(t('camp.title'))}</h2>
         ${state.map ? `<p><strong>${esc(t('camp.number', { n: state.map.campaign.id }))}</strong></p>` : ''}
+        ${state.map?.campaign.closesAt ? `<p class="muted small">${esc(t('camp.closesAt', { date: new Date(state.map.campaign.closesAt).toLocaleString(locale(), { weekday: 'long', hour: '2-digit', minute: '2-digit' }) }))}</p>` : ''}
         <p class="muted small">${esc(t('camp.points'))} — ${esc(t('camp.pointsHint'))}</p>
         ${[...playable].sort((a, b) => (points[b.id] || 0) - (points[a.id] || 0)).map((x) => `
           <div class="score" style="--c:${esc(x.color)}">${flag(x.id) || '<span class="dot"></span>'}${esc(loc(x.name))}<span class="n">${esc(t('camp.pts', { n: fmtNum(points[x.id] || 0) }))}</span></div>`).join('')}
@@ -886,6 +1018,10 @@ async function renderMenu() {
     view.querySelector('[data-logout]').addEventListener('click', logout);
     view.querySelector('[data-rules]').addEventListener('click', () => go('rules'));
     view.querySelector('[data-patches]').addEventListener('click', () => go('patches'));
+    view.querySelector('[data-install]').addEventListener('click', () => go('install'));
+    view.querySelector('[data-impact]').addEventListener('click', () => go('impact'));
+    view.querySelector('[data-pantheon]').addEventListener('click', () => go('pantheon'));
+    view.querySelector('[data-pushsettings]').addEventListener('click', () => go('pushsettings'));
     view.querySelector('[data-avatars]').addEventListener('click', () => go('avatars'));
     view.querySelector('[data-classes]').addEventListener('click', () => {
       state.classesFrom = 'menu';
@@ -911,6 +1047,7 @@ function notifText(n) {
   const p = { ...n.params };
   if (p.mission) p.mission = loc((state.config.missions || []).find((m) => m.id === p.mission)?.title) || p.mission;
   if (p.faction) p.faction = loc(faction(p.faction)?.name) || p.faction;
+  if (p.general) p.general = generalName(p.general);
   if (p.class) p.class = className(p.class);
   if (p.distinction) p.distinction = loc((state.config.distinctions || []).find((x) => x.id === p.distinction)?.name) || p.distinction;
   for (const k of ['territory', 'home']) if (p[k]) p[k] = loc(state.config.map.territories.find((x) => x.id === p[k])?.name) || p[k];
@@ -982,7 +1119,7 @@ async function renderMissions() {
   const sorted = (list) => [...list].sort((a, b) => order[a.status] - order[b.status]);
   // data : { missions, daily } tel que renvoyé par le serveur.
   const draw = (data, error) => {
-    const { missions = [], daily, specials = [] } = data;
+    const { missions = [], daily, specials = [], campaignMissions = [] } = data;
     view.innerHTML = panelHead(t('missions.title'))
       + (error ? `<p class="error" role="alert">${esc(error)}</p>` : '')
       + (daily && daily.missions.length ? `
@@ -995,6 +1132,9 @@ async function renderMissions() {
           <p class="muted small">${esc(t('daily.exileHint'))}</p>
           ${sorted(daily.exile).map((m) => card(m, 'data-claim-daily')).join('')}` : ''}
         <div class="section-head"><h2>${esc(t('missions.main'))}</h2></div>` : '')
+      + (campaignMissions.length ? `<div class="section-head"><h2>${esc(t('campaignMissions.title'))}</h2></div>
+        <p class="muted small">${esc(t('campaignMissions.hint'))}</p>
+        ${sorted(campaignMissions).map((m) => card(m, 'data-claim-campaign')).join('')}` : '')
       + (missions.length ? sorted(missions).map((m) => card(m, 'data-claim')).join('') : (error ? '' : `<p class="muted">${esc(t('missions.empty'))}</p>`))
       + (specials.length ? `<details class="card specials" ${state.specialsOpen ? 'open' : ''}>
           <summary><strong>${esc(t('missions.specials'))}</strong>
@@ -1014,6 +1154,7 @@ async function renderMissions() {
       try {
         const res = await api(path, { id: b.getAttribute(attr) });
         setMe(res);
+        flash(t('flash.reward'));
         if (state.tab === 'missions' && view.isConnected) draw(res);
       } catch (err) {
         if (err.status === 401) return sessionLost();
@@ -1022,6 +1163,7 @@ async function renderMissions() {
     }));
     claim('data-claim', '/missions/claim');
     claim('data-claim-daily', '/missions/daily/claim');
+    claim('data-claim-campaign', '/missions/campaign/claim');
   };
   view.innerHTML = panelHead(t('missions.title')) + `<p class="muted">${esc(t('common.loading'))}</p>`;
   bindClose(view);
@@ -1037,6 +1179,8 @@ async function renderMissions() {
 
 // Journal du monde : derniers événements de la carte, et alliés tombés qui demandent de l'aide.
 let journalView = null;
+const PING_ICON = { attack: '\u2694\uFE0F', defend: '\u{1F6E1}\uFE0F', danger: '\u26A0\uFE0F', onmyway: '\u{1F6B6}', regroup: '\u{1F6A9}' };
+const REACT_ICON = { cheer: '\u{1F44F}', support: '\u{1F4AA}', help: '\u{1F91D}' }; // applaudir, soutenir, serrer la main
 async function renderJournal() {
   const view = document.getElementById('view');
   view.className = 'view scroll';
@@ -1053,13 +1197,18 @@ async function renderJournal() {
   const describe = (e) => {
     const p = { ...e.params };
     const main = p.attacker || p.faction;
-    for (const k of ['faction', 'attacker', 'defender', 'from']) if (p[k]) p[k] = loc(faction(p[k])?.name) || p[k];
+    // Les noms de faction sont repérés (\u0001 id \u0002 nom \u0003) pour être colorés une fois la phrase composée.
+    for (const k of ['faction', 'attacker', 'defender', 'from']) if (p[k]) p[k] = `\u0001${p[k]}\u0002${loc(faction(p[k])?.name) || p[k]}\u0003`;
     if (p.territory) p.territory = terrName(p.territory);
+    if (p.general) p.general = generalName(p.general);
     let key = 'journal.' + e.type;
+    if (e.type === 'battle_started' && p.general) key = 'journal.battle_started_general';
+    if (['general_fell', 'serpents_gone'].includes(e.type) && !p.faction) key += '_none';
     if (e.type === 'battle_started' && p.defender) key += '_def';
     if (e.type === 'campaign_ended' && !p.faction) key += '_draw';
-    if (['battle_started', 'territory_taken', 'faction_out'].includes(e.type)) key = numKey(key, main);
-    return hasText(key) ? { text: t(key, p), color: faction(main)?.color } : null;
+    if (['battle_started', 'territory_taken', 'faction_out', 'general_spared', 'general_captured', 'serpents_gone'].includes(e.type)) key = numKey(key, main);
+    const html = (txt) => esc(txt).replace(/\u0001([a-z]+)\u0002([^\u0003]*)\u0003/g, (_, id, name) => `<span class="fname" style="color:${esc(faction(id)?.color || 'inherit')}">${name}</span>`);
+    return hasText(key) ? { html: html(t(key, p)), color: faction(main)?.color } : null;
   };
   let error = '';
   const draw = (data) => {
@@ -1074,10 +1223,12 @@ async function renderJournal() {
         </section>` : '')
       + (data.fallen.length ? `<section class="card"><h2>${esc(t('journal.fallen'))}</h2>
           ${data.fallen.map((f) => `<div class="fallen"><strong>${esc(f.pseudo)}</strong>
-            <button type="button" class="btn compact" data-pay="${f.id}" ${state.me.character.gold < data.reviveCost ? 'disabled' : ''}>${esc(t('journal.pay', { gold: fmtNum(data.reviveCost) }))}</button></div>`).join('')}
+            <button type="button" class="btn compact" data-pay="${f.id}" ${state.me.character.gold < (f.cost ?? data.reviveCost) ? 'disabled' : ''}>${esc(t('journal.pay', { gold: fmtNum(f.cost ?? data.reviveCost) }))}</button></div>`).join('')}
         </section>` : '')
       + (events.length ? events.map(({ e, d }) => `<article class="card event" style="--c:${esc(d.color || '#6b7287')}">
-          <p>${esc(d.text)}</p><small class="muted">${esc(ago(e.at, data.now))}</small></article>`).join('')
+          <p>${d.html}</p>
+          <div class="event-foot"><small class="muted">${esc(ago(e.at, data.now))}</small>
+            ${(e.react || []).map((k) => `<button type="button" class="react" data-react="${k}" data-event="${e.id}" title="${esc(t(`react.${k}`))}" aria-label="${esc(t(`react.${k}`))}"><span aria-hidden="true">${REACT_ICON[k]}</span></button>`).join('')}</div></article>`).join('')
         : `<p class="muted">${esc(t('journal.empty'))}</p>`);
     view.querySelectorAll('[data-exile]').forEach((b) => b.addEventListener('click', async () => {
       view.querySelectorAll('[data-exile]').forEach((x) => { x.disabled = true; });
@@ -1092,6 +1243,19 @@ async function renderJournal() {
       } catch (err) {
         if (err.status === 401) return sessionLost();
         error = err.message;
+      }
+      reload();
+    }));
+    view.querySelectorAll('[data-react]').forEach((b) => b.addEventListener('click', async () => {
+      view.querySelectorAll('[data-react]').forEach((x) => { x.disabled = true; });
+      try {
+        const res = await api('/journal/react', { event: Number(b.dataset.event), kind: b.dataset.react });
+        setMe(res);
+        const f = res.flash || {};
+        flash(f.kind === 'cheer' ? t('flash.cheer', { xp: f.xp }) : f.kind === 'support' ? t(f.pseudo ? 'flash.support' : 'flash.supportAnon', { pseudo: f.pseudo, gold: f.gold }) : t('flash.help', { pct: f.pct }));
+      } catch (err) {
+        if (err.status === 401) return sessionLost();
+        flash(err.message, 'error');
       }
       reload();
     }));
@@ -1137,6 +1301,185 @@ function renderRules() {
     go('classes');
   });
   track('rules_read');
+}
+
+// Message temporaire en haut de l'écran (sous la bannière), qui disparaît tout seul.
+let flashTimer = null;
+function flash(msg, kind = 'note') {
+  let el = document.getElementById('flash');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'flash';
+    el.setAttribute('role', 'status');
+    document.body.appendChild(el);
+  }
+  const bar = document.getElementById('topbar');
+  el.style.top = `${(bar ? bar.getBoundingClientRect().bottom : 0) + 8}px`;
+  el.className = `flash ${kind}`;
+  el.textContent = msg;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { el.className = 'flash hidden'; }, kind === 'error' ? 5000 : 3500);
+}
+
+// Fenêtre de game over : quand le joueur tombe, ou quand sa faction tombe. Montrée une fois par chute (mémorisée sur l'appareil).
+function maybeGameOver() {
+  const p = state.me?.player;
+  if (!p || !state.me.character || document.getElementById('gameover-overlay') || document.getElementById('result-overlay')) return;
+  // Faction tombée (hors jeu), ou joueur mis hors de combat après un repli manqué (encore pénalisé), ou tombé.
+  const kind = p.status === 'dead' && p.factionOut ? 'faction' : p.status === 'dead' ? 'death' : p.deaths > 0 && p.rewardDebuff > 0 ? 'wounded' : null;
+  if (!kind) return;
+  const key = `gameover:${state.me.user.id}:${p.campaignId}:${kind}:${kind === 'faction' ? 0 : p.deaths}`;
+  state.goSeen = state.goSeen || new Set();
+  if (state.goSeen.has(key)) return;
+  state.goSeen.add(key); // mémoire de secours quand le stockage de l'appareil est indisponible
+  try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch { /* seule la mémoire de la session reste */ }
+  const cost = state.map?.costs?.revive;
+  const overlay = document.createElement('div');
+  overlay.id = 'gameover-overlay';
+  overlay.className = 'overlay';
+  const title = kind === 'faction' ? 'gameover.factionTitle' : kind === 'wounded' ? 'gameover.woundedTitle' : 'gameover.deadTitle';
+  const body = kind === 'faction' ? 'gameover.factionBody' : kind === 'wounded' ? 'gameover.woundedBody' : p.fallMult > 1 ? 'gameover.deadBodyAttack' : 'gameover.deadBody';
+  overlay.innerHTML = `<div class="modal gameover ${kind}" role="dialog" aria-modal="true">
+    <h2>${esc(t(title))}</h2>
+    <p>${esc(t(body))}</p>
+    ${kind === 'death' && cost ? `<p class="small muted">${esc(t('gameover.deadCost', { gold: fmtNum(cost) }))}</p>` : ''}
+    <div class="row">${kind === 'faction' ? `<button type="button" class="btn" data-exile>${esc(t('gameover.exile'))}</button>` : ''}
+      <button type="button" class="btn ${kind === 'faction' ? 'ghost' : ''}" data-close>${esc(t('gameover.close'))}</button></div></div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('[data-close]').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('[data-exile]')?.addEventListener('click', () => { overlay.remove(); go('journal'); });
+}
+
+// Fenêtre de fin de campagne : résultat de la faction, détail des points et classement, montrée une fois à chaque participant.
+function showResult() {
+  const r = state.me?.result;
+  if (!r || !state.me.character || document.getElementById('result-overlay')) return;
+  const mine = faction(r.faction);
+  const winner = r.winner ? faction(r.winner) : null;
+  const verdict = !winner ? t('result.draw') : r.won ? t('result.won') : t(numKey('result.lost', r.winner), { faction: loc(winner.name) });
+  const part = (k, v) => `<li><span>${esc(k)}</span><b>+${fmtNum(v)}</b></li>`;
+  const lines = [
+    ...r.parts.map((x) => part(t(`result.part.${x.key}`), x.points)),
+    ...(r.mult > 1 ? [`<li><span>${esc(t('result.mult', { n: Math.round((r.mult - 1) * 100) }))}</span><b>×${r.mult}</b></li>`] : []),
+    ...(r.win ? [part(t('result.part.win'), r.win)] : []),
+  ].join('');
+  const overlay = document.createElement('div');
+  overlay.id = 'result-overlay';
+  overlay.className = 'overlay';
+  overlay.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(t('result.title'))}">
+    <p class="steps">${esc(t('result.title'))} · ${esc(t(`result.reason.${r.reason}`))}</p>
+    <h2 class="${r.won ? 'won' : ''}">${esc(verdict)}</h2>
+    <p class="result-faction">${mine ? flag(mine.id) + esc(loc(mine.name)) : ''} <b>${esc(t('result.points', { n: fmtNum(r.factionPoints) }))}</b></p>
+    ${r.exile ? `<p class="muted small">${esc(t('result.exileNote'))}</p>` : `<ul class="result-parts">${lines}</ul>`}
+    <h3>${esc(t('result.standings'))}</h3>
+    <ol class="result-standings">${r.standings.map((x) => `<li>${flag(x.faction)}<span>${esc(loc(faction(x.faction)?.name))}</span><small class="muted">${esc(t('result.map', { pct: x.pct }))}</small><b>${fmtNum(x.points)}</b></li>`).join('')}</ol>
+    <p class="small">${r.rank ? esc(t('result.rank', { rank: r.rank, score: fmtNum(r.score) })) : ''}${r.rankGold ? ' · ' + esc(t('result.rankGold', { gold: fmtNum(r.rankGold) })) : ''}${r.exileGold ? ' · ' + esc(t('result.exileGold', { gold: fmtNum(r.exileGold) })) : ''}</p>
+    <button type="button" class="btn" data-close>${esc(t('result.close'))}</button></div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('[data-close]').addEventListener('click', async () => {
+    overlay.remove();
+    try { setMe(await api('/campaign/seen', {})); } catch (err) { if (err.status === 401) sessionLost(); }
+  });
+}
+
+// Mon impact : ce que j'ai accompli dans la campagne en cours, et à vie.
+async function renderImpact() {
+  const view = document.getElementById('view');
+  view.className = 'view scroll';
+  view.innerHTML = panelHead(t('impact.title')) + `<p class="muted">${esc(t('common.loading'))}</p>`;
+  bindClose(view);
+  let d;
+  try { d = await api('/impact'); } catch (err) { if (err.status === 401) return sessionLost(); view.innerHTML = panelHead(t('impact.title')) + `<p class="error">${esc(err.message)}</p>`; bindClose(view); return; }
+  if (state.tab !== 'impact' || !view.isConnected) return;
+  const row = (k, v) => `<div class="stat"><span>${esc(t(k))}</span><b>${v}</b></div>`;
+  view.innerHTML = panelHead(t('impact.title')) + `
+    <section class="card"><h2>${esc(t('impact.campaign'))}</h2><div class="stats">
+      ${['conquests', 'defenses', 'combat', 'generals', 'spared', 'retakes', 'annexes', 'garreg', 'builds', 'deaths'].map((k) => row(`impact.${k}`, fmtNum(d[k] || 0))).join('')}
+      ${row('impact.score', fmtNum(d.score))}${row('impact.rank', d.rank ? `#${d.rank}` : '–')}${row('impact.share', `${d.share} %`)}</div></section>
+    <section class="card"><h2>${esc(t('impact.life'))}</h2><div class="stats">
+      ${Object.entries(d.life).map(([k, v]) => row(`impact.life.${k}`, fmtNum(v))).join('')}</div></section>`;
+  bindClose(view);
+}
+
+// Panthéon : saison en cours, campagnes passées avec leur podium, saisons terminées.
+async function renderPantheon() {
+  const view = document.getElementById('view');
+  view.className = 'view scroll';
+  view.innerHTML = panelHead(t('pantheon.title')) + `<p class="muted">${esc(t('common.loading'))}</p>`;
+  bindClose(view);
+  let d;
+  try { d = await api('/pantheon'); } catch (err) { if (err.status === 401) return sessionLost(); view.innerHTML = panelHead(t('pantheon.title')) + `<p class="error">${esc(err.message)}</p>`; bindClose(view); return; }
+  if (state.tab !== 'pantheon' || !view.isConnected) return;
+  const fname = (id) => (id ? `${flag(id)}<span style="color:${esc(faction(id)?.color || 'inherit')}">${esc(loc(faction(id)?.name))}</span>` : '');
+  const players = (list) => `<ol class="result-standings">${list.map((x, i) => `<li><span class="rk">${i + 1}</span><img class="avatar tiny" src="${avatarUrl(x.avatar)}" alt=""><span>${esc(x.pseudo)} ${flag(x.faction)}</span><b>${fmtNum(x.score)}</b></li>`).join('')}</ol>`;
+  const factions = (totals) => `<ol class="result-standings">${Object.entries(totals).sort((a, b) => b[1] - a[1]).map(([f, n]) => `<li>${flag(f)}<span>${esc(loc(faction(f)?.name))}</span><b>${fmtNum(n)}</b></li>`).join('')}</ol>`;
+  view.innerHTML = panelHead(t('pantheon.title')) + `
+    <section class="card"><h2>${esc(t('pantheon.season', { n: d.season.number, done: d.season.done, length: d.season.length }))}</h2>
+      ${Object.keys(d.season.factions).length ? `<h3>${esc(t('pantheon.seasonFactions'))}</h3>${factions(d.season.factions)}` : ''}
+      ${d.season.players.length ? `<h3>${esc(t('pantheon.seasonPlayers'))}</h3>${players(d.season.players)}` : `<p class="muted">${esc(t('pantheon.empty'))}</p>`}</section>
+    ${d.seasons.length ? `<h2 class="section-title">${esc(t('pantheon.seasons'))}</h2>${d.seasons.map((x) => `<section class="card"><h3>${esc(t('pantheon.seasonNo', { n: x.season }))} · ${x.winner ? esc(t('pantheon.winner', { faction: '' })) + fname(x.winner) : esc(t('pantheon.draw'))}</h3>${players(x.players.slice(0, 3))}</section>`).join('')}` : ''}
+    ${d.campaigns.length ? `<h2 class="section-title">${esc(t('pantheon.campaigns'))}</h2>${d.campaigns.map((c) => `<section class="card"><h3>${esc(t('pantheon.campaign', { n: c.id }))} · ${c.winner ? esc(t('pantheon.winner', { faction: '' })) + fname(c.winner) : esc(t('pantheon.draw'))}</h3>${c.top.length ? players(c.top) : ''}</section>`).join('')}` : ''}`;
+  bindClose(view);
+}
+
+// Notifications push : activer sur cet appareil, choisir ce qu'on veut recevoir.
+async function renderPush() {
+  const view = document.getElementById('view');
+  view.className = 'view scroll';
+  view.innerHTML = panelHead(t('push.title')) + `<p class="muted">${esc(t('common.loading'))}</p>`;
+  bindClose(view);
+  const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  let st;
+  try { st = await api('/push/status'); } catch (err) { if (err.status === 401) return sessionLost(); return; }
+  if (state.tab !== 'pushsettings' || !view.isConnected) return;
+  const reg = supported ? await navigator.serviceWorker.ready.catch(() => null) : null;
+  const sub = reg ? await reg.pushManager.getSubscription().catch(() => null) : null;
+  const on = !!sub && st.subscribed;
+  const denied = supported && Notification.permission === 'denied';
+  const prefs = ['stamina', 'attacked', 'rally', 'results', 'verdict'];
+  view.innerHTML = panelHead(t('push.title')) + `
+    <p class="muted">${esc(t('push.hint'))}</p>
+    <section class="card">
+      ${!supported ? `<p class="note">${esc(t('push.unsupported'))}</p>` : denied ? `<p class="note">${esc(t('push.denied'))}</p>`
+    : on ? `<p>${esc(t('push.enabled'))}</p><button type="button" class="btn ghost compact" data-push="off">${esc(t('push.disable'))}</button>`
+      : `<button type="button" class="btn" data-push="on">${esc(t('push.enable'))}</button>`}
+    </section>
+    ${on ? `<section class="card">${prefs.map((k) => `<label class="check"><input type="checkbox" data-pref="${k}" ${st.prefs[k] ? 'checked' : ''}> ${esc(t(`push.${k}`))}</label>`).join('')}</section>` : ''}`;
+  bindClose(view);
+  const b64 = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+  view.querySelector('[data-push=on]')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try {
+      if ((await Notification.requestPermission()) !== 'granted') return renderPush();
+      const s = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(st.key) });
+      await api('/push/subscribe', { subscription: s.toJSON() });
+    } catch (err) { flash(err.message || String(err), 'error'); }
+    renderPush();
+  });
+  view.querySelector('[data-push=off]')?.addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try {
+      const endpoint = sub.endpoint;
+      await sub.unsubscribe();
+      await api('/push/unsubscribe', { endpoint });
+    } catch (err) { flash(err.message || String(err), 'error'); }
+    renderPush();
+  });
+  view.querySelectorAll('[data-pref]').forEach((c) => c.addEventListener('change', async () => {
+    try { await api('/push/prefs', { [c.dataset.pref]: c.checked }); } catch (err) { flash(err.message || String(err), 'error'); }
+  }));
+}
+
+// Aide : ajouter le jeu à l'écran d'accueil (Android et iOS). La plateforme détectée s'affiche en premier.
+function renderInstall() {
+  const view = document.getElementById('view');
+  view.className = 'view scroll';
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const block = (title, p) => `<section class="card"><h2>${esc(t(title))}</h2><ol class="install-steps">${[1, 2, 3, 4].map((n) => `<li>${esc(t(`install.${p}${n}`))}</li>`).join('')}</ol></section>`;
+  const blocks = [block('install.android', 'a'), block('install.ios', 'i')];
+  view.innerHTML = panelHead(t('install.title')) + `<p class="muted">${esc(t('install.intro'))}</p>` + (ios ? blocks.reverse() : blocks).join('')
+    + `<p class="muted small">${esc(t('install.note'))}</p>`;
+  bindClose(view);
 }
 
 // Notes de mise à jour : les plus récentes d'abord. Les ouvrir les marque comme lues (la pastille disparaît).
@@ -1415,6 +1758,9 @@ async function start() {
       fetch('/api/avatars').then((r) => r.json()).catch(() => ({ avatars: [] })),
     ]);
     config.map = map;
+    // Classes réservées aux généraux : jamais proposées au joueur, mais connues pour afficher leur nom.
+    config.npcClasses = config.classes.filter((c) => c.npc);
+    config.classes = config.classes.filter((c) => !c.npc);
     state.config = config;
     state.avatars = avatars.avatars || [];
     fallbackDict = await loadDict(config.defaultLang);

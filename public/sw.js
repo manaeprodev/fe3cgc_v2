@@ -1,6 +1,6 @@
 // Service worker : réseau d'abord, cache en secours (pour ouvrir l'app hors ligne).
 // L'API (/api/) n'est jamais mise en cache.
-const CACHE = 'conquete-v5';
+const CACHE = 'conquete-v8';
 const SHELL = ['./', 'css/style.css', 'js/app.js', 'config/game.json', 'config/map.json', 'assets/map/fodlan.jpg', 'i18n/fr.json', 'i18n/en.json', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
@@ -29,4 +29,25 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() => caches.match(e.request).then((hit) => hit || caches.match('./')))
   );
+});
+
+// Notifications push : le serveur envoie un message chiffré { title, body, url, tag } ; un toucher ouvre ou ramène le jeu.
+self.addEventListener('push', (e) => {
+  let m = {};
+  try { m = e.data ? e.data.json() : {}; } catch { m = {}; }
+  e.waitUntil(self.registration.showNotification(m.title || 'Fire Emblem Three Crowns', {
+    body: m.body || '',
+    icon: 'assets/icons/icon-192.png',
+    badge: 'assets/icons/icon-192.png',
+    tag: m.tag || 'conquete',
+    data: { url: m.url || './' },
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = new URL((e.notification.data && e.notification.data.url) || './', self.location.origin).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+    const open = wins.find((w) => w.url.startsWith(self.location.origin));
+    return open ? open.focus() : self.clients.openWindow(target);
+  }));
 });

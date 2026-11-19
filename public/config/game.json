@@ -33,8 +33,8 @@
         "en": "Goal of the game"
       },
       "text": {
-        "fr": "Choisis une faction et aide-la à conquérir la carte, territoire après territoire.\n\nLe jeu se déroule en campagnes. Ta faction remporte la campagne si elle tient tous les territoires (hors territoires annexes) ou si elle est la dernière encore en jeu.\n\nÀ la fin d'une campagne, chaque faction marque des points selon ses résultats, la carte revient à son état de départ et une nouvelle campagne commence.\n\nTon personnage, lui, garde tout d'une campagne à l'autre : son or, sa renommée, sa classe et ses avatars.",
-        "en": "Pick a faction and help it conquer the map, one territory at a time.\n\nThe game is played in campaigns. Your faction wins the campaign if it holds every territory (annex territories aside) or if it is the last one still in play.\n\nAt the end of a campaign, each faction scores points for its results, the map returns to its starting state and a new campaign begins.\n\nYour character keeps everything from one campaign to the next: gold, renown, class and avatars."
+        "fr": "Choisis une faction et aide-la à conquérir la carte, territoire après territoire.\n\nLe jeu se déroule en campagnes. Dans la nuit du lundi au mardi, à minuit (heure de Paris), la campagne se clôt : plus aucune attaque, les combats en cours se terminent, puis la faction qui a le plus de points l'emporte. La suivante commence le mardi à 4 h. Elle peut aussi se terminer plus tôt, si une faction tient tous les territoires (hors territoires annexes) ou si elle est la dernière encore en jeu.\n\nÀ la fin d'une campagne, chaque faction marque des points selon ses résultats, la carte revient à son état de départ et une nouvelle campagne commence.\n\nTon personnage, lui, garde tout d'une campagne à l'autre : son or, sa renommée, sa classe et ses avatars.",
+        "en": "Pick a faction and help it conquer the map, one territory at a time.\n\nThe game is played in campaigns. On the night from Monday to Tuesday, at midnight (Paris time), the campaign closes: no more attacks, ongoing battles finish, then the faction with the most points wins. The next one starts on Tuesday at 4 am. It can also end sooner, if a faction holds every territory (annex territories aside) or is the last one still in play.\n\nAt the end of a campaign, each faction scores points for its results, the map returns to its starting state and a new campaign begins.\n\nYour character keeps everything from one campaign to the next: gold, renown, class and avatars."
       }
     },
     {
@@ -43,8 +43,8 @@
         "en": "Resources"
       },
       "text": {
-        "fr": "Actions : tu en gagnes 1 toutes les 10 minutes, jusqu'à 6 en réserve. Se déplacer, attaquer, défendre et récolter coûtent chacun 1 action.\n\nOr : tu en gagnes en récoltant sur un territoire allié, en remportant des batailles, en accomplissant des missions et avec le bonus de régularité. Il sert à changer de classe, à acheter des avatars, à payer des renforts en bataille et à revenir en jeu après être tombé.\n\nRenommée : c'est ton niveau. Elle monte avec l'expérience gagnée en jouant : 100 points pour le niveau 1, puis 10 % de plus à chaque niveau. Elle ouvre l'accès aux classes supérieures et rend chacune de tes actions de combat plus forte.",
-        "en": "Actions: you gain 1 every 10 minutes, up to 6 in reserve. Moving, attacking, defending and gathering each cost 1 action.\n\nGold: you earn it by gathering on an allied territory, winning battles, completing missions and through the regularity bonus. It pays for class changes, avatars, reinforcements in battle and your return after falling.\n\nRenown: this is your level. It rises with the experience you earn by playing: 100 points for level 1, then 10% more for each level. It unlocks higher classes and makes each of your combat actions stronger."
+        "fr": "Actions : tu en gagnes 1 toutes les 10 minutes, jusqu'à 8 en réserve. Se déplacer, attaquer, défendre et récolter coûtent chacun 1 action.\n\nOr : tu en gagnes en récoltant sur un territoire allié, en remportant des batailles, en accomplissant des missions et avec le bonus de régularité. Il sert à changer de classe, à acheter des avatars, à construire sur tes territoires, à payer des renforts en bataille et à régler la pénalité d'un repli manqué.\n\nRenommée : c'est ton niveau. Elle monte avec l'expérience gagnée en jouant : 100 points pour le niveau 1, puis 10 % de plus à chaque niveau. Elle ouvre l'accès aux classes supérieures et rend chacune de tes actions de combat plus forte.",
+        "en": "Actions: you gain 1 every 10 minutes, up to 8 in reserve. Moving, attacking, defending and gathering each cost 1 action.\n\nGold: you earn it by gathering on an allied territory, winning battles, completing missions and through the regularity bonus. It pays for class changes, avatars, building on your territories, reinforcements in battle and the penalty of a missed retreat.\n\nRenown: this is your level. It rises with the experience you earn by playing: 100 points for level 1, then 10% more for each level. It unlocks higher classes and makes each of your combat actions stronger."
       }
     },
     {
@@ -53,8 +53,8 @@
         "en": "Territories"
       },
       "text": {
-        "fr": "La carte compte 59 territoires. Chacun est teinté de la couleur de la faction qui le contrôle ; un territoire sans couleur est neutre.\n\nTouche un territoire pour voir qui le contrôle, les joueurs présents, la bataille en cours et ses voisins. On ne se déplace que d'un territoire à un voisin.\n\nCertains territoires comptent plus que d'autres : les capitales (Hresvelg, Blaiddyd, Riegan) et surtout Garreg-Mach. Ils sont mieux défendus et rapportent davantage.\n\nGarreg-Mach est tenu par l'Église de Seiros, une faction non jouable qui se défend seule et qui est très difficile à faire tomber.\n\nLes territoires annexes, en bordure de carte, peuvent être conquis mais ne comptent pas pour remporter la campagne.\n\nLes Serpents des Ténèbres n'ont pas de joueurs : leurs mini-boss surgissent au hasard pour attaquer un territoire. S'ils l'emportent, il faut le reprendre. Ils n'apparaissent jamais entre minuit et 6 h (heure de Paris).",
-        "en": "The map has 59 territories. Each is tinted with the colour of the faction controlling it; a territory with no colour is neutral.\n\nTap a territory to see who controls it, the players there, any battle under way and its neighbours. You can only move from a territory to a neighbour.\n\nSome territories matter more than others: the capitals (Hresvelg, Blaiddyd, Riegan) and above all Garreg-Mach. They are better defended and more rewarding.\n\nGarreg-Mach is held by the Church of Seiros, a non-playable faction that defends itself and is very hard to bring down.\n\nAnnex territories, on the edges of the map, can be conquered but do not count towards winning the campaign.\n\nThose Who Slither in the Dark have no players: their mini-bosses appear at random to attack a territory. If they win, it has to be retaken. They never appear between midnight and 6 a.m. (Paris time)."
+        "fr": "La carte compte 59 territoires. Chacun est teinté de la couleur de la faction qui le contrôle ; un territoire sans couleur est neutre.\n\nTouche un territoire pour voir qui le contrôle, les joueurs présents, la bataille en cours et ses voisins. On ne se déplace que d'un territoire à un voisin.\n\nCertains territoires comptent plus que d'autres : les capitales (Hresvelg, Blaiddyd, Riegan, marquées d'une couronne) et surtout Garreg-Mach. Ils sont mieux défendus et rapportent davantage.\n\nLa capitale est le cœur d'une faction : si elle tombe, la faction perd 10 % de puissance tant qu'elle ne l'a pas reprise. En fin de campagne, tenir sa capitale et prendre celles des autres rapporte des points.\n\nGarreg-Mach est tenu par l'Église de Seiros, une faction non jouable qui se défend seule et qui est très difficile à faire tomber.\n\nLes territoires annexes, en bordure de carte, peuvent être conquis mais ne comptent pas pour remporter la campagne.\n\nLes Serpents des Ténèbres n'ont pas de joueurs : leurs mini-boss surgissent au hasard pour attaquer un territoire. S'ils l'emportent, il faut le reprendre. Ils n'apparaissent jamais entre minuit et 6 h (heure de Paris).",
+        "en": "The map has 59 territories. Each is tinted with the colour of the faction controlling it; a territory with no colour is neutral.\n\nTap a territory to see who controls it, the players there, any battle under way and its neighbours. You can only move from a territory to a neighbour.\n\nSome territories matter more than others: the capitals (Hresvelg, Blaiddyd, Riegan, marked with a crown) and above all Garreg Mach. They are better defended and more rewarding.\n\nThe capital is a faction's heart: if it falls, the faction loses 10% power until it is retaken. At the end of the campaign, holding your own capital and taking the others' earns points.\n\nGarreg-Mach is held by the Church of Seiros, a non-playable faction that defends itself and is very hard to bring down.\n\nAnnex territories, on the edges of the map, can be conquered but do not count towards winning the campaign.\n\nThose Who Slither in the Dark have no players: their mini-bosses appear at random to attack a territory. If they win, it has to be retaken. They never appear between midnight and 6 a.m. (Paris time)."
       }
     },
     {
@@ -63,8 +63,48 @@
         "en": "Campaign"
       },
       "text": {
-        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 6 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 tours pour se replier sur un territoire allié, sinon ils tombent.\n\nSi l'attaque échoue contre une autre faction jouable, le territoire devient insaisissable pendant 4 heures et sa faction gagne +25 % de puissance d'attaque sur les territoires ennemis voisins (contre-attaque). Les Serpents des Ténèbres et l'Église de Seiros ne déclenchent pas cet effet.\n\nUn joueur tombé peut revenir : en payant 100 or, en sacrifiant un niveau de renommée, ou en demandant à un allié de payer pour lui. Il réapparaît dans la capitale de sa faction, ou sur un de ses territoires au hasard si elle est tombée.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager un bataillon en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nHors jeu, tu peux prendre les armes comme Exilé sous la bannière d'une autre faction jusqu'à la fin de la campagne, mais avec 25 % d'or et d'expérience en moins sur tes gains. Les factions qui dominent la carte refusent les exilés, sauf les Loups de cendre ; l'Église de Seiros en accueille tant qu'elle tient Garreg-Mach. Ta série de missions du jour est gelée, et des missions d'exil te sont réservées. Ceux qui ont combattu avant la chute de leur faction reçoivent une prime d'or et la distinction Vétéran ; le dernier défenseur gagne le titre de Dernier rempart.\n\nLa campagne se termine quand une faction tient tous les territoires (hors territoires annexes) ou qu'il ne reste qu'une faction en jeu. Les factions reçoivent alors des points, les trois meilleurs joueurs une récompense, puis une nouvelle campagne commence.",
-        "en": "You gain 1 action every 10 minutes, up to 6 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 turns to retreat to an allied territory, otherwise they fall.\n\nIf the attack fails against another playable faction, the territory becomes untouchable for 4 hours and its faction gets +25% attack power against neighbouring enemy territories (counter-attack). Those Who Slither In The Dark and The Church of Seiros do not trigger this effect.\n\nA fallen player can come back: by paying 100 gold, by sacrificing one renown level, or by asking an ally to pay. They reappear in their faction's capital, or on one of its territories at random if the capital has fallen.\n\nWith no action left, you can still weigh on a battle with your gold: hire a battalion when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nWhen out, you can take up arms as an Exile under another faction's banner until the end of the campaign, but with 25% less gold and experience on your gains. Factions that dominate the map refuse exiles, except the Ashen Wolves; the Church of Seiros takes them in as long as it holds Garreg-Mach. Your daily mission streak is frozen, and exile missions are reserved for you. Those who fought before their faction fell receive a gold bonus and the Battle-Scarred distinction; the last defender earns the Last Stand title.\n\nThe campaign ends when one faction holds every territory (annex territories aside) or when only one faction is still in play. Factions then receive points, the top three players a reward, and a new campaign begins."
+        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 8 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide. Quand une force écrase l'autre (4 contre 1 ou plus), il n'y a pas de tirage : victoire ou défaite certaine. L'écran de bataille affiche tes chances, ton camp et la force des deux côtés.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 heures pour se replier gratuitement sur un territoire allié, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue, les attaquants restés sur place doivent eux aussi se replier dans les 6 heures, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue contre une autre faction jouable, le territoire devient insaisissable pendant 4 heures et sa faction gagne +25 % de puissance d'attaque sur les territoires ennemis voisins (contre-attaque). Les Serpents des Ténèbres et l'Église de Seiros ne déclenchent pas cet effet.\n\nMis hors de combat, tu n'es pas privé de jeu mais puni : tu es renvoyé à ta capitale (ou sur un de tes territoires si elle est tombée), tu perds 100 or (le double après une attaque ratée), ton stock d'actions est vidé et tes gains sont réduits pendant tes 10 prochaines actions.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager un bataillon en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nSur ton territoire, hors bataille, tu peux construire (1 action et de l'or) : forteresse (+20 % de défense par niveau), marché (+30 % d'or récolté) ou académie (+30 % d'expérience récoltée). Une spécialité par territoire, 3 niveaux (800, 1 600 puis 3 200 or) ; la conquête détruit les constructions.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nHors jeu, tu peux prendre les armes comme Exilé sous la bannière d'une autre faction jusqu'à la fin de la campagne, mais avec 25 % d'or et d'expérience en moins sur tes gains. Les factions qui dominent la carte refusent les exilés, sauf les Loups de cendre ; l'Église de Seiros en accueille tant qu'elle tient Garreg-Mach. Un exilé ne rapporte aucun point à une faction, ni à l'ancienne ni à celle qu'il rejoint : il garde ses gains personnels, plus une prime d'or en fin de campagne s'il s'est battu. Si ta faction est déjà tombée quand tu rejoins la campagne, tu peux t'exiler tout de suite. Ta série de missions du jour est gelée, et des missions d'exil te sont réservées. Ceux qui ont combattu avant la chute de leur faction reçoivent une prime d'or et la distinction Vétéran ; le dernier défenseur gagne le titre de Dernier rempart.",
+        "en": "You gain 1 action every 10 minutes, up to 8 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides. When one force crushes the other (4 to 1 or more), there is no draw: certain victory or defeat. The battle screen shows your odds, your side and both sides' strength.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 hours to retreat for free to an allied territory, otherwise they are knocked out.\n\nIf the attack fails, the attackers who stayed on site must also retreat within 6 hours, otherwise they are knocked out.\n\nIf the attack fails against another playable faction, the territory becomes untouchable for 4 hours and its faction gets +25% attack power against neighbouring enemy territories (counter-attack). Those Who Slither In The Dark and The Church of Seiros do not trigger this effect.\n\nKnocked out, you are not barred from playing but you are punished: you are sent back to your capital (or to one of your territories if it has fallen), you lose 100 gold (double after a failed attack), your action stock is emptied and your gains are reduced for your next 10 actions.\n\nWith no action left, you can still weigh on a battle with your gold: hire a battalion when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nOn your territory, outside battle, you can build (1 action and gold): fortress (+20% defence per level), market (+30% gold gathered) or academy (+30% experience gathered). One speciality per territory, 3 levels (800, 1,600 then 3,200 gold); conquest destroys constructions.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nWhen out, you can take up arms as an Exile under another faction's banner until the end of the campaign, but with 25% less gold and experience on your gains. Factions that dominate the map refuse exiles, except the Ashen Wolves; the Church of Seiros takes them in as long as it holds Garreg-Mach. An Exile earns no points for any faction, neither the old one nor the one joined: they keep their personal gains, plus a gold bonus at the end of the campaign if they fought. If your faction has already fallen when you join the campaign, you can go into exile right away. Your daily mission streak is frozen, and exile missions are reserved for you. Those who fought before their faction fell receive a gold bonus and the Battle-Scarred distinction; the last defender earns the Last Stand title."
+      }
+    },
+    {
+      "title": {
+        "fr": "Généraux",
+        "en": "Generals"
+      },
+      "text": {
+        "fr": "Les généraux sont des personnages du jeu, dirigés par l'ordinateur. Chacun se tient sur son territoire d'origine au début de la campagne et le défend coûte que coûte quand il est attaqué, s'il lui reste assez d'actions. Ils ont 4 actions au maximum (au lieu de 8), une classe avec ses bonus et un niveau de renommée calculé d'après la médiane des joueurs actifs de leur faction, selon leur puissance et leur importance. Les Loups de cendre défendent tous Garreg-Mach ; quelques généraux sont indépendants et défendent leur propre territoire.\n\nUne fois un premier territoire conquis sur la carte, les généraux peuvent aussi partir en sortie contre un territoire ennemi voisin, et n'attaquent qu'une fois par bataille.\n\nUn général n'a qu'une vie par campagne : battu en attaque comme en défense, ou si son territoire d'origine est conquis, il meurt et disparaît de la carte (sauf s'il est épargné, voir plus bas). Ceux qui l'ont vaincu reçoivent de l'or et de la renommée en plus, selon son importance.\n\nCertains généraux peuvent être épargnés, seulement par certaines factions, et une seule fois. Les vainqueurs ont alors 1 heure pour décider : l'épargner (il rejoint leur faction, mais défend toujours son territoire d'origine) ou le faire mourir. Sans décision, il meurt. Un général déjà épargné qui est battu à nouveau meurt.\n\nLes Serpents des Ténèbres ont aussi leurs généraux : un raid sur trois environ est mené par l'un d'eux. Epimenides est toujours le dernier à venir. Une fois tombé, les Serpents ne reviennent plus jusqu'à la fin de la campagne, et la faction qui l'a abattu gagne +15 % de points.",
+        "en": "Generals are game characters controlled by the computer. Each one stands on their home territory at the start of the campaign and defends it at all costs when it is attacked, as long as they have enough actions left. They have at most 4 actions (instead of 8), a class with its bonuses and a renown level computed from the median of their faction's active players, according to their strength and importance. The Ashen Wolves all defend Garreg Mach; a few generals are independent and defend their own territory.\n\nOnce a first territory has been conquered on the map, generals may also sortie against a neighbouring enemy territory, and attack only once per battle.\n\nA general has one life per campaign: beaten, whether attacking or defending, or if their home territory is conquered, they die and vanish from the map (unless spared, see below). Those who defeated them earn extra gold and renown, depending on their importance.\n\nSome generals can be spared, only by certain factions, and only once. The victors then have 1 hour to decide: spare them (they join their faction, but still defend their home territory) or put them to death. With no decision, they die. A general who was already spared and is beaten again dies.\n\nThose Who Slither in the Dark have generals too: roughly one raid in three is led by one of them. Epimenides always comes last. Once fallen, the Serpents do not return until the end of the campaign, and the faction that slew them gains +15% points."
+      }
+    },
+    {
+      "title": {
+        "fr": "Fin de campagne",
+        "en": "End of campaign"
+      },
+      "text": {
+        "fr": "Dans la nuit du lundi au mardi, à minuit (heure de Paris), la campagne se clôt : plus aucune attaque (ni des joueurs, ni des généraux, ni des Serpents), mais on peut encore se déplacer et récolter. Les combats en cours se terminent, puis la fin de campagne est calculée. Une pause suit, et la nouvelle campagne commence le mardi à 4 h : carte, généraux et Serpents sont remis à zéro. Elle peut aussi finir plus tôt : si une faction tient toute la carte (hors annexes) ou est la dernière en jeu.\n\nLa faction qui a le plus de points l'emporte, avec un bonus de victoire. Ses points viennent des territoires tenus, de la part de la carte conquise (par paliers : 25, 50, 75 et 100 %), des survivants, de l'efficacité de ses joueurs (leur score, hors exil), des capitales (la sienne tenue, celles des autres prises) et de son objectif de la semaine. Les Loups de cendre, qui tiennent rarement des territoires, comptent aussi leurs attaques remportées, leurs défenses réussies et leur faible nombre de morts.\n\nAbattre Epimenides donne +15 % de points à la faction qui y parvient.\n\nTous les participants voient le résultat dans une fenêtre, dès la fin de la campagne ou à leur prochaine connexion. Les trois meilleurs joueurs reçoivent une récompense (et le meilleur le titre de MVP), les exilés qui se sont battus une prime d'or.\n\nToutes les 4 campagnes, une saison se termine : le Panthéon (menu) garde les podiums, la faction victorieuse de la saison et ses champions reçoivent des titres.",
+        "en": "On the night from Monday to Tuesday, at midnight (Paris time), the campaign closes: no more attacks (from players, generals or the Serpents), but you can still move and gather. Ongoing battles finish, then the end of the campaign is computed. A pause follows, and the new campaign starts on Tuesday at 4 am: map, generals and Serpents are reset. It can also end sooner: if a faction holds the whole map (annexes aside) or is the last one in play.\n\nThe faction with the most points wins, with a victory bonus. Its points come from territories held, the share of the map conquered (in steps: 25, 50, 75 and 100%), survivors, the efficiency of its players (their score, exile excluded), capitals (its own held, others' taken) and its objective of the week. The Ashen Wolves, who rarely hold territories, also count their attacks won, successful defences and low number of deaths.\n\nSlaying Epimenides gives +15% points to the faction that does it.\n\nEvery participant sees the result in a window, as soon as the campaign ends or at their next login. The top three players receive a reward (and the best one the MVP title), and exiles who fought a gold bonus.\n\nEvery 4 campaigns a season ends: the Pantheon (menu) keeps the podiums, and the season-winning faction and its champions receive titles."
+      }
+    },
+    {
+      "title": {
+        "fr": "Seigneurs et objectifs",
+        "en": "Lords and objectives"
+      },
+      "text": {
+        "fr": "Chaque faction a un seigneur : Edelgard, Dimitri, Claude et Yuri. Chaque action de combat de la faction (et chaque bataille gagnée) remplit la jauge de son seigneur. Quand elle est pleine, la capacité du seigneur s'active pour 2 heures, pour toute la faction :\n• Edelgard (Aigles de jais) : +12 % de puissance d'attaque.\n• Dimitri (Lions de saphir) : +15 % de puissance de défense.\n• Claude (Cerfs d'or) : renforts et fortifications à moitié prix.\n• Yuri (Loups de cendre) : +10 % de puissance en attaque comme en défense.\nPendant l'effet, la jauge ne monte pas.\n\nChaque campagne, chaque faction reçoit aussi un objectif de la semaine (conquérir des territoires, repousser des attaques, tenir une part de la carte, vaincre des généraux, prendre une capitale…). L'atteindre rapporte des points à la faction et de l'or à ses participants.",
+        "en": "Each faction has a lord: Edelgard, Dimitri, Claude and Yuri. Every combat action of the faction (and every battle won) fills its lord's gauge. When it is full, the lord's ability is active for 2 hours, for the whole faction:\n• Edelgard (Black Eagles): +12% attack power.\n• Dimitri (Blue Lions): +15% defence power.\n• Claude (Golden Deer): reinforcements and fortifications at half price.\n• Yuri (Ashen Wolves): +10% power in attack and defence.\nDuring the effect, the gauge does not rise.\n\nEvery campaign, each faction also gets an objective of the week (conquer territories, repel attacks, hold a share of the map, defeat generals, take a capital…). Achieving it earns points for the faction and gold for its participants."
+      }
+    },
+    {
+      "title": {
+        "fr": "Coordination",
+        "en": "Coordination"
+      },
+      "text": {
+        "fr": "Signalements : sur un territoire, « Signaler à ma faction » envoie un marqueur visible de tes alliés pendant 30 minutes : À l'attaque !, Défendons !, Danger, En chemin ou Regroupement. Un signalement actif par joueur, et une minute d'attente entre deux.\n\nJournal du monde : tu peux réagir à l'action d'un allié (jamais à la tienne), une fois par événement et 10 fois par jour pour chaque réaction : 👏 féliciter un territoire pris ou défendu (+10 xp pour toi), 💪 soutenir une attaque en cours (+10 or pour l'allié), 🤝 envoyer de l'aide après un appel (+1 point de chances pour son camp).\n\nPremiers pas : un petit parcours de 7 étapes t'accompagne la première heure ; l'accomplir rapporte une récompense.",
+        "en": "Signals: on a territory, \"Signal to my faction\" sends a marker visible to your allies for 30 minutes: Attack!, Let's defend!, Danger, On my way or Regroup. One active signal per player, and a one-minute wait between two.\n\nWorld journal: you can react to an ally's action (never your own), once per event and 10 times a day for each reaction: 👏 cheer a territory taken or defended (+10 xp for you), 💪 support an attack in progress (+10 gold for the ally), 🤝 send help after a call (+1 point of chance for their side).\n\nFirst steps: a short 7-step course guides you through the first hour; completing it earns a reward."
       }
     }
   ],
@@ -418,12 +458,12 @@
         {
           "kind": "power",
           "side": "defense",
-          "pct": 5
+          "pct": 10
         }
       ],
       "effectText": {
-        "fr": "+5 % de pouvoir de défense.",
-        "en": "+5% defence power."
+        "fr": "+10 % de pouvoir de défense.",
+        "en": "+10% defence power."
       }
     },
     {
@@ -716,12 +756,12 @@
         {
           "kind": "power",
           "side": "defense",
-          "pct": 10
+          "pct": 15
         }
       ],
       "effectText": {
-        "fr": "+10 % de pouvoir de défense.",
-        "en": "+10% defence power."
+        "fr": "+15 % de pouvoir de défense.",
+        "en": "+15% defence power."
       }
     },
     {
@@ -1262,6 +1302,90 @@
         "fr": "+1 % de pouvoir d'attaque ou de défense par territoire pris ou défense réussie de sa faction dans la campagne en cours (maximum +50 %). Une fois par bataille, rejoint sans dépenser d'action le territoire ennemi voisin où sa faction attaque.",
         "en": "+1% attack or defence power for each territory taken or successful defence by its faction in the current campaign (maximum +50%). Once per battle, joins without spending an action the neighbouring enemy territory where its faction is attacking."
       }
+    },
+    {
+      "id": "emperor",
+      "tier": "legendary",
+      "requires": [
+        "great-knight"
+      ],
+      "npc": true,
+      "name": {
+        "fr": "Empereur",
+        "en": "Emperor"
+      },
+      "description": {
+        "fr": "Classe légendaire, réservée aux seigneurs.",
+        "en": "Legendary class, reserved for lords."
+      },
+      "icon": "assets/classes/legendary/emperor.webp",
+      "effects": [
+        {
+          "kind": "power",
+          "side": "defense",
+          "pct": 45
+        }
+      ],
+      "effectText": {
+        "fr": "+45 % de puissance de défense.",
+        "en": "+45% defence power."
+      }
+    },
+    {
+      "id": "great-lord",
+      "tier": "legendary",
+      "requires": [
+        "great-knight"
+      ],
+      "npc": true,
+      "name": {
+        "fr": "Grand Seigneur",
+        "en": "Great Lord"
+      },
+      "description": {
+        "fr": "Classe légendaire, réservée aux seigneurs.",
+        "en": "Legendary class, reserved for lords."
+      },
+      "icon": "assets/classes/legendary/great_lord.webp",
+      "effects": [
+        {
+          "kind": "power",
+          "side": "defense",
+          "pct": 45
+        }
+      ],
+      "effectText": {
+        "fr": "+45 % de puissance de défense.",
+        "en": "+45% defence power."
+      }
+    },
+    {
+      "id": "barbarossa",
+      "tier": "legendary",
+      "requires": [
+        "bow-knight"
+      ],
+      "npc": true,
+      "name": {
+        "fr": "Barbarossa",
+        "en": "Barbarossa"
+      },
+      "description": {
+        "fr": "Classe légendaire, réservée aux seigneurs.",
+        "en": "Legendary class, reserved for lords."
+      },
+      "icon": "assets/classes/legendary/barbarossa.webp",
+      "effects": [
+        {
+          "kind": "power",
+          "side": "defense",
+          "pct": 45
+        }
+      ],
+      "effectText": {
+        "fr": "+45 % de puissance de défense.",
+        "en": "+45% defence power."
+      }
     }
   ],
   "factions": [
@@ -1788,10 +1912,10 @@
   },
   "campaign": {
     "turnMinutes": 10,
-    "maxActions": 6,
-    "startActions": 6,
+    "maxActions": 8,
+    "startActions": 8,
     "battleTurns": 6,
-    "retreatTurns": 6,
+    "retreatTurns": 36,
     "capitals": {
       "rouge": "hresvelg",
       "bleue": "blaiddyd",
@@ -1848,11 +1972,7 @@
       }
     },
     "points": {
-      "win": 100,
-      "territory": 10,
-      "survivor": 5,
-      "loserTerritory": 2,
-      "loserSurvivor": 3
+      "win": 100
     },
     "cadenceGold": 10,
     "hire": {
@@ -1861,7 +1981,8 @@
       "perBattle": 2
     },
     "revive": {
-      "gold": 100
+      "gold": 100,
+      "attackerMultiplier": 2
     },
     "ranking": {
       "combat": 10,
@@ -1881,7 +2002,8 @@
         "outnumberedMax": 3,
         "rewardMultiplier": 2,
         "pointsMultiplier": 3,
-        "hiddenAtBase": true
+        "hiddenAtBase": true,
+        "efficiency": true
       }
     },
     "exile": {
@@ -1915,6 +2037,456 @@
     },
     "guardians": {
       "violette": "eglise"
+    },
+    "schedule": {
+      "weekday": 2,
+      "hour": 0,
+      "minute": 0,
+      "reopenHour": 4,
+      "reopenDayOffset": 0,
+      "timezone": "Europe/Paris"
+    },
+    "finale": {
+      "territory": 10,
+      "mapBonus": [
+        {
+          "pct": 25,
+          "points": 30
+        },
+        {
+          "pct": 50,
+          "points": 80
+        },
+        {
+          "pct": 75,
+          "points": 150
+        },
+        {
+          "pct": 100,
+          "points": 300
+        }
+      ],
+      "survivor": 3,
+      "activityRatio": 0.05,
+      "efficiency": {
+        "attackWon": 5,
+        "defenseWon": 5,
+        "lowDeaths": {
+          "max": 80,
+          "deathsPerPlayer": 3
+        }
+      },
+      "exile": {
+        "gold": 150
+      },
+      "capitalOwn": 40,
+      "capitalEnemy": 60
+    },
+    "keyTerritory": "garreg-mach",
+    "reactions": {
+      "cheerXp": 10,
+      "supportGold": 10,
+      "helpPct": 1,
+      "dailyCap": 10
+    },
+    "missions": [
+      {
+        "id": "c-conquest",
+        "title": {
+          "fr": "Conquérant",
+          "en": "Conqueror"
+        },
+        "description": {
+          "fr": "Conquérir 3 territoires avec succès.",
+          "en": "Successfully conquer 3 territories."
+        },
+        "condition": {
+          "event": "conquest",
+          "count": 3
+        },
+        "rewards": {
+          "gold": 400,
+          "xp": 150
+        }
+      },
+      {
+        "id": "c-defense",
+        "title": {
+          "fr": "Rempart",
+          "en": "Bulwark"
+        },
+        "description": {
+          "fr": "Défendre 3 territoires avec succès.",
+          "en": "Successfully defend 3 territories."
+        },
+        "condition": {
+          "event": "defense",
+          "count": 3
+        },
+        "rewards": {
+          "gold": 300,
+          "xp": 120
+        }
+      },
+      {
+        "id": "c-retake",
+        "title": {
+          "fr": "Reconquête",
+          "en": "Reconquest"
+        },
+        "description": {
+          "fr": "Reprendre un territoire d'origine de ta faction qui avait été conquis.",
+          "en": "Retake one of your faction's original territories that had been conquered."
+        },
+        "condition": {
+          "event": "retake",
+          "count": 1
+        },
+        "rewards": {
+          "gold": 400,
+          "xp": 150
+        }
+      },
+      {
+        "id": "c-annex",
+        "title": {
+          "fr": "Aux confins",
+          "en": "Beyond the borders"
+        },
+        "description": {
+          "fr": "Conquérir un territoire annexe.",
+          "en": "Conquer an annex territory."
+        },
+        "condition": {
+          "event": "annex_conquest",
+          "count": 1
+        },
+        "rewards": {
+          "gold": 300,
+          "xp": 100
+        }
+      },
+      {
+        "id": "c-general",
+        "title": {
+          "fr": "Chasseur de généraux",
+          "en": "General hunter"
+        },
+        "description": {
+          "fr": "Vaincre un général.",
+          "en": "Defeat a general."
+        },
+        "condition": {
+          "event": "general",
+          "count": 1
+        },
+        "rewards": {
+          "gold": 400,
+          "xp": 150
+        }
+      },
+      {
+        "id": "c-spare",
+        "title": {
+          "fr": "Clémence",
+          "en": "Mercy"
+        },
+        "description": {
+          "fr": "Épargner un général vaincu.",
+          "en": "Spare a defeated general."
+        },
+        "condition": {
+          "event": "spare",
+          "count": 1
+        },
+        "rewards": {
+          "gold": 250,
+          "xp": 100
+        }
+      },
+      {
+        "id": "c-garreg",
+        "title": {
+          "fr": "Le monastère",
+          "en": "The monastery"
+        },
+        "description": {
+          "fr": "Conquérir Garreg-Mach.",
+          "en": "Conquer Garreg Mach."
+        },
+        "condition": {
+          "event": "garreg_conquest",
+          "count": 1
+        },
+        "rewards": {
+          "gold": 1500,
+          "xp": 600
+        }
+      }
+    ],
+    "wound": {
+      "actions": 10
+    },
+    "decisive": 0.8,
+    "capital": {
+      "lossPct": 10
+    },
+    "build": {
+      "maxLevel": 3,
+      "costs": [
+        800,
+        1600,
+        3200
+      ],
+      "specs": {
+        "fortress": {
+          "defensePct": 20,
+          "name": {
+            "fr": "Forteresse",
+            "en": "Fortress"
+          },
+          "description": {
+            "fr": "+20 % de défense par niveau.",
+            "en": "+20% defence per level."
+          }
+        },
+        "market": {
+          "goldPct": 30,
+          "name": {
+            "fr": "Marché",
+            "en": "Market"
+          },
+          "description": {
+            "fr": "+30 % d'or récolté par niveau.",
+            "en": "+30% gold gathered per level."
+          }
+        },
+        "academy": {
+          "xpPct": 30,
+          "name": {
+            "fr": "Académie",
+            "en": "Academy"
+          },
+          "description": {
+            "fr": "+30 % d'expérience récoltée par niveau.",
+            "en": "+30% experience gathered per level."
+          }
+        }
+      }
+    },
+    "gauge": {
+      "perAction": 1,
+      "perWin": 5,
+      "max": 120
+    },
+    "lords": {
+      "rouge": {
+        "id": "edelgard",
+        "ability": {
+          "title": {
+            "fr": "Ambition impériale",
+            "en": "Imperial ambition"
+          },
+          "description": {
+            "fr": "+12 % de puissance d'attaque pour toute la faction.",
+            "en": "+12% attack power for the whole faction."
+          },
+          "minutes": 120,
+          "effect": {
+            "kind": "power",
+            "side": "attack",
+            "pct": 12
+          }
+        }
+      },
+      "bleue": {
+        "id": "dimitri",
+        "ability": {
+          "title": {
+            "fr": "Honneur du Royaume",
+            "en": "Honour of the Kingdom"
+          },
+          "description": {
+            "fr": "+15 % de puissance de défense pour toute la faction.",
+            "en": "+15% defence power for the whole faction."
+          },
+          "minutes": 120,
+          "effect": {
+            "kind": "power",
+            "side": "defense",
+            "pct": 15
+          }
+        }
+      },
+      "jaune": {
+        "id": "claude",
+        "ability": {
+          "title": {
+            "fr": "Stratège de Leicester",
+            "en": "Leicester strategist"
+          },
+          "description": {
+            "fr": "Renforts et fortifications à moitié prix.",
+            "en": "Reinforcements and fortifications at half price."
+          },
+          "minutes": 120,
+          "effect": {
+            "kind": "hireCost",
+            "pct": 50
+          }
+        }
+      },
+      "violette": {
+        "id": "yuri",
+        "ability": {
+          "title": {
+            "fr": "Dans l'Abysse",
+            "en": "In the Abyss"
+          },
+          "description": {
+            "fr": "+10 % de puissance en attaque comme en défense.",
+            "en": "+10% power in attack and defence."
+          },
+          "minutes": 120,
+          "effect": {
+            "kind": "power",
+            "side": "both",
+            "pct": 10
+          }
+        }
+      }
+    },
+    "objectives": [
+      {
+        "id": "obj-conquests",
+        "type": "conquests",
+        "title": {
+          "fr": "Offensive générale",
+          "en": "General offensive"
+        },
+        "description": {
+          "fr": "Conquérir 6 territoires pendant la campagne.",
+          "en": "Conquer 6 territories during the campaign."
+        },
+        "points": 80,
+        "gold": 200,
+        "target": 6
+      },
+      {
+        "id": "obj-defenses",
+        "type": "defenses",
+        "title": {
+          "fr": "Mur de boucliers",
+          "en": "Shield wall"
+        },
+        "description": {
+          "fr": "Repousser 5 attaques pendant la campagne.",
+          "en": "Repel 5 attacks during the campaign."
+        },
+        "points": 80,
+        "gold": 200,
+        "target": 5
+      },
+      {
+        "id": "obj-pct",
+        "type": "pct",
+        "title": {
+          "fr": "Domination",
+          "en": "Domination"
+        },
+        "description": {
+          "fr": "Tenir au moins 35 % de la carte à la fin de la campagne.",
+          "en": "Hold at least 35% of the map at the end of the campaign."
+        },
+        "points": 100,
+        "gold": 250,
+        "target": 35
+      },
+      {
+        "id": "obj-generals",
+        "type": "generals",
+        "title": {
+          "fr": "Chasse aux généraux",
+          "en": "General hunt"
+        },
+        "description": {
+          "fr": "Vaincre 2 généraux pendant la campagne.",
+          "en": "Defeat 2 generals during the campaign."
+        },
+        "points": 90,
+        "gold": 200,
+        "target": 2
+      },
+      {
+        "id": "obj-annex",
+        "type": "annex",
+        "title": {
+          "fr": "Aux frontières",
+          "en": "At the borders"
+        },
+        "description": {
+          "fr": "Conquérir 2 territoires annexes.",
+          "en": "Conquer 2 annex territories."
+        },
+        "points": 70,
+        "gold": 150,
+        "target": 2
+      },
+      {
+        "id": "obj-capital",
+        "type": "capital",
+        "title": {
+          "fr": "Coup à la tête",
+          "en": "Decapitation strike"
+        },
+        "description": {
+          "fr": "Prendre la capitale d'une autre faction.",
+          "en": "Take another faction's capital."
+        },
+        "points": 120,
+        "gold": 300,
+        "target": 1,
+        "factions": [
+          "rouge",
+          "bleue",
+          "jaune"
+        ]
+      },
+      {
+        "id": "obj-garreg",
+        "type": "hold",
+        "title": {
+          "fr": "Le monastère",
+          "en": "The monastery"
+        },
+        "description": {
+          "fr": "Tenir Garreg-Mach à la fin de la campagne.",
+          "en": "Hold Garreg Mach at the end of the campaign."
+        },
+        "points": 150,
+        "gold": 300,
+        "factions": [
+          "rouge",
+          "bleue",
+          "jaune"
+        ],
+        "territory": "garreg-mach"
+      }
+    ],
+    "pings": {
+      "kinds": [
+        "attack",
+        "defend",
+        "danger",
+        "onmyway",
+        "regroup"
+      ],
+      "minutes": 30,
+      "cooldownSeconds": 60,
+      "max": 15
+    },
+    "season": {
+      "campaigns": 4
     }
   },
   "daily": {
@@ -2063,9 +2635,188 @@
         "en": "Fought until its faction fell."
       },
       "avatar": "avatar_42.webp"
+    },
+    {
+      "id": "campaign_mvp",
+      "name": {
+        "fr": "MVP de campagne",
+        "en": "Campaign MVP"
+      },
+      "description": {
+        "fr": "Meilleur score individuel d'une campagne.",
+        "en": "Best individual score of a campaign."
+      }
+    },
+    {
+      "id": "season_champion",
+      "name": {
+        "fr": "Champion de saison",
+        "en": "Season champion"
+      },
+      "description": {
+        "fr": "Dans le trio de tête d'une saison.",
+        "en": "In a season's top three."
+      }
+    },
+    {
+      "id": "season_victor",
+      "name": {
+        "fr": "Faction victorieuse de la saison",
+        "en": "Season-winning faction"
+      },
+      "description": {
+        "fr": "A fait partie de la faction qui a remporté une saison.",
+        "en": "Was part of the faction that won a season."
+      }
     }
   ],
   "patches": [
+    {
+      "id": "1.4",
+      "date": "2026-11-19",
+      "title": {
+        "fr": "Patch 1.4",
+        "en": "Patch 1.4"
+      },
+      "intro": {
+        "fr": "Les généraux entrent en scène, les campagnes ont un rythme hebdomadaire, la guerre gagne en profondeur et le jeu te prévient quand il faut revenir.",
+        "en": "Generals take the stage, campaigns follow a weekly rhythm, war gains depth and the game tells you when to come back."
+      },
+      "sections": [
+        {
+          "title": {
+            "fr": "Généraux",
+            "en": "Generals"
+          },
+          "items": [
+            {
+              "fr": "Les personnages du jeu apparaissent sur la carte comme généraux, dirigés par l'IA : chacun garde son territoire d'origine et le défend coûte que coûte.",
+              "en": "Game characters now appear on the map as AI-controlled generals: each keeps their home territory and defends it at all costs."
+            },
+            {
+              "fr": "Ils ont 4 actions, une classe avec ses bonus et un niveau de renommée tiré de la médiane des joueurs actifs de leur faction, selon leur importance. Une fois un territoire conquis, ils peuvent partir en sortie.",
+              "en": "They have 4 actions, a class with its bonuses and a renown level drawn from the median of their faction's active players, depending on their importance. Once a territory has been conquered, they may sortie."
+            },
+            {
+              "fr": "Un général n'a qu'une vie : battu, ou si son territoire d'origine est conquis, il meurt. Les vainqueurs gagnent de l'or et de la renommée en plus.",
+              "en": "A general has one life: once beaten, or if their home territory is conquered, they die. The victors earn extra gold and renown."
+            },
+            {
+              "fr": "Certains peuvent être épargnés une fois, par certaines factions : à vous de choisir de l'épargner (il rejoint votre faction et défend toujours son territoire d'origine) ou de le faire mourir.",
+              "en": "Some can be spared once, by certain factions: you choose to spare them (they join your faction and still defend their home territory) or put them to death."
+            },
+            {
+              "fr": "Les Serpents des Ténèbres ont leurs généraux : environ un raid sur trois est mené par l'un d'eux, et Epimenides, toujours le dernier, met fin aux raids pour la campagne et donne +15 % de points à ceux qui l'abattent.",
+              "en": "Those Who Slither in the Dark have generals: about one raid in three is led by one, and Epimenides, always last, ends the raids for the campaign and gives +15% points to those who slay him."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Combat",
+            "en": "Combat"
+          },
+          "items": [
+            {
+              "fr": "Réserve d'actions portée de 6 à 8. Chevalier blindé : +10 % de défense (au lieu de +5 %). Chevalier forteresse : +15 % (au lieu de +10 %).",
+              "en": "Action reserve raised from 6 to 8. Armored Knight: +10% defence (instead of +5%). Fortress Knight: +15% (instead of +10%)."
+            },
+            {
+              "fr": "Repli plus long : 6 heures pour se replier, y compris après une attaque ratée. Sans repli à temps, tu n'es plus privé de jeu : renvoyé à la capitale, tu perds de l'or (le double après une attaque ratée), tes actions et une part de tes gains pendant 10 actions.",
+              "en": "Longer retreat: 6 hours to retreat, including after a failed attack. Without a timely retreat you are no longer barred from playing: sent back to the capital, you lose gold (double after a failed attack), your actions and part of your gains for 10 actions."
+            },
+            {
+              "fr": "Victoire écrasante : à 4 contre 1 ou plus, l'issue est certaine. L'écran de bataille montre tes chances, la force des deux camps et un libellé clair.",
+              "en": "Overwhelming victory: at 4 to 1 or more, the outcome is certain. The battle screen shows your odds, both sides' strength and a clear label."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Stratégie",
+            "en": "Strategy"
+          },
+          "items": [
+            {
+              "fr": "Les capitales ont une couronne sur la carte. Perdre la sienne coûte 10 % de puissance jusqu'à sa reprise ; en fin de campagne, tenir la sienne et prendre celles des autres rapporte des points.",
+              "en": "Capitals have a crown on the map. Losing yours costs 10% power until it is retaken; at the end of the campaign, holding yours and taking the others' earns points."
+            },
+            {
+              "fr": "Construire sur ses territoires : forteresse (défense), marché (or récolté) ou académie (expérience récoltée), 3 niveaux par territoire, détruits à la conquête.",
+              "en": "Build on your territories: fortress (defence), market (gold gathered) or academy (experience gathered), 3 levels per territory, destroyed on conquest."
+            },
+            {
+              "fr": "Capacités des seigneurs : la jauge de ta faction se remplit en combattant ; pleine, Edelgard, Dimitri, Claude ou Yuri offre un bonus à toute la faction pendant 2 heures.",
+              "en": "Lords' abilities: your faction's gauge fills as you fight; when full, Edelgard, Dimitri, Claude or Yuri grants a bonus to the whole faction for 2 hours."
+            },
+            {
+              "fr": "Objectif de la semaine : chaque faction en reçoit un, avec points et or à la clé.",
+              "en": "Objective of the week: each faction receives one, with points and gold at stake."
+            },
+            {
+              "fr": "Signalements de faction : « À l'attaque ! », « Défendons ! », « Danger », « En chemin », « Regroupement », visibles 30 minutes sur la carte.",
+              "en": "Faction signals: \"Attack!\", \"Let's defend!\", \"Danger\", \"On my way\", \"Regroup\", visible on the map for 30 minutes."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Campagne",
+            "en": "Campaign"
+          },
+          "items": [
+            {
+              "fr": "Dans la nuit du lundi au mardi, à minuit (heure de Paris), la campagne se clôt : plus aucune attaque, les combats en cours se terminent, puis la faction qui a le plus de points l'emporte. La suivante commence le mardi à 4 h.",
+              "en": "On the night from Monday to Tuesday, at midnight (Paris time), the campaign closes: no more attacks, ongoing battles finish, then the faction with the most points wins. The next one starts on Tuesday at 4 am."
+            },
+            {
+              "fr": "Bonus de fin de campagne : part de la carte, survivants, efficacité des joueurs, capitales, objectif de faction, et pour les Loups de cendre les attaques remportées, les défenses réussies et le faible nombre de morts.",
+              "en": "End-of-campaign bonuses: share of the map, survivors, player efficiency, capitals, faction objective, and for the Ashen Wolves attacks won, successful defences and few deaths."
+            },
+            {
+              "fr": "Une fenêtre de résultat s'affiche à chaque participant, dès la fin de la campagne ou à sa prochaine connexion.",
+              "en": "A result window is shown to every participant, as soon as the campaign ends or at their next login."
+            },
+            {
+              "fr": "Missions de campagne : 7 objectifs remis à zéro à chaque campagne.",
+              "en": "Campaign missions: 7 objectives reset every campaign."
+            },
+            {
+              "fr": "Exil : un joueur qui rejoint la campagne alors que sa faction est déjà tombée peut s'exiler aussitôt. Les exilés ne rapportent plus de points à une faction, mais touchent une prime d'or s'ils se sont battus.",
+              "en": "Exile: a player who joins the campaign when their faction has already fallen can go into exile right away. Exiles no longer earn points for a faction, but receive a gold bonus if they fought."
+            },
+            {
+              "fr": "Panthéon : podium de chaque campagne, saison de 4 campagnes avec ses meilleurs joueurs, titres de MVP, de champion de saison et de faction victorieuse.",
+              "en": "Pantheon: podium of every campaign, 4-campaign seasons with their best players, MVP, season champion and winning faction titles."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Vie du jeu",
+            "en": "Quality of life"
+          },
+          "items": [
+            {
+              "fr": "Notifications push (menu) : réserve d'actions pleine, territoire attaqué ou repli nécessaire, appel à l'aide, résultat de campagne, général à juger. Jamais la nuit, jamais en rafale, et chaque type se règle.",
+              "en": "Push notifications (menu): action reserve full, territory attacked or retreat needed, call for help, campaign result, general to judge. Never at night, never in bursts, and each type is adjustable."
+            },
+            {
+              "fr": "Journal du monde : noms de faction colorés, et réactions aux actions d'un allié : féliciter (+10 xp), soutenir (+10 or pour l'allié), envoyer de l'aide (+1 % de chances), dans la limite de 10 par jour.",
+              "en": "World journal: coloured faction names, and reactions to an ally's actions: cheer (+10 xp), support (+10 gold for the ally), send help (+1% chance), up to 10 a day."
+            },
+            {
+              "fr": "« Mon impact » : ce que tu as accompli dans la campagne et à vie. Parcours « Premiers pas » pour bien commencer.",
+              "en": "\"My impact\": what you accomplished in the campaign and lifetime. A \"First steps\" course to get started."
+            },
+            {
+              "fr": "Messages temporaires en haut de l'écran, détail des territoires plus compact avec les généraux, repères mieux centrés, carte zoomée sur ta position, drapeau de nation sur la bannière, pas de zoom au double tap.",
+              "en": "Temporary messages at the top of the screen, more compact territory details showing generals, better-centred markers, map zoomed on your position, nation flag on the banner, no double-tap zoom."
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "1.3",
       "date": "2026-11-17",
@@ -2360,5 +3111,801 @@
         }
       ]
     }
-  ]
+  ],
+  "generals": {
+    "actions": 4,
+    "level": {
+      "min": 1,
+      "base": 0.5,
+      "perCoef": 0.25,
+      "activeDays": 7
+    },
+    "reward": {
+      "gold": 120,
+      "xp": 50
+    },
+    "attackChance": 0.03,
+    "maxSorties": 2,
+    "verdictTurns": 6,
+    "serpents": {
+      "chance": 0.3,
+      "finalBoss": "epimenides",
+      "pointsBonus": 0.15
+    },
+    "roster": [
+      {
+        "id": "yuri",
+        "name": "Yuri",
+        "faction": "violette",
+        "home": "garreg-mach",
+        "path": [
+          "myrmidon",
+          "thief",
+          "assassin",
+          "trickster"
+        ],
+        "coef": 3,
+        "spare": [
+          "rouge",
+          "bleue",
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/ashen_wolves/yuri.webp"
+      },
+      {
+        "id": "constance",
+        "name": "Constance",
+        "faction": "violette",
+        "home": "garreg-mach",
+        "path": [
+          "monk",
+          "priest",
+          "bishop",
+          "gremory"
+        ],
+        "coef": 2,
+        "spare": [
+          "rouge",
+          "bleue",
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/ashen_wolves/constance.webp"
+      },
+      {
+        "id": "hapi",
+        "name": "Hapi",
+        "faction": "violette",
+        "home": "garreg-mach",
+        "path": [
+          "monk",
+          "mage",
+          "warlock",
+          "dark-knight"
+        ],
+        "coef": 2,
+        "spare": [
+          "rouge",
+          "bleue",
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/ashen_wolves/hapi.webp"
+      },
+      {
+        "id": "balthus",
+        "name": "Balthus",
+        "faction": "violette",
+        "home": "garreg-mach",
+        "path": [
+          "fighter",
+          "brawler",
+          "grappler",
+          "war-master"
+        ],
+        "coef": 2,
+        "spare": [
+          "rouge",
+          "bleue",
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/ashen_wolves/balthus.webp"
+      },
+      {
+        "id": "edelgard",
+        "name": "Edelgard",
+        "faction": "rouge",
+        "home": "hresvelg",
+        "path": [
+          "soldier",
+          "armored-knight",
+          "fortress-knight",
+          "great-knight",
+          "emperor"
+        ],
+        "coef": 2,
+        "spare": [],
+        "avatar": "assets/characters/black_eagles/edelgard.webp"
+      },
+      {
+        "id": "hubert",
+        "name": "Hubert",
+        "faction": "rouge",
+        "home": "hresvelg",
+        "path": [
+          "monk",
+          "mage",
+          "dark-mage"
+        ],
+        "coef": 1,
+        "spare": [],
+        "avatar": "assets/characters/black_eagles/hubert.webp"
+      },
+      {
+        "id": "bernadetta",
+        "name": "Bernadetta",
+        "faction": "rouge",
+        "home": "varley",
+        "path": [
+          "fighter",
+          "archer"
+        ],
+        "coef": 1,
+        "spare": [
+          "bleue",
+          "violette"
+        ],
+        "avatar": "assets/characters/black_eagles/bernadetta.webp"
+      },
+      {
+        "id": "caspar",
+        "name": "Caspar",
+        "faction": "rouge",
+        "home": "bergliez",
+        "path": [
+          "fighter",
+          "brigand",
+          "warrior"
+        ],
+        "coef": 1,
+        "spare": [],
+        "avatar": "assets/characters/black_eagles/caspar.webp"
+      },
+      {
+        "id": "dorothea",
+        "name": "Dorothea",
+        "faction": "rouge",
+        "home": "hresvelg",
+        "path": [
+          "myrmidon",
+          "mercenary",
+          "swordsmaster",
+          "dancer"
+        ],
+        "coef": 0.5,
+        "spare": [
+          "bleue",
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/black_eagles/dorothea.webp"
+      },
+      {
+        "id": "ferdinand",
+        "name": "Ferdinand",
+        "faction": "rouge",
+        "home": "aegir",
+        "path": [
+          "soldier",
+          "cavalier",
+          "paladin"
+        ],
+        "coef": 1,
+        "spare": [
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/black_eagles/ferdinand.webp"
+      },
+      {
+        "id": "jeritza",
+        "name": "Jeritza",
+        "faction": "rouge",
+        "home": "essar",
+        "path": [
+          "soldier",
+          "cavalier",
+          "paladin",
+          "dark-knight"
+        ],
+        "coef": 1,
+        "spare": [
+          "violette"
+        ],
+        "avatar": "assets/characters/black_eagles/jeritza.webp"
+      },
+      {
+        "id": "linhardt",
+        "name": "Linhardt",
+        "faction": "rouge",
+        "home": "hevring",
+        "path": [
+          "monk",
+          "priest",
+          "bishop"
+        ],
+        "coef": 1,
+        "spare": [
+          "bleue",
+          "violette"
+        ],
+        "avatar": "assets/characters/black_eagles/linhardt.webp"
+      },
+      {
+        "id": "manuela",
+        "name": "Manuela",
+        "faction": "rouge",
+        "home": "hresvelg",
+        "path": [
+          "myrmidon",
+          "thief",
+          "assassin"
+        ],
+        "coef": 0.5,
+        "spare": [
+          "bleue",
+          "jaune"
+        ],
+        "avatar": "assets/characters/black_eagles/manuela.webp"
+      },
+      {
+        "id": "monica",
+        "name": "Monica",
+        "faction": "rouge",
+        "home": "ochs",
+        "path": [
+          "monk",
+          "mage",
+          "warlock"
+        ],
+        "coef": 1,
+        "spare": [],
+        "avatar": "assets/characters/black_eagles/monica.webp"
+      },
+      {
+        "id": "dimitri",
+        "name": "Dimitri",
+        "faction": "bleue",
+        "home": "blaiddyd",
+        "path": [
+          "soldier",
+          "cavalier",
+          "paladin",
+          "great-knight",
+          "great-lord"
+        ],
+        "coef": 3,
+        "spare": [],
+        "avatar": "assets/characters/blue_lions/dimitri.webp"
+      },
+      {
+        "id": "dedue",
+        "name": "Dedue",
+        "faction": "bleue",
+        "home": "blaiddyd",
+        "path": [
+          "soldier",
+          "armored-knight",
+          "fortress-knight",
+          "great-knight"
+        ],
+        "coef": 2,
+        "spare": [],
+        "avatar": "assets/characters/blue_lions/dedue.webp"
+      },
+      {
+        "id": "annette",
+        "name": "Annette",
+        "faction": "bleue",
+        "home": "dominic",
+        "path": [
+          "monk",
+          "priest"
+        ],
+        "coef": 2,
+        "spare": [],
+        "avatar": "assets/characters/blue_lions/annette.webp"
+      },
+      {
+        "id": "ashe",
+        "name": "Ashe",
+        "faction": "bleue",
+        "home": "rowe",
+        "path": [
+          "fighter",
+          "archer",
+          "sniper",
+          "bow-knight"
+        ],
+        "coef": 1,
+        "spare": [
+          "jaune",
+          "rouge",
+          "violette"
+        ],
+        "avatar": "assets/characters/blue_lions/ashe.webp"
+      },
+      {
+        "id": "felix",
+        "name": "Felix",
+        "faction": "bleue",
+        "home": "fraldarius",
+        "path": [
+          "myrmidon",
+          "thief",
+          "assassin"
+        ],
+        "coef": 2,
+        "spare": [],
+        "avatar": "assets/characters/blue_lions/felix.webp"
+      },
+      {
+        "id": "ingrid",
+        "name": "Ingrid",
+        "faction": "bleue",
+        "home": "galatea",
+        "path": [
+          "soldier",
+          "pegasus-knight"
+        ],
+        "coef": 2,
+        "spare": [
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/blue_lions/ingrid.webp"
+      },
+      {
+        "id": "mercedes",
+        "name": "Mercedes",
+        "faction": "bleue",
+        "home": "elidure",
+        "path": [
+          "monk",
+          "priest"
+        ],
+        "coef": 2,
+        "spare": [
+          "rouge",
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/blue_lions/mercedes.webp"
+      },
+      {
+        "id": "rodrigue",
+        "name": "Rodrigue",
+        "faction": "bleue",
+        "home": "fraldarius",
+        "path": [
+          "soldier",
+          "cavalier",
+          "paladin",
+          "dark-knight"
+        ],
+        "coef": 1,
+        "spare": [],
+        "avatar": "assets/characters/blue_lions/rodrigue.webp"
+      },
+      {
+        "id": "sylvain",
+        "name": "Sylvain",
+        "faction": "bleue",
+        "home": "gautier",
+        "path": [
+          "soldier",
+          "cavalier",
+          "paladin"
+        ],
+        "coef": 2,
+        "spare": [],
+        "avatar": "assets/characters/blue_lions/sylvain.webp"
+      },
+      {
+        "id": "claude",
+        "name": "Claude",
+        "faction": "jaune",
+        "home": "riegan",
+        "path": [
+          "fighter",
+          "archer",
+          "sniper",
+          "bow-knight",
+          "barbarossa"
+        ],
+        "coef": 3,
+        "spare": [],
+        "avatar": "assets/characters/golden_deer/claude.webp"
+      },
+      {
+        "id": "hilda",
+        "name": "Hilda",
+        "faction": "jaune",
+        "home": "goneril",
+        "path": [
+          "fighter",
+          "brigand",
+          "warrior"
+        ],
+        "coef": 2,
+        "spare": [
+          "bleue",
+          "violette"
+        ],
+        "avatar": "assets/characters/golden_deer/hilda.webp"
+      },
+      {
+        "id": "holst",
+        "name": "Holst",
+        "faction": "jaune",
+        "home": "goneril",
+        "path": [
+          "fighter",
+          "brawler",
+          "grappler",
+          "war-master"
+        ],
+        "coef": 1,
+        "spare": [
+          "bleue"
+        ],
+        "avatar": "assets/characters/golden_deer/holst.webp"
+      },
+      {
+        "id": "judith",
+        "name": "Judith",
+        "faction": "jaune",
+        "home": "daphnel",
+        "path": [
+          "myrmidon",
+          "mercenary"
+        ],
+        "coef": 1,
+        "spare": [
+          "bleue"
+        ],
+        "avatar": "assets/characters/golden_deer/judith.webp"
+      },
+      {
+        "id": "ignatz",
+        "name": "Ignatz",
+        "faction": "jaune",
+        "home": "phlegethon",
+        "path": [
+          "fighter",
+          "archer",
+          "sniper"
+        ],
+        "coef": 1,
+        "spare": [
+          "rouge"
+        ],
+        "avatar": "assets/characters/golden_deer/ignatz.webp"
+      },
+      {
+        "id": "leonie",
+        "name": "Leonie",
+        "faction": "jaune",
+        "home": "muller",
+        "path": [
+          "fighter",
+          "archer",
+          "sniper",
+          "bow-knight"
+        ],
+        "coef": 2,
+        "spare": [
+          "bleue"
+        ],
+        "avatar": "assets/characters/golden_deer/leonie.webp"
+      },
+      {
+        "id": "lorenz",
+        "name": "Lorenz",
+        "faction": "jaune",
+        "home": "gloucester",
+        "path": [
+          "soldier",
+          "cavalier",
+          "paladin",
+          "dark-knight"
+        ],
+        "coef": 2,
+        "spare": [
+          "rouge"
+        ],
+        "avatar": "assets/characters/golden_deer/lorenz.webp"
+      },
+      {
+        "id": "marianne",
+        "name": "Marianne",
+        "faction": "jaune",
+        "home": "edmund",
+        "path": [
+          "monk",
+          "priest"
+        ],
+        "coef": 2,
+        "spare": [
+          "bleue"
+        ],
+        "avatar": "assets/characters/golden_deer/marianne.webp"
+      },
+      {
+        "id": "lysithea",
+        "name": "Lysithea",
+        "faction": "jaune",
+        "home": "ordelia",
+        "path": [
+          "monk",
+          "mage",
+          "warlock"
+        ],
+        "coef": 2,
+        "spare": [
+          "rouge",
+          "violette"
+        ],
+        "avatar": "assets/characters/golden_deer/lysithea.webp"
+      },
+      {
+        "id": "raphael",
+        "name": "Raphael",
+        "faction": "jaune",
+        "home": "phlegethon",
+        "path": [
+          "fighter",
+          "brawler"
+        ],
+        "coef": 1,
+        "spare": [
+          "bleue",
+          "rouge"
+        ],
+        "avatar": "assets/characters/golden_deer/raphael.webp"
+      },
+      {
+        "id": "petra",
+        "name": "Petra",
+        "faction": null,
+        "home": "brigid",
+        "path": [
+          "myrmidon",
+          "thief",
+          "assassin"
+        ],
+        "coef": 2,
+        "spare": [
+          "rouge",
+          "bleue",
+          "jaune"
+        ],
+        "avatar": "assets/characters/black_eagles/petra.webp"
+      },
+      {
+        "id": "nader",
+        "name": "Nader",
+        "faction": null,
+        "home": "almyra",
+        "path": [
+          "fighter",
+          "brigand",
+          "warrior"
+        ],
+        "coef": 2,
+        "spare": [
+          "jaune"
+        ],
+        "avatar": "assets/characters/golden_deer/nader.webp"
+      },
+      {
+        "id": "shadid",
+        "name": "Shadid",
+        "faction": null,
+        "home": "almyra",
+        "path": [
+          "soldier",
+          "pegasus-knight",
+          "wyvern-rider",
+          "wyvern-knight"
+        ],
+        "coef": 3,
+        "spare": [
+          "jaune"
+        ],
+        "avatar": "assets/characters/golden_deer/shadid.webp"
+      },
+      {
+        "id": "cornelia",
+        "name": "Cornelia",
+        "faction": "serpents",
+        "home": "",
+        "path": [
+          "monk",
+          "mage",
+          "dark-mage",
+          "gremory"
+        ],
+        "coef": 1,
+        "spare": [],
+        "avatar": "assets/characters/those_who_slither_in_the_dark/cornelia.webp"
+      },
+      {
+        "id": "kronya",
+        "name": "Kronya",
+        "faction": "serpents",
+        "home": "",
+        "path": [
+          "myrmidon",
+          "thief",
+          "assassin"
+        ],
+        "coef": 1,
+        "spare": [],
+        "avatar": "assets/characters/those_who_slither_in_the_dark/kronya.webp"
+      },
+      {
+        "id": "solon",
+        "name": "Solon",
+        "faction": "serpents",
+        "home": "",
+        "path": [
+          "monk",
+          "mage",
+          "dark-mage"
+        ],
+        "coef": 1,
+        "spare": [],
+        "avatar": "assets/characters/those_who_slither_in_the_dark/solon.webp"
+      },
+      {
+        "id": "thales",
+        "name": "Thales",
+        "faction": "serpents",
+        "home": "",
+        "path": [
+          "monk",
+          "mage",
+          "dark-mage",
+          "dark-bishop"
+        ],
+        "coef": 1.5,
+        "spare": [],
+        "avatar": "assets/characters/those_who_slither_in_the_dark/thales.webp"
+      },
+      {
+        "id": "nemesis",
+        "name": "Nemesis",
+        "faction": "serpents",
+        "home": "",
+        "path": [
+          "myrmidon",
+          "mercenary",
+          "swordsmaster"
+        ],
+        "coef": 2,
+        "spare": [],
+        "avatar": "assets/characters/those_who_slither_in_the_dark/nemesis.webp"
+      },
+      {
+        "id": "epimenides",
+        "name": "Epimenides",
+        "faction": "serpents",
+        "home": "",
+        "path": [
+          "monk",
+          "mage",
+          "dark-mage",
+          "dark-bishop"
+        ],
+        "coef": 3,
+        "spare": [],
+        "avatar": "assets/characters/those_who_slither_in_the_dark/epimenides.webp"
+      }
+    ]
+  },
+  "tutorial": {
+    "rewards": {
+      "gold": 500,
+      "xp": 200
+    },
+    "steps": [
+      {
+        "id": "view",
+        "event": "territory_viewed",
+        "title": {
+          "fr": "Explorer la carte",
+          "en": "Explore the map"
+        },
+        "description": {
+          "fr": "Touche un territoire sur la carte pour voir qui le tient.",
+          "en": "Tap a territory on the map to see who holds it."
+        }
+      },
+      {
+        "id": "move",
+        "event": "move",
+        "title": {
+          "fr": "Se déplacer",
+          "en": "Move"
+        },
+        "description": {
+          "fr": "Sélectionne un territoire voisin du tien et touche « Se déplacer ».",
+          "en": "Select a neighbouring territory and tap Move."
+        }
+      },
+      {
+        "id": "gather",
+        "event": "gather",
+        "title": {
+          "fr": "Récolter",
+          "en": "Gather"
+        },
+        "description": {
+          "fr": "Sur un territoire de ta faction, touche « Récolter » pour gagner de l'or et de l'expérience.",
+          "en": "On your faction's territory, tap Gather to earn gold and experience."
+        }
+      },
+      {
+        "id": "attack",
+        "event": "attack_action",
+        "title": {
+          "fr": "Attaquer",
+          "en": "Attack"
+        },
+        "description": {
+          "fr": "Rends-toi sur un territoire ennemi voisin et touche « Attaquer » : la bataille dure une heure.",
+          "en": "Go to a neighbouring enemy territory and tap Attack: the battle lasts an hour."
+        }
+      },
+      {
+        "id": "defend",
+        "event": "defend_action",
+        "title": {
+          "fr": "Défendre",
+          "en": "Defend"
+        },
+        "description": {
+          "fr": "Sur un territoire de ta faction, touche « Défendre » pour le renforcer.",
+          "en": "On your faction's territory, tap Defend to strengthen it."
+        }
+      },
+      {
+        "id": "journal",
+        "event": "journal_read",
+        "title": {
+          "fr": "Lire le journal du monde",
+          "en": "Read the world journal"
+        },
+        "description": {
+          "fr": "Ouvre l'onglet Journal : tu y réagis aux actions de tes alliés.",
+          "en": "Open the Journal tab: you can react to your allies' actions there."
+        }
+      },
+      {
+        "id": "rules",
+        "event": "rules_read",
+        "title": {
+          "fr": "Lire les règles",
+          "en": "Read the rules"
+        },
+        "description": {
+          "fr": "Menu, puis « Règles du jeu » : généraux, capitales, fin de campagne…",
+          "en": "Menu, then Rules: generals, capitals, end of campaign…"
+        }
+      }
+    ]
+  }
 }

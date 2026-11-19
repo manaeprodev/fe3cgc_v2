@@ -104,6 +104,25 @@ db.exec(`
   );
 `);
 
+// Compteurs quotidiens pour régler l'économie : or gagné et dépensé (par source), actions, batailles, joueurs actifs.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS metrics_daily (day TEXT NOT NULL, key TEXT NOT NULL, value REAL NOT NULL DEFAULT 0, PRIMARY KEY (day, key));
+  CREATE TABLE IF NOT EXISTS metrics_active (day TEXT NOT NULL, user_id INTEGER NOT NULL, PRIMARY KEY (day, user_id));
+`);
+const metricBump = db.prepare('INSERT INTO metrics_daily (day, key, value) VALUES (?, ?, ?) ON CONFLICT (day, key) DO UPDATE SET value = value + excluded.value');
+const metricActive = db.prepare('INSERT OR IGNORE INTO metrics_active (day, user_id) VALUES (?, ?)');
+const dayKey = (ms = Date.now()) => new Date(ms).toISOString().slice(0, 10);
+function metric(key, n = 1) { if (n) { try { metricBump.run(dayKey(), key, n); } catch { /* un compteur manqué ne doit jamais gêner le jeu */ } } }
+const seenToday = new Map(); // jour -> ensemble des joueurs déjà comptés
+function markActive(userId) {
+  const day = dayKey();
+  if (!seenToday.has(day)) { seenToday.clear(); seenToday.set(day, new Set()); }
+  const set = seenToday.get(day);
+  if (set.has(userId)) return;
+  set.add(userId);
+  try { metricActive.run(day, userId); } catch { /* idem */ }
+}
+
 // Réglages du joueur (surchargeables dans config/game.json, clé "player").
 const PLAYER = { startGold: 500, renownBaseXp: 100, renownGrowth: 1.1, ...(config.player || {}) };
 const MISSIONS = Array.isArray(config.missions) ? config.missions : [];
@@ -120,7 +139,8 @@ const SPECIALS = config.avatars?.special || [];
 const SPECIAL_EVENTS = new Set(SPECIALS.map((m) => m.stat).filter(Boolean));
 const classById = (id) => config.classes.find((c) => c.id === id);
 const tierById = (id) => TIERS.find((t) => t.id === id);
-const MISSION_EVENTS = new Set(MISSIONS.filter((m) => m.condition?.type === 'event').map((m) => m.condition.event));
+const TUTORIAL = config.tutorial || { steps: [], rewards: { gold: 0, xp: 0 } };
+const MISSION_EVENTS = new Set([...MISSIONS.filter((m) => m.condition?.type === 'event').map((m) => m.condition.event), ...TUTORIAL.steps.map((x) => x.event)]);
 
 // Migration : ressources du joueur (or, et xp dont découle la renommée).
 {
@@ -393,7 +413,9 @@ function createSession(req, res, userId) {
 function currentUser(req) {
   const token = parseCookies(req).sid;
   if (!token) return null;
-  return q.sessionUser.get(sha256(token), now()) || null;
+  const user = q.sessionUser.get(sha256(token), now()) || null;
+  if (user) markActive(user.id);
+  return user;
 }
 
 function send(res, status, data) {
@@ -496,7 +518,9 @@ function renown(totalXp) {
 // Le texte de chaque type est dans public/i18n/<langue>.json (clés notif.<type>.title / .body).
 function notify(userId, type, params = {}) {
   q.insertNotif.run(userId, type, type, JSON.stringify(params), now());
+  if (pushHook) { try { pushHook(userId, type, params); } catch { /* le push est accessoire */ } }
 }
+let pushHook = null; // notifications push (voir push.js), branchées une fois le moteur démarré
 
 function parseParams(s) {
   try { return JSON.parse(s) || {}; } catch { return {}; }
@@ -508,12 +532,14 @@ let rewardMods = () => ({ gold: 1, xp: 1 });
 
 // Donne de l'or et/ou de l'xp à un joueur, et le prévient s'il gagne un niveau de renommée.
 // Toutes les sources de gains passent ici : les bonus et malus de classe s'appliquent donc à toutes.
-function grant(userId, gold, xp) {
+function grant(userId, gold, xp, source = 'other') {
   const ch = q.character.get(userId);
   if (!ch) return;
   const mods = rewardMods(userId);
   gold = Math.round(gold * mods.gold);
   xp = Math.round(xp * mods.xp);
+  if (gold > 0) { metric('gold_in', gold); metric(`gold_in:${source}`, gold); }
+  if (xp > 0) { metric('xp_in', xp); metric(`xp_in:${source}`, xp); }
   const before = renown(ch.xp).level;
   q.addResources.run(gold, xp, userId);
   const after = renown(ch.xp + xp).level;
@@ -558,9 +584,17 @@ const statOf = (userId, event) => q.events.all(userId).find((r) => r.event === e
 // Dernière mise à jour publiée (la première de la liste « patches » de game.json).
 const LATEST_PATCH = (config.patches || [])[0]?.id || null;
 
+// Tutoriel de la première heure : chaque étape est faite quand l'événement correspondant a été constaté au moins une fois.
+function tutorialState(userId) {
+  if (!TUTORIAL.steps.length) return null;
+  const counts = new Map(q.events.all(userId).map((r) => [r.event, r.count]));
+  if (counts.get('tutorial_done')) return null;
+  const steps = TUTORIAL.steps.map((x) => ({ id: x.id, title: x.title, description: x.description, done: (counts.get(x.event) || 0) >= (x.count || 1) }));
+  return { steps, complete: steps.every((x) => x.done), rewards: TUTORIAL.rewards };
+}
 function mePayload(user) {
   const ch = q.character.get(user.id);
-  const claimable = missionState(user.id).filter((m) => m.status === 'done').length + (ch ? daily.claimable(user.id) : 0);
+  const claimable = missionState(user.id).filter((m) => m.status === 'done').length + (ch ? daily.claimable(user.id) : 0) + (ch ? campaign.missionsClaimable(user.id) : 0);
   return {
     user: { id: user.id, email: user.email, lang: user.lang || null },
     // `path` : lignée de classes du joueur (ses effets de classe se cumulent le long de ce chemin).
@@ -571,6 +605,10 @@ function mePayload(user) {
     patch: { latest: LATEST_PATCH, seen: q.patchSeen.get(user.id)?.patch_seen || null },
     // Position, actions disponibles et état du joueur dans la campagne en cours.
     player: ch ? campaign.playerPayload(user.id) : null,
+    // Premier pas dans le jeu : étapes à accomplir, et si la récompense est à récupérer (ou déjà prise / masquée).
+    tutorial: ch ? tutorialState(user.id) : null,
+    // Résultat de la dernière campagne terminée, tant que le joueur ne l'a pas lu (fenêtre de fin de campagne).
+    result: ch ? campaign.resultFor(user.id) : null,
     // Distinctions gagnées (titres), avec leur nombre.
     distinctions: ch ? campaign.distinctionsOf(user.id) : [],
     // Compteurs durables (par exemple les attaques des Serpents repoussées), pour les conditions de classe.
@@ -578,6 +616,28 @@ function mePayload(user) {
   };
 }
 
+// Tableau des compteurs quotidiens : une ligne par jour, avec les ratios utiles pour équilibrer l'économie.
+function adminMetrics(req) {
+  const days = Math.min(90, Math.max(1, Number(new URL(req.url, 'http://x').searchParams.get('days')) || 14));
+  const since = dayKey(Date.now() - (days - 1) * 86_400_000);
+  const rows = db.prepare('SELECT day, key, value FROM metrics_daily WHERE day >= ? ORDER BY day').all(since);
+  const active = new Map(db.prepare('SELECT day, count(*) AS n FROM metrics_active WHERE day >= ? GROUP BY day').all(since).map((r) => [r.day, r.n]));
+  const byDay = new Map();
+  for (const r of rows) { if (!byDay.has(r.day)) byDay.set(r.day, {}); byDay.get(r.day)[r.key] = r.value; }
+  for (const d of active.keys()) if (!byDay.has(d)) byDay.set(d, {});
+  const out = [...byDay].sort(([a], [b]) => (a < b ? -1 : 1)).map(([day, m]) => {
+    const n = active.get(day) || 0;
+    const won = (m.battles_attack_won || 0);
+    const lost = (m.battles_defense_won || 0);
+    return {
+      day, activePlayers: n, ...m,
+      goldNet: (m.gold_in || 0) - Object.entries(m).filter(([k]) => k.startsWith('gold_out:')).reduce((a, [, v]) => a + v, 0),
+      goldInPerPlayer: n ? Math.round((m.gold_in || 0) / n) : null,
+      attackWinRate: won + lost ? Math.round((won / (won + lost)) * 100) : null,
+    };
+  });
+  return { days: out, players: db.prepare('SELECT count(*) AS n FROM characters').get().n };
+}
 // Moteur de campagne : actions, déplacements, batailles, mini-boss, fin de campagne (voir campaign.js).
 // Missions du jour et série de jours consécutifs (voir daily.js).
 const daily = require('./daily')({ db, config, grant, HttpError, fallenState: (userId) => campaign.fallenState(userId) });
@@ -609,7 +669,7 @@ const campaign = require('./campaign')({
   unlockAvatar, freezeStreaks: (userIds) => daily.freeze(userIds),
   countStat: (userId, key, n = 1) => statAdd(userId, key, n),
   setStat: (userId, key, value) => { q.setEvent.run(userId, key, value); specialState(userId); },
-  fx, statOf: (userId, event) => statOf(userId, event),
+  fx, statOf: (userId, event) => statOf(userId, event), metric,
   // Actions de jeu constatées par le serveur : elles font avancer les missions du jour et les missions classiques.
   onEvent: (userId, event) => {
     daily.bump(userId, event);
@@ -619,6 +679,15 @@ const campaign = require('./campaign')({
 });
 // À partir de maintenant, les gains d'or et d'expérience tiennent compte des effets de classe.
 rewardMods = campaign.rewardMods;
+// Notifications push (voir push.js) : chaque notification du jeu qui compte peut aussi réveiller le téléphone.
+const push = require('./push')({
+  db, config, dataDir: DATA_DIR, publicDir: PUBLIC_DIR, currentUser, readJson, send, HttpError,
+  playerState: (userId) => {
+    const pl = campaign.playerPayload(userId);
+    return pl ? { status: pl.status, actions: pl.actions, maxActions: pl.maxActions, open: campaign.phaseNow() === 'open' } : null;
+  },
+});
+pushHook = push.onNotify;
 // Le monde avance tout seul : batailles arrivées à terme, replis expirés, mini-boss.
 setInterval(() => { try { campaign.tick(); } catch (e) { console.error(e); } }, Math.min(15_000, campaign.TURN_MS / 2)).unref();
 
@@ -718,6 +787,7 @@ const routes = {
     if (q.buyAvatar.run(a.file, a.price, user.id, a.price).changes !== 1) throw new HttpError(409, 'not_enough_gold');
     q.unlockAvatar.run(user.id, a.file, 'gold', now());
     statAdd(user.id, 'gold_spent', a.price);
+    metric('gold_out:avatar', a.price);
     send(res, 200, { ...mePayload(user), avatars: avatarList(user.id) });
   },
 
@@ -763,7 +833,7 @@ const routes = {
     if (!ch) throw new HttpError(409, 'no_character');
     const cls = classById(target);
     const tier = cls && tierById(cls.tier);
-    if (!cls || !tier || !Number.isInteger(tier.cost) || !Number.isInteger(tier.renown)) throw new HttpError(400, 'invalid_class');
+    if (!cls || cls.npc || !tier || !Number.isInteger(tier.cost) || !Number.isInteger(tier.renown)) throw new HttpError(400, 'invalid_class');
     if (cls.id === ch.class) throw new HttpError(409, 'class_same');
     if (cls.tier !== BASE_TIER && !(cls.requires || []).includes(ch.class)) throw new HttpError(409, 'class_path');
     if (renown(ch.xp).level < tier.renown) throw new HttpError(409, 'class_renown');
@@ -773,6 +843,7 @@ const routes = {
     // La lignée garde les classes traversées : leurs effets restent acquis (une classe de base la remet à zéro).
     if (q.changeClass.run(cls.id, JSON.stringify(fx.nextPath(ch, cls.id)), tier.cost, user.id, tier.cost).changes !== 1) throw new HttpError(409, 'class_gold');
     statAdd(user.id, 'gold_spent', tier.cost);
+    metric('gold_out:class', tier.cost);
     q.logClass.run(user.id, ch.class, cls.id, tier.cost, now());
     notify(user.id, 'class_changed', { class: cls.id });
     send(res, 200, mePayload(user));
@@ -814,10 +885,36 @@ const routes = {
     send(res, 200, mePayload(user));
   },
 
+  // Tutoriel : récupérer la récompense une fois toutes les étapes faites, ou le masquer.
+  'POST /api/tutorial/claim': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    await readJson(req);
+    const st = q.character.get(user.id) ? tutorialState(user.id) : null;
+    if (!st || !st.complete) throw new HttpError(409, 'reward_unavailable');
+    q.bumpEvent.run(user.id, 'tutorial_done');
+    grant(user.id, TUTORIAL.rewards.gold || 0, TUTORIAL.rewards.xp || 0, 'tutorial');
+    send(res, 200, mePayload(user));
+  },
+  'POST /api/tutorial/dismiss': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    await readJson(req);
+    if (q.character.get(user.id)) q.bumpEvent.run(user.id, 'tutorial_done');
+    send(res, 200, mePayload(user));
+  },
+
+  // Suivi économique (réservé à l'administrateur : en-tête x-admin-token égal à la variable ADMIN_TOKEN).
+  'GET /api/admin/metrics': async (req, res) => {
+    const token = process.env.ADMIN_TOKEN;
+    if (!token || String(req.headers['x-admin-token'] || '') !== token) throw new HttpError(404, 'not_found');
+    send(res, 200, adminMetrics(req));
+  },
+
   'GET /api/missions': async (req, res) => {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
-    send(res, 200, { missions: missionState(user.id), daily: daily.state(user.id), specials: specialState(user.id) });
+    send(res, 200, { missions: missionState(user.id), daily: daily.state(user.id), campaignMissions: campaign.missionState(user.id), specials: specialState(user.id) });
   },
 
   'POST /api/missions/daily/claim': async (req, res) => {
@@ -826,7 +923,17 @@ const routes = {
     const { id } = await readJson(req);
     if (!q.character.get(user.id)) throw new HttpError(409, 'no_character');
     const state = daily.claim(user.id, id);
-    send(res, 200, { ...mePayload(user), missions: missionState(user.id), daily: state });
+    send(res, 200, { ...mePayload(user), missions: missionState(user.id), daily: state, campaignMissions: campaign.missionState(user.id), specials: specialState(user.id) });
+  },
+
+  // Missions de campagne : remises à zéro à chaque campagne (voir campaign.js).
+  'POST /api/missions/campaign/claim': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    const { id } = await readJson(req);
+    if (!q.character.get(user.id)) throw new HttpError(409, 'no_character');
+    const list = campaign.claimMission(user.id, id);
+    send(res, 200, { ...mePayload(user), missions: missionState(user.id), daily: daily.state(user.id), campaignMissions: list, specials: specialState(user.id) });
   },
 
   'POST /api/missions/claim': async (req, res) => {
@@ -838,14 +945,14 @@ const routes = {
     missionState(user.id); // enregistre la mission si elle vient d'être accomplie
     // La mise à jour ne touche une ligne que si la mission est accomplie et pas encore récupérée.
     if (q.claimMission.run(now(), user.id, id).changes !== 1) throw new HttpError(409, 'reward_unavailable');
-    grant(user.id, mission.rewards?.gold || 0, mission.rewards?.xp || 0);
+    grant(user.id, mission.rewards?.gold || 0, mission.rewards?.xp || 0, 'mission');
     // Une mission peut aussi débloquer un avatar (rewards.avatar).
     const prize = mission.rewards?.avatar;
     if (prize && LOCKED_AVATARS.has(prize) && q.unlockAvatar.run(user.id, prize, `mission:${mission.id}`, now()).changes === 1) {
       notify(user.id, 'avatar_unlocked', { avatar: prize });
     }
     const me = mePayload(user); // réévalue les missions (ex. palier de renommée atteint)
-    send(res, 200, { ...me, missions: missionState(user.id), daily: daily.state(user.id) });
+    send(res, 200, { ...me, missions: missionState(user.id), daily: daily.state(user.id), campaignMissions: campaign.missionState(user.id), specials: specialState(user.id) });
   },
 
   // Signale une action du joueur utile aux missions (ex. « rules_read »).
@@ -867,6 +974,7 @@ const routes = {
 
   // POST /api/move, /api/act et /api/retreat : actions de campagne.
   ...campaign.routes,
+  ...push.routes,
 };
 
 // ---------------------------------------------------------------- Fichiers statiques

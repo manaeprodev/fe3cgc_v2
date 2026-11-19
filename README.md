@@ -95,7 +95,7 @@ Dans l'app, la carte est un SVG : chaque territoire est cliquable, coloré selon
 
 ### Campagne : clé `campaign` de `game.json`, moteur dans `campaign.js`
 
-Le temps est découpé en tours (`turnMinutes`, 10 minutes). Un joueur gagne 1 action par tour jusqu'à `maxActions` (6).
+Le temps est découpé en tours (`turnMinutes`, 10 minutes). Un joueur gagne 1 action par tour jusqu'à `maxActions` (8).
 
 - **Se déplacer** vers un territoire voisin : 1 action. On n'entre sur un territoire qui n'est pas à sa faction que s'il touche un territoire de sa faction (ou sa base, voir `homeBases`).
 - **Défendre** (territoire allié) : renforce la défense de la bataille en cours, ou pose une garnison qui compte si une bataille démarre dans les `battleTurns` tours.
@@ -104,18 +104,79 @@ Le temps est découpé en tours (`turnMinutes`, 10 minutes). Un joueur gagne 1 a
 
 Chances de l'attaque = force des attaquants / (attaquants + défense), bornées par `minChance` et `maxChance`. Chaque action Attaquer ou Défendre ajoute la force du joueur : `tierPower` selon le rang de sa classe, augmentée de `renownPower` par niveau de renommée. La défense part de `baseDefense` × importance du territoire (`importance` dans `map.json`), plus `npcDefense` pour une faction non jouable (c'est ce qui rend Garreg-Mach dur à prendre).
 
-À la fin de la bataille, un tirage décide. Attaque réussie : le territoire change de faction, les attaquants touchent `attackRewards` × importance, et les défenseurs présents ont `retreatTurns` tours pour se replier sur un territoire allié, sinon ils tombent jusqu'à la fin de la campagne. Attaque ratée : les défenseurs touchent `defenseRewards` × importance.
+À la fin de la bataille, un tirage décide. Attaque réussie : le territoire change de faction, les attaquants touchent `attackRewards` × importance, et les défenseurs présents ont `retreatTurns` tours pour se replier sur un territoire allié, sinon ils tombent jusqu'à la fin de la campagne. Attaque ratée : les défenseurs touchent `defenseRewards` × importance, et les attaquants restés sur place doivent à leur tour se replier dans les `retreatTurns` tours, sinon ils tombent. Leur retour en jeu coûte alors `revive.attackerMultiplier` fois le prix normal (or, renommée ou aide d'un allié, colonne `fall_mult` de `player_state`).
 
 - `capitals` : territoire d'apparition de chaque faction. `homeBases` : base d'une faction sans territoire (Garreg-Mach pour les Loups de cendre), qui lui sert d'appui sans qu'elle le contrôle.
 - `annex` : territoires annexes, conquérables mais ignorés pour la victoire.
 - `boss` : à chaque tour, la faction `boss.faction` a `chancePerTurn` chances (0,07 = 7 %) de lancer une attaque de force `power` × importance sur un territoire au hasard (au plus `max` à la fois). Si elle gagne, le territoire lui appartient. `quietHours` (`from` inclus, `to` exclu, en heures, avec son fuseau `timezone`) interdit toute apparition pendant la nuit : de minuit à 6 h, heure de Paris. Les batailles déjà commencées continuent, et le fuseau est fixé dans la config pour que la nuit ne dépende pas du serveur qui héberge le jeu. `TEST_HOUR` force l'heure pour les tests.
-- Fin de campagne : une faction jouable tient tous les territoires non annexes, ou il ne reste des joueurs en vie que dans une seule faction. `points` fixe les points gagnés ; ils s'ajoutent dans la table `faction_points`. La carte est ensuite remise à son état de départ et une nouvelle campagne commence.
+- Fin de campagne : une faction jouable tient tous les territoires non annexes, il ne reste des joueurs en vie que dans une seule faction, ou l'heure de fin programmée est passée (voir plus bas). Les points gagnés s'ajoutent dans la table `faction_points`. La carte est ensuite remise à son état de départ, les généraux reprennent leur poste et une nouvelle campagne commence.
+
+### Cycle de campagne, fin programmée et points : clés `schedule`, `finale`, `points`, `season`
+
+- `schedule` : `{ weekday, hour, minute, reopenHour, timezone }`, par défaut le mardi (2) à minuit, soit la nuit du lundi au mardi, heure de Paris, et réouverture le jour même à 4 h (`reopenDayOffset` jours après la clôture). Trois phases (champ `campaign.phase` de la carte) :
+  - `open` : jeu normal ;
+  - `closing` (clôture, dès l'heure de fin) : plus aucune attaque (joueurs, généraux sortis en campagne, Serpents), on peut se déplacer, récolter, construire ; les combats en cours se terminent ;
+  - `break` (pause) : dès le dernier combat terminé, la fin de campagne est calculée (points, résultats, titres) et plus aucune action n'est possible jusqu'à la réouverture (`reset_at`). La carte, les généraux et les Serpents sont alors remis à zéro et la campagne suivante commence.
+  Une campagne en cours quand la fonction a été activée ne compte qu'à partir de ce moment (meta `schedule_from`). `TEST_END_AT` (heure de clôture) et `TEST_RESET_AT` (réouverture), en millisecondes, les fixent pour les tests. Les fins par conquête totale ou élimination restent immédiates.
+- La faction qui a le plus de points l'emporte (égalité : pas de vainqueur), avec `points.win` en plus. Points de chaque faction (`finale`) :
+  - `territory` par territoire tenu (× `pointsMultiplier` d'une faction `underdogs`) ;
+  - `mapBonus` : palier de part de la carte conquise (`pct`, `points`), le plus haut atteint ;
+  - `survivor` par membre encore en jeu, hors exilés ;
+  - `activityRatio` × la somme des scores gagnés par les membres hors exil (colonne `faction_score` de `campaign_scores`) ;
+  - `capitalOwn` pour sa capitale tenue, `capitalEnemy` par capitale d'une autre faction tenue ;
+  - l'objectif de la semaine atteint (voir plus bas) ;
+  - `efficiency`, seulement pour les factions `underdogs` avec `efficiency: true` (Loups de cendre) : `attackWon` par attaque remportée, `defenseWon` par défense réussie (créditée à la faction, y compris à l'Église), et `lowDeaths` (`max` points, réduits à zéro à `deathsPerPlayer` morts par joueur) ;
+  - ×(1 + `generals.serpents.pointsBonus`) pour la faction qui a abattu le dernier général des Serpents.
+- Un exilé garde un score personnel mais ne rapporte rien à une faction (ni à la sienne ni à celle qu'il rejoint). `finale.exile.gold` : prime d'or de fin de campagne pour un exilé qui s'est battu.
+- Chaque participant (au moins un point de classement, ou un combat d'exil) reçoit un résultat (table `campaign_results`, champ `result` de `/api/me`) montré dans une fenêtre jusqu'à `POST /api/campaign/seen`.
+- **Saisons** (`season.campaigns`, 4 par défaut) : à la fin de la dernière campagne d'une saison, les points des factions sont additionnés (table `seasons`) ; le meilleur trio de joueurs reçoit `season_champion`, les participants de la faction victorieuse `season_victor`. Le meilleur joueur de chaque campagne reçoit `campaign_mvp`. `GET /api/pantheon` donne les campagnes passées (podium, vainqueur), la saison en cours et les saisons terminées.
+
+### Repli manqué : blessure plutôt que mort
+
+Après une bataille perdue ou un territoire perdu, les joueurs présents ont `retreatTurns` tours (36 = 6 h) pour se replier gratuitement. Sans repli à temps, ils ne sont plus privés de jeu : `woundPlayer` les renvoie à leur capitale, leur prélève `revive.gold` (× `revive.attackerMultiplier` après une attaque ratée, plus l'amende de l'Archer d'élite), vide leur stock d'actions et divise leurs gains pendant `wound.actions` actions. Une faction tombée garde la mort et l'exil.
+
+### Victoire écrasante : clé `decisive`
+
+Au-delà de `decisive` (0,8, soit 4 contre 1) du rapport attaque / (attaque + défense), l'issue est certaine : pas de tirage (`battle.decisive` = `win` ou `lose`). Les chances de l'attaque reçoivent aussi l'aide des alliés (`battles.help`).
+
+### Capitales, constructions, seigneurs, objectifs, signalements
+
+- `capitals` : une faction qui a perdu sa capitale perd `capital.lossPct` % de puissance tant qu'elle ne l'a pas reprise. La couronne s'affiche sur la carte.
+- `build` : `{ maxLevel, costs, specs }`. Action `build` (1 action + or, hors bataille) : une spécialité par territoire (`fortress` : `defensePct`, `market` : `goldPct`, `academy` : `xpPct`, par niveau), détruite à la conquête (table `territory_builds`).
+- `lords` et `gauge` : chaque faction a un seigneur dont la capacité (`ability.effect` : `power` côté attaque, défense ou les deux, ou `hireCost`) se déclenche pour `ability.minutes` quand la jauge atteint `gauge.max` (metas `gauge:<faction>` et `buff:<faction>`). Chaque action de combat ajoute `perAction`, chaque bataille gagnée `perWin`.
+- `objectives` : liste d'objectifs de faction (`type` : `conquests`, `defenses`, `generals`, `annex`, `capital`, `pct`, `hold`), un tiré par faction et par campagne (tables `faction_objectives`, `faction_progress`). Atteint, il rapporte `points` à la faction et `gold` à ses participants.
+- `pings` : signalements de faction (`kinds`, `minutes`, `cooldownSeconds`, `max`), route `POST /api/ping`, un signalement actif par joueur.
+
+### Suivi, tutoriel, notifications
+
+- **Suivi économique** : table `metrics_daily` (or gagné par source, or dépensé par poste, actions, batailles, chutes) et `metrics_active` (joueurs actifs par jour). `GET /api/admin/metrics?days=14` (en-tête `x-admin-token` égal à la variable `ADMIN_TOKEN` ; absent = route invisible) et la page `/admin.html`.
+- **Tutoriel** (`tutorial.steps`, `tutorial.rewards`) : étapes cochées d'après les événements réels du joueur ; `POST /api/tutorial/claim` et `/api/tutorial/dismiss`.
+- **Notifications push** (`push.js`, clé `push` facultative) : Web Push sans dépendance (clés VAPID dans `DATA_DIR/vapid.json`, chiffrement aes128gcm). Types : territoire attaqué, repli nécessaire, appel à l'aide, résultat de campagne, général à juger, réserve d'actions pleine. Garde-fous : un délai par type (`cooldownMinutes`), 6 messages par jour (`dailyMax`), jamais la nuit (`quiet`), réglage par type pour le joueur, adresses de services push connus seulement (`PUSH_ALLOW_ANY=1` pour les tests). `VAPID_SUBJECT` fixe le contact. Sur iPhone, l'app doit d'abord être installée sur l'écran d'accueil.
+- **Tests** : `npm test` (ou `node tests/run.js [motif]`) lance les suites de `tests/`, chacune sur son propre serveur et sa base jetable.
+
+### Missions de campagne et réactions du journal
+
+- `campaign.missions` : objectifs remis à zéro à chaque campagne (tables `campaign_mission_progress` et `campaign_mission_claims`), au format des autres missions (`condition: { event, count }`, `rewards`). Événements comptés par le serveur pour les joueurs qui ont agi dans la bataille : `conquest`, `defense`, `garreg_conquest` (territoire `keyTerritory`), `retake` (territoire d'origine de sa faction repris), `annex_conquest`, `general` (général vaincu), `spare` (général épargné). Route de récupération : `POST /api/missions/campaign/claim` ; l'état est dans `campaignMissions` de `GET /api/missions`.
+- `campaign.reactions` : le Journal propose des réactions à l'action d'un allié, jamais à la sienne, une fois par joueur et par événement (table `journal_reactions`, route `POST /api/journal/react`) : `cheer` (territoire pris ou défendu par sa faction, sans y avoir combattu) donne `cheerXp` xp ; `support` (attaque d'un allié encore en cours) donne `supportGold` or à l'allié qui l'a lancée ; `help` (appel à l'aide d'un allié, bataille en cours) ajoute `helpPct` point de chances à son camp (colonne `battles.help`).
+- Les fenêtres de game over (joueur tombé, faction tombée) s'ouvrent une fois par chute, d'après `campaignId`, `deaths` et `factionOut` du joueur (mémorisé sur l'appareil).
+
+### Généraux : clé `generals` de `game.json`
+
+Personnages non joueurs, dirigés par l'IA du serveur (tables `generals`, `general_contribs`, `general_verdicts`). Leur liste est `generals.roster` : `id`, `name`, `faction` (vide = indépendant), `home` (territoire d'origine), `path` (lignée de classes, avec les classes légendaires `npc: true` réservées aux seigneurs), `coef` (puissance et importance), `spare` (factions qui peuvent l'épargner) et `avatar`.
+
+- Au début de chaque campagne ils se placent sur leur territoire d'origine, avec `generals.actions` actions (4) qui se rechargent d'une par tour.
+- **Niveau de renommée** : médiane des niveaux des joueurs actifs de leur faction (`level.activeDays`, 7 jours ; à défaut tous ses membres ; tous les joueurs pour un indépendant) × (`level.base` + `level.perCoef` × `coef`), au moins `level.min`. Leur puissance suit la classe finale et ce niveau, avec les effets de leur lignée.
+- **Défense** : quand leur territoire d'origine est attaqué (même par les Serpents), ils s'y rendent s'ils ont assez d'actions et le défendent, une fois par bataille. Les Loups de cendre défendent Garreg-Mach.
+- **Sorties** : seulement après une première conquête sur la carte. Une fois par tour, `attackChance` de chances de partir vers un territoire ennemi voisin (ou de rejoindre l'attaque de leur faction), avec au plus `maxSorties` sorties en cours ; le tour suivant ils attaquent une seule fois, sinon ils rentrent. Les indépendants ne sortent pas.
+- **Défaite** : le général du camp perdant est vaincu, de même que tout général du camp vaincu qui se trouve sur un territoire conquis ou dont c'est la maison (jamais de fantôme ni de général sans maison). Ses vainqueurs reçoivent `reward.gold` et `reward.xp` × `coef`. Il meurt, sauf s'il est épargnable : pas encore épargné (`spared`) et la faction victorieuse figure dans `spare`. Les vainqueurs qui ont agi dans la bataille ont alors `verdictTurns` tours pour l'épargner (il rejoint leur faction, garde son territoire d'origine et le défend toujours) ou le faire mourir (route `POST /api/general/verdict`) ; sans décision il meurt. Un général épargné qui est vaincu meurt.
+- **Serpents** (`generals.serpents`) : chaque raid a `chance` de chances d'être mené par un général de la faction `serpents` (force du raid × `coef`). `finalBoss` ne vient qu'une fois les autres tombés, à coup sûr. Quand il tombe, les Serpents ne reviennent plus de la campagne (meta `serpents_gone`) et la faction qui l'a abattu a `pointsBonus` de points en plus.
+- Les généraux apparaissent dans la liste des présents d'un territoire ; ceux des factions `hiddenAtBase` restent cachés sur leur base tant qu'ils n'y combattent pas. `TEST_NO_GENERALS` les désactive, `TEST_GEN_ROLL`, `GEN_ATTACK_CHANCE` et `GENERAL_CHANCE` règlent leur hasard pour les tests.
 
 Autres réglages de `campaign` :
 
 - `cadenceGold` : or gagné par la première action de chaque tour (bonus de régularité).
 - `hire` : renfort payé en or, sans action. Fortification sur son territoire, bataillon (« Battalion ») dans une attaque de sa faction ; `gold` le prix, `power` la force ajoutée, `perBattle` le maximum par joueur et par bataille.
-- `revive.gold` : prix du retour en jeu d'un joueur tombé. Il peut aussi sacrifier un niveau de renommée, ou demander à un allié de payer (les demandes apparaissent dans le Journal de sa faction). Il réapparaît dans sa capitale si sa faction la tient, sinon sur un de ses territoires au hasard.
+- `revive.gold` : prix du retour en jeu d'un joueur tombé (`attackerMultiplier` : coefficient après une attaque ratée). Il peut aussi sacrifier un niveau de renommée, ou demander à un allié de payer (les demandes apparaissent dans le Journal de sa faction). Il réapparaît dans sa capitale si sa faction la tient, sinon sur un de ses territoires au hasard.
 - Une faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne ; ses joueurs ne peuvent plus revenir. La campagne se termine quand, parmi les factions qui ont des joueurs, une seule reste en jeu.
 - `ranking` : points de classement par action de combat (`combat`), par bataille gagnée (`victory`) et par récolte (`gather`) ; `rewards` est l'or donné aux premiers à la fin de la campagne.
 - Appel à l'aide : gratuit, une fois par joueur et par bataille ; il prévient toute la faction.

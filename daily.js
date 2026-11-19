@@ -106,7 +106,7 @@ module.exports = function createDaily(ctx) {
     // La première récupération du jour prolonge la série (ou la recommence).
     const s = q.streak.get(userId);
     if (!s || s.last_day !== day) q.setStreak.run(userId, day, streakOf(userId) + 1);
-    grant(userId, mission.rewards.gold, mission.rewards.xp);
+    grant(userId, mission.rewards.gold, mission.rewards.xp, 'daily');
     return state(userId);
   }
 

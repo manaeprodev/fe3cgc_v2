@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Suivi du jeu</title>
+  <style>
+    body { font: 14px system-ui, sans-serif; background: #12141c; color: #eceef5; margin: 0; padding: 16px; }
+    input, button { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid #32374a; background: #1b1e2a; color: inherit; }
+    table { border-collapse: collapse; margin-top: 12px; width: 100%; }
+    th, td { border-bottom: 1px solid #32374a; padding: 4px 8px; text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    .wrap { overflow-x: auto; }
+    .err { color: #ff6b6b; }
+  </style>
+</head>
+<body>
+  <h1>Suivi du jeu</h1>
+  <p>Jeton d'administration (variable <code>ADMIN_TOKEN</code> du serveur) : <input id="token" type="password" autocomplete="off"> <input id="days" type="number" value="14" min="1" max="90" style="width:4em"> jours <button id="go">Afficher</button></p>
+  <p id="msg"></p>
+  <div class="wrap"><table id="table"></table></div>
+  <script src="js/admin.js"></script>
+</body>
+</html>

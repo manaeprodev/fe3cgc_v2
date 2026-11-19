@@ -166,6 +166,8 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
     const lv = (pseudo) => terrOf(map, 'hresvelg').occupants.find((o) => o.pseudo === pseudo).level;
     check('moyenne 10 : coef 2 → 10, coef 1 → 8 (7,5 arrondi), coef 0,5 → 6', lv('Edelgard') === 10 && lv('Hubert') === 8 && lv('Dorothea') === 6, [lv('Edelgard'), lv('Hubert'), lv('Dorothea')].join('/'));
     check('un indépendant suit la moyenne de tous les joueurs (coef 2 : ×1)', (() => { const l = terrOf(map, 'brigid').occupants[0].level; return l >= 1 && l <= 10; })());
+    const annette = terrOf(map, 'dominic').occupants.find((o) => o.pseudo === 'Annette');
+    check('equilibrage : les Lions (mediane 0) sont en retard sur la moyenne (5) : leurs generaux sont releves de 70 % de l ecart, Annette (coef 2) niveau 4', annette && annette.level === 4, String(annette?.level));
 
     // ---------- 4. Défense du territoire d'origine, vaincus, épargnés
     console.log('# Défense, verdict');

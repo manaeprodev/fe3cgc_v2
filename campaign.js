@@ -41,7 +41,7 @@ module.exports = function createCampaign(ctx) {
     ranking: { combat: 10, victory: 30, gather: 2, rewards: [1000, 600, 300] },
     underdogs: {},
     // Missions de campagne : { id, title, description, condition: { event, count }, rewards: { gold, xp } }.
-    missions: [], keyTerritory: 'garreg-mach', reactions: { cheerXp: 10, supportGold: 10, helpPct: 1, dailyCap: 10 },
+    missions: [], keyTerritory: 'garreg-mach', reactions: { cheerXp: 10, supportGold: 10, helpPct: 1, dailyCap: 10, cheerMinutes: 60 },
     // Capitale perdue : -lossPct % de puissance pour la faction tant qu'elle ne l'a pas reprise.
     capital: { lossPct: 10 },
     // Saison : nombre de campagnes (une par semaine) avant le sacre des champions.
@@ -795,10 +795,16 @@ module.exports = function createCampaign(ctx) {
   // Renommée médiane des joueurs actifs de chaque faction (connectés depuis `activeDays` jours ; à défaut, tous ses membres),
   // pour qu'une poignée de comptes inactifs ne tire pas le niveau des généraux vers le bas. Mise en cache quelques secondes.
   let levelCache = null;
+  let smooth = null; // niveau lissé de chaque faction (persisté dans la meta glvl)
+  let smoothAt = 0;
+  const SMOOTH_MS = process.env.GLVL_SMOOTH_MS !== undefined ? Number(process.env.GLVL_SMOOTH_MS) : 60_000;
   const median = (a) => { if (!a.length) return 0; const v = [...a].sort((x, y) => x - y); const m = v.length >> 1; return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2; };
+  // Niveau de référence de chaque faction pour ses généraux : sa médiane de joueurs actifs, relevée vers la moyenne des factions
+  // quand elle est en retard (`level.balance`), puis lissée dans le temps (`level.smoothing` à chaque minute) pour éviter les sauts.
   function avgLevels() {
     if (levelCache && Date.now() - levelCache.at < 5000) return levelCache;
-    const since = Date.now() - (G.level.activeDays ?? 7) * 86_400_000;
+    const now = Date.now();
+    const since = now - (G.level.activeDays ?? 7) * 86_400_000;
     const by = new Map();
     const act = new Map();
     const all = [];
@@ -813,7 +819,16 @@ module.exports = function createCampaign(ctx) {
       if (active) act.get(r.faction).push(l);
     }
     const pick = (a, b) => (a.length ? median(a) : median(b));
-    levelCache = { at: Date.now(), all: pick(allAct, all), by: new Map([...by].map(([f, a]) => [f, pick(act.get(f), a)])) };
+    const raw = new Map([...by].filter(([f]) => PLAYABLE.has(f)).map(([f, a]) => [f, pick(act.get(f), a)]));
+    const ref = raw.size ? [...raw.values()].reduce((x, y) => x + y, 0) / raw.size : 0;
+    const bal = G.level.balance ?? 0;
+    const target = new Map([...raw].map(([f, v]) => [f, v + bal * Math.max(0, ref - v)]));
+    if (!smooth) { try { smooth = JSON.parse(q.meta.get('glvl')?.value || '{}'); } catch { smooth = {}; } }
+    const alpha = process.env.GLVL_ALPHA !== undefined ? Number(process.env.GLVL_ALPHA) : (G.level.smoothing ?? 0.15);
+    const step = now - smoothAt >= SMOOTH_MS;
+    for (const [f, v] of target) smooth[f] = smooth[f] === undefined ? v : step ? smooth[f] + (v - smooth[f]) * alpha : smooth[f];
+    if (step) { smoothAt = now; q.setMeta.run('glvl', JSON.stringify(smooth)); }
+    levelCache = { at: now, all: pick(allAct, all), by: new Map([...target.keys()].map((f) => [f, smooth[f]])) };
     return levelCache;
   }
   // Niveau de renommée d'un général : moyenne de sa faction (ou de tous les joueurs s'il est indépendant), selon son coefficient.
@@ -1751,7 +1766,8 @@ module.exports = function createCampaign(ctx) {
     tick();
     send(res, 200, { ...ctx.mePayload(user), map: mapPayload(user.id), ...extra });
   };
-  // Réactions possibles du joueur à un événement du journal (voir POST /api/journal/react).
+  // Réactions possibles du joueur à un événement du journal (voir POST /api/journal/react), chacune avec sa limite de validité :
+  // soutenir et envoyer de l'aide tant que la bataille est en cours, féliciter pendant `cheerMinutes` après le résultat.
   function reactionKinds(userId, e) {
     let p;
     try { p = JSON.parse(e.params) || {}; } catch { return []; }
@@ -1760,10 +1776,10 @@ module.exports = function createCampaign(ctx) {
     const b = q.battleById.get(p.battle);
     const open = !!b && !b.resolved_at;
     const mine = !!q.myContribution.get(p.battle, userId);
-    if (e.type === 'territory_taken' && p.faction === side && !mine) return ['cheer'];
-    if (e.type === 'attack_repelled' && p.faction === side && !mine) return ['cheer'];
-    if (e.type === 'battle_started' && p.attacker === side && p.actor && p.actor !== userId && open) return ['support'];
-    if (e.type === 'rally' && p.faction === side && p.actor !== userId && open) return ['help'];
+    const cheerUntil = e.created_at + (C.reactions.cheerMinutes || 60) * 60000;
+    if ((e.type === 'territory_taken' || e.type === 'attack_repelled') && p.faction === side && !mine && Date.now() < cheerUntil) return [{ k: 'cheer', until: cheerUntil }];
+    if (e.type === 'battle_started' && p.attacker === side && p.actor && p.actor !== userId && open) return [{ k: 'support', until: b.ends_at }];
+    if (e.type === 'rally' && p.faction === side && p.actor !== userId && open) return [{ k: 'help', until: b.ends_at }];
     return [];
   }
   const reviveCost = (faction) => (perks(faction).freeRevive ? 0 : C.revive.gold);
@@ -2071,7 +2087,7 @@ module.exports = function createCampaign(ctx) {
       tick();
       if (phase(Date.now()) === 'break') throw new HttpError(409, 'campaign_break');
       const e = Number.isInteger(event) ? q.eventById.get(event) : null;
-      if (!e || !['cheer', 'support', 'help'].includes(kind) || !reactionKinds(user.id, e).includes(kind)) throw new HttpError(409, 'invalid_action');
+      if (!e || !['cheer', 'support', 'help'].includes(kind) || !reactionKinds(user.id, e).some((x) => x.k === kind)) throw new HttpError(409, 'invalid_action');
       if (q.reactionsSince.get(user.id, kind, Date.now() - 86_400_000).n >= C.reactions.dailyCap) throw new HttpError(429, 'reaction_cap');
       if (q.addReaction.run(e.id, user.id, kind, Date.now()).changes !== 1) throw new HttpError(409, 'already_done');
       const p = JSON.parse(e.params);
@@ -2103,7 +2119,7 @@ module.exports = function createCampaign(ctx) {
         now: Date.now(),
         events: q.events.all().map((e) => {
           const { actor: _a, battle: _b, ...params } = parse(e.params); // les identifiants de joueurs restent côté serveur
-          return { id: e.id, type: e.type, params, at: e.created_at, react: reactionKinds(user.id, e).filter((k) => !done.has(`${e.id}:${k}`)) };
+          return { id: e.id, type: e.type, params, at: e.created_at, react: reactionKinds(user.id, e).filter((x) => !done.has(`${e.id}:${x.k}`)) };
         }),
         fallen: mapPayload(user.id).fallen,
         exile: exileInfo(user.id),

@@ -410,6 +410,8 @@ let mapView = null; // fonctions de l'écran Carte ouvert, pour le rafraîchir s
 let refreshDue = 0;
 function tickTimers() {
   let expired = false;
+  // Une réaction du journal disparaît dès que l'action n'est plus en cours.
+  document.querySelectorAll('[data-expire]').forEach((el) => { if (Number(el.dataset.expire) <= serverNow()) el.remove(); });
   document.querySelectorAll('[data-until]').forEach((el) => {
     const left = Number(el.dataset.until) - serverNow();
     el.textContent = fmtLeft(left);
@@ -698,7 +700,7 @@ async function renderMap() {
     const counterBonus = state.config.campaign?.counter?.attackBonus || 0;
     const capFaction = Object.entries(state.map?.capitals || {}).find(([, id]) => id === tr.id)?.[0];
     const bsp0 = state.config.campaign?.build?.specs || {};
-    const tags = [capFaction ? `\u{1F451} ${t('camp.capital', { faction: loc(faction(capFaction)?.name) })}` : '', st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : '',
+    const tags = [capFaction ? `\u{1F451} ${loc(state.config.campaign?.capitalNames?.[capFaction]) || t('camp.capital', { faction: loc(faction(capFaction)?.name) })}` : '', st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : '',
       st.build ? t('build.current', { name: loc(bsp0[st.build.spec]?.name), level: st.build.level }) : ''].filter(Boolean);
     const present = Object.entries(st.players || {}).map(([f, n]) => `<span class="who-here" title="${esc(loc(faction(f)?.name))}">
       ${flag(f) || `<span class="dot" style="--c:${esc(faction(f)?.color || '#888')}"></span>`}${n}</span>`).join('');
@@ -741,11 +743,15 @@ async function renderMap() {
     // Phase de la campagne, capacité du seigneur, objectif de la semaine, signalements de la faction.
     const lordInfo = state.map?.lord;
     const obj = state.map?.objective;
-    const lordHtml = lordInfo ? `<div class="strip lord ${lordInfo.activeUntil ? 'on' : ''}" title="${esc(loc(lordInfo.ability.description))}">
-        <img src="${esc(faction(lordInfo.faction)?.lord || '')}" alt=""><div><strong>${esc(loc(lordInfo.ability.title))}</strong>
-        ${lordInfo.activeUntil ? `<small>${withTimer('lord.active', { ability: loc(lordInfo.ability.title) }, lordInfo.activeUntil).replace(esc(loc(lordInfo.ability.title)) + ' ', '')}</small>`
-    : `<span class="xpbar"><i style="width:${Math.min(100, (lordInfo.gauge / lordInfo.max) * 100)}%"></i></span><small>${esc(t('lord.gauge', { n: lordInfo.gauge, max: lordInfo.max }))}</small>`}</div></div>` : '';
-    const objHtml = obj ? `<div class="strip objective ${obj.done ? 'done' : ''}"><span aria-hidden="true">\u{1F3AF}</span><div><strong>${esc(loc(obj.title))}</strong> <small>${obj.done ? esc(t('objective.done')) : `${obj.current} / ${obj.target}`}</small>
+    const lordFac = lordInfo && faction(lordInfo.faction);
+    const lordPortrait = lordInfo && (state.config.generals?.roster || []).find((x) => x.id === lordInfo.id)?.avatar;
+    const lordHtml = lordInfo ? `<div class="strip lord ${lordInfo.activeUntil ? 'on' : ''}" style="--c:${esc(lordFac?.color || '#c9a25a')}" title="${esc(loc(lordInfo.ability.description))}">
+        <img class="portrait" src="${esc(lordPortrait || '')}" alt="">
+        <div><strong>${esc(loc(lordInfo.ability.title))}</strong>
+        ${lordInfo.activeUntil ? `<small class="live">${esc(t('lord.activeShort'))} · <span data-until="${lordInfo.activeUntil}">${fmtLeft(lordInfo.activeUntil - serverNow())}</span></small>`
+    : `<span class="xpbar"><i style="width:${Math.min(100, (lordInfo.gauge / lordInfo.max) * 100)}%"></i></span><small>${esc(t('lord.gauge', { n: lordInfo.gauge, max: lordInfo.max }))}</small>`}</div>
+        ${lordFac?.logo ? `<img class="banner" src="${esc(lordFac.logo)}" alt="">` : ''}</div>` : '';
+    const objHtml = obj ? `<div class="strip objective ${obj.done ? 'done' : ''}" style="--c:${esc(faction(myFaction())?.color || '#c9a25a')}"><span aria-hidden="true">\u{1F3AF}</span><div><strong>${esc(loc(obj.title))}</strong> <small>${obj.done ? esc(t('objective.done')) : `${obj.current} / ${obj.target}`}</small>
         <p class="small muted">${esc(loc(obj.description))}</p></div></div>` : '';
     const phaseHtml = phase === 'closing' ? `<p class="banner">${esc(t('camp.closing'))}</p>`
       : phase === 'break' ? `<p class="banner">${withTimer('camp.break', {}, state.map.campaign.resetAt)}</p>` : '';
@@ -923,11 +929,17 @@ async function renderMenu() {
     const shownFactions = state.config.factions.filter((x) => (!x.secret && !x.npc) || x.id === ch.faction || counts[x.id] > 0
       || state.players.some((p) => p.faction === x.id));
     view.innerHTML = `
-      <button class="btn ghost" type="button" data-rules>${esc(t('menu.rules'))}</button>
-      <button class="btn ghost" type="button" data-impact>${esc(t('menu.impact'))}</button>
-      <button class="btn ghost" type="button" data-pantheon>${esc(t('menu.pantheon'))}</button>
-      <button class="btn ghost" type="button" data-pushsettings>${esc(t('menu.notifications'))}</button>
-      <button class="btn ghost" type="button" data-install>${esc(t('menu.install'))}</button>
+      <details class="menu-fold" data-fold="help" ${state.menuFold?.help ? 'open' : ''}><summary>${esc(t('menu.helpFold'))}</summary>
+        <div class="fold-body">
+          <button class="btn ghost" type="button" data-rules>${esc(t('menu.rules'))}</button>
+          <button class="btn ghost" type="button" data-pushsettings>${esc(t('menu.notifications'))}</button>
+          <button class="btn ghost" type="button" data-install>${esc(t('menu.install'))}</button>
+        </div></details>
+      <details class="menu-fold" data-fold="conquests" ${state.menuFold?.conquests ? 'open' : ''}><summary>${esc(t('menu.conquestFold'))}</summary>
+        <div class="fold-body">
+          <button class="btn ghost" type="button" data-impact>${esc(t('menu.impact'))}</button>
+          <button class="btn ghost" type="button" data-pantheon>${esc(t('menu.pantheon'))}</button>
+        </div></details>
       <button class="btn ghost" type="button" data-patches>${esc(t('menu.patches'))}${patchUnread() ? `<span class="new-dot" title="${esc(t('patch.new'))}"></span>` : ''}</button>
 
       <section class="card">
@@ -1016,6 +1028,7 @@ async function renderMenu() {
 
       <button class="btn danger" type="button" data-logout>${esc(t('common.logout'))}</button>`;
     view.querySelector('[data-logout]').addEventListener('click', logout);
+    view.querySelectorAll('.menu-fold').forEach((d) => d.addEventListener('toggle', () => { state.menuFold = { ...state.menuFold, [d.dataset.fold]: d.open }; }));
     view.querySelector('[data-rules]').addEventListener('click', () => go('rules'));
     view.querySelector('[data-patches]').addEventListener('click', () => go('patches'));
     view.querySelector('[data-install]').addEventListener('click', () => go('install'));
@@ -1228,7 +1241,7 @@ async function renderJournal() {
       + (events.length ? events.map(({ e, d }) => `<article class="card event" style="--c:${esc(d.color || '#6b7287')}">
           <p>${d.html}</p>
           <div class="event-foot"><small class="muted">${esc(ago(e.at, data.now))}</small>
-            ${(e.react || []).map((k) => `<button type="button" class="react" data-react="${k}" data-event="${e.id}" title="${esc(t(`react.${k}`))}" aria-label="${esc(t(`react.${k}`))}"><span aria-hidden="true">${REACT_ICON[k]}</span></button>`).join('')}</div></article>`).join('')
+            ${(e.react || []).filter((x) => x.until > serverNow()).map((x) => `<button type="button" class="react" data-react="${x.k}" data-event="${e.id}" data-expire="${x.until}" title="${esc(t(`react.${x.k}`))}" aria-label="${esc(t(`react.${x.k}`))}"><span aria-hidden="true">${REACT_ICON[x.k]}</span></button>`).join('')}</div></article>`).join('')
         : `<p class="muted">${esc(t('journal.empty'))}</p>`);
     view.querySelectorAll('[data-exile]').forEach((b) => b.addEventListener('click', async () => {
       view.querySelectorAll('[data-exile]').forEach((x) => { x.disabled = true; });
@@ -1488,13 +1501,14 @@ function renderPatches() {
   view.className = 'view scroll';
   const patches = state.config.patches || [];
   const fmt = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
-  view.innerHTML = panelHead(t('patch.title')) + (patches.length ? patches.map((pt) => `
-    <section class="card patch">
-      <h2>${esc(loc(pt.title))}${pt.date ? ` <span class="muted small">· ${esc(fmt(pt.date))}</span>` : ''}</h2>
-      ${pt.intro ? `<p class="muted">${esc(loc(pt.intro))}</p>` : ''}
+  // La dernière mise à jour est affichée ; les précédentes sont archivées chacune dans un dépliant fermé.
+  const body = (pt) => `${pt.intro ? `<p class="muted">${esc(loc(pt.intro))}</p>` : ''}
       ${(pt.sections || []).map((sec) => `<h3>${esc(loc(sec.title))}</h3>
-        <ul class="patch-list">${(sec.items || []).map((i) => `<li>${esc(loc(i))}</li>`).join('')}</ul>`).join('')}
-    </section>`).join('') : `<p class="muted">${esc(t('patch.empty'))}</p>`);
+        <ul class="patch-list">${(sec.items || []).map((i) => `<li>${esc(loc(i))}</li>`).join('')}</ul>`).join('')}`;
+  const head = (pt) => `${esc(loc(pt.title))}${pt.date ? ` <span class="muted small">· ${esc(fmt(pt.date))}</span>` : ''}`;
+  view.innerHTML = panelHead(t('patch.title')) + (patches.length ? patches.map((pt, i) => (i === 0
+    ? `<section class="card patch"><h2>${head(pt)}</h2>${body(pt)}</section>`
+    : `<details class="card patch archived"><summary><strong>${head(pt)}</strong></summary>${body(pt)}</details>`)).join('') : `<p class="muted">${esc(t('patch.empty'))}</p>`);
   bindClose(view);
   if (patchUnread()) {
     state.me.patch = { ...state.me.patch, seen: state.me.patch.latest };

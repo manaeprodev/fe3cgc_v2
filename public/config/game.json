@@ -1962,7 +1962,7 @@
     "maxChance": 0.95,
     "boss": {
       "faction": "serpents",
-      "chancePerTurn": 0.07,
+      "chancePerTurn": 0.04,
       "max": 1,
       "power": 3,
       "quietHours": {
@@ -2087,7 +2087,8 @@
       "cheerXp": 10,
       "supportGold": 10,
       "helpPct": 1,
-      "dailyCap": 10
+      "dailyCap": 10,
+      "cheerMinutes": 60
     },
     "missions": [
       {
@@ -2487,6 +2488,20 @@
     },
     "season": {
       "campaigns": 4
+    },
+    "capitalNames": {
+      "rouge": {
+        "fr": "Capitale de l'Empire d'Adrestia",
+        "en": "Capital of the Adrestian Empire"
+      },
+      "bleue": {
+        "fr": "Capitale du Saint Royaume de Faerghus",
+        "en": "Capital of the Holy Kingdom of Faerghus"
+      },
+      "jaune": {
+        "fr": "Capitale de l'Alliance de Leicester",
+        "en": "Capital of the Leicester Alliance"
+      }
     }
   },
   "daily": {
@@ -2708,6 +2723,14 @@
             {
               "fr": "Les Serpents des Ténèbres ont leurs généraux : environ un raid sur trois est mené par l'un d'eux, et Epimenides, toujours le dernier, met fin aux raids pour la campagne et donne +15 % de points à ceux qui l'abattent.",
               "en": "Those Who Slither in the Dark have generals: about one raid in three is led by one, and Epimenides, always last, ends the raids for the campaign and gives +15% points to those who slay him."
+            },
+            {
+              "fr": "Niveau des généraux équilibré : une faction en retard de renommée a des généraux plus forts, et leur niveau évolue en douceur, sans sauts.",
+              "en": "Generals' level is balanced: a faction behind in renown has stronger generals, and their level changes gradually, without jumps."
+            },
+            {
+              "fr": "Les Serpents des Ténèbres attaquent moins souvent.",
+              "en": "Those Who Slither in the Dark attack less often."
             }
           ]
         },
@@ -2812,6 +2835,14 @@
             {
               "fr": "Messages temporaires en haut de l'écran, détail des territoires plus compact avec les généraux, repères mieux centrés, carte zoomée sur ta position, drapeau de nation sur la bannière, pas de zoom au double tap.",
               "en": "Temporary messages at the top of the screen, more compact territory details showing generals, better-centred markers, map zoomed on your position, nation flag on the banner, no double-tap zoom."
+            },
+            {
+              "fr": "Menu réorganisé : « Informations & Aide » (règles, notifications, écran d'accueil) et « Mes conquêtes » (impact, panthéon). Les réactions du journal ne s'affichent que tant que l'action est en cours.",
+              "en": "Reorganised menu: \"Information & Help\" (rules, notifications, home screen) and \"My conquests\" (impact, pantheon). Journal reactions only show while the action is still going on."
+            },
+            {
+              "fr": "Bandeau du seigneur plus compact, avec son portrait et les couleurs de sa maison.",
+              "en": "More compact lord banner, with their portrait and house colours."
             }
           ]
         }
@@ -3118,7 +3149,9 @@
       "min": 1,
       "base": 0.5,
       "perCoef": 0.25,
-      "activeDays": 7
+      "activeDays": 7,
+      "balance": 0.7,
+      "smoothing": 0.15
     },
     "reward": {
       "gold": 120,

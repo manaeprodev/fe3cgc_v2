@@ -504,5 +504,8 @@
   "push.verdict": "Général à juger",
   "notif.stamina_full.title": "Tes actions sont prêtes",
   "notif.stamina_full.body": "Ta réserve d'actions est pleine : reviens jouer !",
-  "error.invalid_subscription": "Abonnement refusé."
+  "error.invalid_subscription": "Abonnement refusé.",
+  "menu.helpFold": "Informations & Aide",
+  "menu.conquestFold": "Mes conquêtes",
+  "lord.activeShort": "Capacité active"
 }

@@ -499,5 +499,8 @@
   "push.verdict": "General to judge",
   "notif.stamina_full.title": "Your actions are ready",
   "notif.stamina_full.body": "Your action reserve is full: come back and play!",
-  "error.invalid_subscription": "Subscription refused."
+  "error.invalid_subscription": "Subscription refused.",
+  "menu.helpFold": "Information & Help",
+  "menu.conquestFold": "My conquests",
+  "lord.activeShort": "Ability active"
 }

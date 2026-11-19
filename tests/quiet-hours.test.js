@@ -1,4 +1,4 @@
-// Teste les heures calmes des Serpents des Ténèbres (pas d'apparition de minuit à 6 h, heure de Paris) et la chance de 7 %.
+// Teste les heures calmes des Serpents des Ténèbres (pas d'apparition de minuit à 6 h, heure de Paris) et la chance de 4 %.
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -41,7 +41,7 @@ const paris = (iso) => Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit'
 
 (async () => {
   try {
-    check('config : 7 % de chances par tour', cfg.campaign.boss.chancePerTurn === 0.07, String(cfg.campaign.boss.chancePerTurn));
+    check('config : 4 % de chances par tour', cfg.campaign.boss.chancePerTurn === 0.04, String(cfg.campaign.boss.chancePerTurn));
     check('config : interdit de minuit (inclus) à 6 h (exclu), heure de Paris', JSON.stringify(cfg.campaign.boss.quietHours) === '{"from":0,"to":6,"timezone":"Europe/Paris"}');
     // Lecture de l'heure de Paris : heure d'hiver (UTC+1) et d'été (UTC+2), y compris autour de minuit et de 6 h.
     check('heure de Paris, hiver : 23 h 30 UTC = 0 h', paris('2026-01-15T23:30:00Z') === 0);

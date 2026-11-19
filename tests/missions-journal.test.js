@@ -195,7 +195,7 @@ const mission = async (n, id) => (await clients[n]('/missions')).d.campaignMissi
     check('Rouge1 lance une attaque', r.s === 200, JSON.stringify(r.d.error));
     let j = (await clients.Rouge2('/journal')).d.events;
     const started = j.find((e) => e.type === 'battle_started');
-    check('un allié peut soutenir cette attaque', started && started.react.join() === 'support' && !('actor' in started.params), JSON.stringify(started));
+    check('un allié peut soutenir cette attaque', started && started.react.map((x) => x.k).join() === 'support' && !('actor' in started.params), JSON.stringify(started));
     check('l\'auteur de l\'attaque ne peut pas se soutenir lui-même', (await clients.Rouge1('/journal')).d.events.find((e) => e.type === 'battle_started').react.length === 0);
     check('un ennemi ne peut pas soutenir', (await clients.Bleu1('/journal')).d.events.find((e) => e.type === 'battle_started').react.length === 0);
     r = await clients.Rouge2('/journal/react', { event: started.id, kind: 'support' });
@@ -210,7 +210,7 @@ const mission = async (n, id) => (await clients[n]('/missions')).d.campaignMissi
     r = await clients.Rouge1('/rally', {});
     j = (await clients.Rouge2('/journal')).d.events;
     const rally = j.find((e) => e.type === 'rally');
-    check('un allié peut envoyer de l\'aide', rally && rally.react.join() === 'help', JSON.stringify(rally));
+    check('un allié peut envoyer de l\'aide', rally && rally.react.map((x) => x.k).join() === 'help', JSON.stringify(rally));
     check('mais pas celui qui a appelé à l\'aide', (await clients.Rouge1('/journal')).d.events.find((e) => e.type === 'rally').react.length === 0);
     r = await clients.Rouge2('/journal/react', { event: rally.id, kind: 'help' });
     const chance1 = terrOf((await clients.Rouge1('/map')).d, 'duval').battle.chance;
@@ -220,7 +220,7 @@ const mission = async (n, id) => (await clients[n]('/missions')).d.campaignMissi
     await clients.Rouge1('/map');
     j = (await clients.Rouge2('/journal')).d.events;
     const taken = j.find((e) => e.type === 'territory_taken');
-    check('territoire pris : un allié qui n\'y a pas combattu peut féliciter', taken && taken.react.join() === 'cheer', JSON.stringify(taken));
+    check('territoire pris : un allié qui n\'y a pas combattu peut féliciter', taken && taken.react.map((x) => x.k).join() === 'cheer', JSON.stringify(taken));
     check('pas ceux qui ont combattu', (await clients.Rouge1('/journal')).d.events.find((e) => e.type === 'territory_taken').react.length === 0);
     check('ni l\'autre camp', (await clients.Bleu1('/journal')).d.events.find((e) => e.type === 'territory_taken').react.length === 0);
     const xp0 = (await me('Rouge2')).character.xp;

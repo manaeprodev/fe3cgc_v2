@@ -219,14 +219,14 @@ const mission = async (n, id) => (await clients[n]('/missions')).d.campaignMissi
     await sleep(13500);
     await clients.Rouge1('/map');
     j = (await clients.Rouge2('/journal')).d.events;
-    const taken = j.find((e) => e.type === 'territory_taken');
+    const taken = j.find((e) => e.type === 'territory_taken' && e.params.territory === 'duval');
     check('territoire pris : un allié qui n\'y a pas combattu peut féliciter', taken && taken.react.map((x) => x.k).join() === 'cheer', JSON.stringify(taken));
-    check('pas ceux qui ont combattu', (await clients.Rouge1('/journal')).d.events.find((e) => e.type === 'territory_taken').react.length === 0);
-    check('ni l\'autre camp', (await clients.Bleu1('/journal')).d.events.find((e) => e.type === 'territory_taken').react.length === 0);
+    check('pas ceux qui ont combattu', (await clients.Rouge1('/journal')).d.events.find((e) => e.type === 'territory_taken' && e.params.territory === 'duval').react.length === 0);
+    check('ni l\'autre camp', (await clients.Bleu1('/journal')).d.events.find((e) => e.type === 'territory_taken' && e.params.territory === 'duval').react.length === 0);
     const xp0 = (await me('Rouge2')).character.xp;
     r = await clients.Rouge2('/journal/react', { event: taken.id, kind: 'cheer' });
     check('féliciter : +10 xp', r.s === 200 && r.d.character.xp === xp0 + 10, JSON.stringify([xp0, r.d.character?.xp]));
-    const done = (await clients.Rouge2('/journal')).d.events.find((e) => e.type === 'territory_taken');
+    const done = (await clients.Rouge2('/journal')).d.events.find((e) => e.type === 'territory_taken' && e.params.territory === 'duval');
     check('la réaction disparaît ensuite', done.react.length === 0);
     // Soutien impossible une fois la bataille terminée
     check('l\'attaque terminée ne se soutient plus', (await clients.Rouge2('/journal')).d.events.find((e) => e.type === 'battle_started').react.length === 0);

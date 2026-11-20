@@ -74,6 +74,17 @@ module.exports = function createCampaign(ctx) {
   // un autre général sous leur bannière (Yuri retourne alors à Garreg-Mach, les autres rejoignent un allié et ordonnent la reprise).
   const LORDS = G.lords || {};
   const isLord = (gid) => Object.values(LORDS).includes(gid);
+  // Église de Seiros : ses chevaliers gardent Garreg-Mach autour de Rhea (son seigneur), partent en croisade contre une faction
+  // qui domine la carte, et si Garreg-Mach tombe, Rhea s'éveille en l'Immaculée et lance ses assauts pour le reprendre.
+  const CH = {
+    faction: 'eglise', seat: 'garreg-mach', lord: 'rhea', immaculate: 'immaculate',
+    crusade: { start: 0.45, end: 0.38, sorties: 3, garrison: 2 },
+    awakening: { waves: 3, waveGapHours: 4, power: 3, raidChance: 0.15, maxRaids: 1, pointsBonus: 0.1 },
+    ...(G.church || {}),
+  };
+  // Siège d'un seigneur : la capitale de sa faction, ou Garreg-Mach pour l'Église.
+  const seatOf = (f) => C.capitals[f] || (f === CH.faction ? CH.seat : null);
+  const raidRoll = () => (process.env.TEST_RAID_ROLL !== undefined ? Number(process.env.TEST_RAID_ROLL) : Math.random());
   // Pour les tests : TURN_SECONDS raccourcit les tours, TEST_ROLL fixe le tirage des batailles (0 = réussite),
   // BOSS_CHANCE remplace la probabilité d'apparition d'un mini-boss.
   const TURN_MS = (Number(process.env.TURN_SECONDS) || C.turnMinutes * 60) * 1000;
@@ -172,6 +183,14 @@ module.exports = function createCampaign(ctx) {
     -- Distinctions gagnées par un joueur (une par campagne et par type).
     -- Généraux de la campagne en cours. status : alive, captive (vaincu, en attente du verdict des vainqueurs) ou dead.
     -- faction vide = indépendant ; les généraux des Serpents attendent hors carte (territory vide) qu'un raid les fasse apparaître.
+    -- Relations (niveau de soutien) d'un joueur avec chaque général : permanentes, elles survivent aux campagnes.
+    CREATE TABLE IF NOT EXISTS relations (
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      gid        TEXT NOT NULL,
+      points     INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER,
+      PRIMARY KEY (user_id, gid)
+    );
     CREATE TABLE IF NOT EXISTS generals (
       gid        TEXT PRIMARY KEY,
       faction    TEXT,
@@ -288,7 +307,7 @@ module.exports = function createCampaign(ctx) {
     // Joueurs en vie (ou en train de se replier) avec leur camp, leur classe et leur renommée : présence sur la carte.
     alivePlayers: db.prepare(`SELECT p.user_id, p.territory, COALESCE(p.exile_faction, c.faction) AS faction, c.class, c.class_path, c.xp
                               FROM player_state p JOIN characters c ON c.user_id = p.user_id WHERE p.status != 'dead'`),
-    battleRows: db.prepare('SELECT user_id, faction, side, power, kind, streak FROM contributions WHERE battle_id = ?'),
+    battleRows: db.prepare('SELECT user_id, faction, side, power, kind, streak, created_at FROM contributions WHERE battle_id = ?'),
     setStreak: db.prepare('UPDATE player_state SET streak_territory = ?, streak_count = ? WHERE user_id = ?'),
     setRewardDebuff: db.prepare('UPDATE player_state SET reward_debuff = ? WHERE user_id = ?'),
     tickDebuff: db.prepare('UPDATE player_state SET reward_debuff = MAX(reward_debuff - 1, 0) WHERE user_id = ?'),
@@ -362,7 +381,7 @@ module.exports = function createCampaign(ctx) {
                            ON CONFLICT (faction) DO UPDATE SET points = points + excluded.points`),
     meta: db.prepare('SELECT value FROM campaign_meta WHERE key = ?'),
     setMeta: db.prepare('INSERT INTO campaign_meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value'),
-    clearFactionMeta: db.prepare("DELETE FROM campaign_meta WHERE key LIKE 'held:%' OR key LIKE 'out:%' OR key LIKE 'epi:%' OR key LIKE 'finished:%' OR key LIKE 'gauge:%' OR key LIKE 'buff:%' OR key LIKE 'retake:%' OR key LIKE 'warned:%' OR key IN ('conquest', 'serpents_gone', 'reset_at', 'summary')"),
+    clearFactionMeta: db.prepare("DELETE FROM campaign_meta WHERE key LIKE 'held:%' OR key LIKE 'out:%' OR key LIKE 'epi:%' OR key LIKE 'finished:%' OR key LIKE 'gauge:%' OR key LIKE 'buff:%' OR key LIKE 'retake:%' OR key LIKE 'warned:%' OR key LIKE 'immac:%' OR key IN ('conquest', 'serpents_gone', 'reset_at', 'summary', 'crusade', 'immaculate')"),
     addEvent: db.prepare('INSERT INTO world_events (campaign_id, type, params, created_at) VALUES (?, ?, ?, ?)'),
     events: db.prepare('SELECT id, type, params, created_at FROM world_events ORDER BY id DESC LIMIT 40'),
     purgeEvents: db.prepare('DELETE FROM world_events WHERE id <= (SELECT max(id) FROM world_events) - 300'),
@@ -477,12 +496,13 @@ module.exports = function createCampaign(ctx) {
     const side = effFaction(uid);
     const spot = side && spawnTerritory(side, ownersMap());
     if (!spot) { q.setDead.run(uid); notify(uid, 'fallen', { wounded: false }); return; }
-    const fine = Math.min(q.gold.get(uid)?.gold || 0, Math.round((isExile(uid) ? C.revive.gold : reviveCost(side)) * mult) + snipe);
+    const fine = Math.min(q.gold.get(uid)?.gold || 0, Math.round((isExile(uid) ? C.revive.gold : reviveCost(side)) * mult * reviveFactor(uid)) + snipe);
     if (fine > 0) q.takeGold.run(fine, uid);
     q.setTerritory.run(spot, uid);
     q.setActions.run(0, t, uid);
-    q.setRewardDebuff.run(C.wound.actions, uid);
-    notify(uid, 'fallen', { wounded: true, gold: fine, actions: C.wound.actions, territory: spot });
+    const woundActions = Math.max(0, C.wound.actions - relSum(relBonuses(uid), 'woundRelief')); // Linhardt
+    q.setRewardDebuff.run(woundActions, uid);
+    notify(uid, 'fallen', { wounded: true, gold: fine, actions: woundActions, territory: spot });
   }
   // Fait reculer des joueurs après une bataille perdue ou un territoire perdu : ils ont quelques tours pour se replier, sinon ils tombent.
   // mult : coût de retour en jeu s'ils tombent (x2 pour un attaquant dont l'attaque a échoué). foes : effets des vainqueurs (Archer).
@@ -498,7 +518,7 @@ module.exports = function createCampaign(ctx) {
         notify(uid, 'auto_retreat', { territory: from, home: refuge });
       } else {
         const own = fx.sumOf(effectsOfUser(uid), 'retreat', 'own');
-        const turns = Math.max(1, C.retreatTurns + own + enemyAdj);
+        const turns = Math.max(1, C.retreatTurns + own + enemyAdj + relSum(relBonuses(uid), 'retreatDelay')); // Flayn
         q.setRetreating.run(t + turns * TURN_MS, penalty, mult, uid);
         notify(uid, 'must_retreat', { territory: q.state.get(uid)?.territory });
       }
@@ -523,6 +543,7 @@ module.exports = function createCampaign(ctx) {
   const score = (userId, n) => {
     if (!n) return;
     const exiled = !!q.state.get(userId)?.exile_faction;
+    n = Math.round(n * (1 + relSum(relBonuses(userId), 'scoreBonus') / 100)); // Rhea
     q.addScore.run(currentCampaign().id, userId, n, exiled ? 0 : n);
   };
 
@@ -727,15 +748,22 @@ module.exports = function createCampaign(ctx) {
   const effectsOfUser = (userId) => { const ch = q.char.get(userId); return ch ? effectsOfRow(ch) : []; };
   const productOf = (effects, kind, field) => effects.filter((e) => e.kind === kind).reduce((a, e) => a * (Number(e[field]) || 1), 1);
   // Réserve d'actions et vitesse de recharge d'un joueur (Chevalier wyverne et Lord wyverne en ont plus).
-  const limitsOf = (userId) => fx.actionLimits(effectsOfUser(userId), C.maxActions, TURN_MS, C.turnMinutes);
+  const limitsOf = (userId) => {
+    const l = fx.actionLimits(effectsOfUser(userId), C.maxActions, TURN_MS, C.turnMinutes);
+    return { ...l, max: l.max + relSum(relBonuses(userId), 'maxActions') }; // Manuela : plus d'actions en réserve
+  };
   // Tirage des déplacements gratuits (TEST_MOVE_ROLL le fixe pour les tests).
   const moveRoll = () => (process.env.TEST_MOVE_ROLL !== undefined ? Number(process.env.TEST_MOVE_ROLL) : Math.random());
   const freeMoveChance = (userId) => { const ch = q.char.get(userId); return ch ? fx.freeMoveChance(fx.pathOf(ch), effectsOfRow(ch)) : 0; };
   // Multiplicateurs d'or et d'expérience appliqués à toutes les sources de gains (voir `grant` dans server.js).
-  function rewardMods(userId) {
+  function rewardMods(userId, source = 'other') {
     const effects = effectsOfUser(userId);
     let gold = 1 + fx.sumOf(effects, 'goldBonus') / 100;
     let xp = 1 + fx.sumOf(effects, 'xpBonus') / 100;
+    // Soutien : Leonie (toute la renommée), Hanneman (renommée des récoltes), Seteth (missions du jour).
+    const rb = relBonuses(userId);
+    xp += (relSum(rb, 'xpAll') + (source === 'gather' ? relSum(rb, 'gatherXp') : 0)) / 100;
+    if (source === 'daily') { const d = relSum(rb, 'dailyBonus') / 100; gold += d; xp += d; }
     // Après une téléportation, les récompenses des actions suivantes sont réduites.
     if ((q.state.get(userId)?.reward_debuff || 0) > 0) {
       const f = effects.find((e) => e.kind === 'teleport')?.rewardFactor ?? 0.5;
@@ -746,7 +774,7 @@ module.exports = function createCampaign(ctx) {
   }
   // Un exilé ne profite d'aucun avantage de la faction qu'il sert (capacité du seigneur, avantages des Loups de cendre…).
   const fortifyCost = (userId) => Math.round(C.hire.gold * productOf(effectsOfUser(userId), 'fortifyCost', 'factor') * (isExile(userId) ? 1 : hireFactor(effFaction(userId))));
-  const fortifyPower = (userId) => C.hire.power * productOf(effectsOfUser(userId), 'fortifyPower', 'factor');
+  const fortifyPower = (userId) => C.hire.power * productOf(effectsOfUser(userId), 'fortifyPower', 'factor') * (1 + relSum(relBonuses(userId), 'fortifyBoost') / 100); // Gilbert
 
   // Crée l'état du joueur s'il n'existe pas encore (nouveau personnage ou nouvelle campagne).
   function ensurePlayer(userId) {
@@ -771,7 +799,22 @@ module.exports = function createCampaign(ctx) {
     return actions >= lim.max ? { actions, at: t, next: null, max: lim.max } : { actions, at, next: at + lim.ms, max: lim.max };
   }
   // Actions offertes (missions) : elles peuvent dépasser le maximum.
+  // Hilda : de l'or à chaque action rendue par le compteur. On enregistre alors la recharge (même résultat que settle) pour ne
+  // payer chaque action qu'une fois. Une réserve pleine ne se recharge pas, donc ne rapporte rien.
+  function collectRegen(userId, t = Date.now()) {
+    const gold = relSum(relBonuses(userId), 'regenGold');
+    if (!gold) return 0;
+    const ps = q.state.get(userId);
+    if (!ps) return 0;
+    const s = settle(ps, t);
+    const gained = s.actions - ps.actions;
+    if (gained <= 0) return 0;
+    q.setActions.run(s.actions, s.at, userId);
+    grant(userId, gold * gained, 0, 'relation');
+    return gold * gained;
+  }
   function giveActions(userId, n) {
+    collectRegen(userId);
     const ps = ensurePlayer(userId);
     if (!ps || !n) return;
     const t = Date.now();
@@ -883,8 +926,15 @@ module.exports = function createCampaign(ctx) {
     db.exec('DELETE FROM generals; DELETE FROM general_contribs; DELETE FROM general_verdicts');
     if (!GENERALS_ON) return;
     for (const g of G.roster) q.insertGeneral.run(g.id, g.faction || null, g.home || '', G.actions, t);
+    if (GEN.has(CH.immaculate)) q.setGeneralStatus.run('dormant', CH.immaculate); // l'Immaculée attend la chute de Garreg-Mach
   }
-  const ensureGenerals = (t) => { if (GENERALS_ON) for (const g of G.roster) q.insertGeneral.run(g.id, g.faction || null, g.home || '', G.actions, t); };
+  const ensureGenerals = (t) => {
+    if (!GENERALS_ON) return;
+    const fresh = G.roster.filter((g) => q.insertGeneral.run(g.id, g.faction || null, g.home || '', G.actions, t).changes);
+    if (fresh.some((g) => g.id === CH.immaculate) && !awakening()) q.setGeneralStatus.run('dormant', CH.immaculate);
+    // Église ajoutée en pleine campagne alors que Garreg-Mach est déjà tombé : ses chevaliers n'entrent pas en jeu.
+    if (ownersMap().get(CH.seat) !== CH.faction) for (const g of fresh) if (g.faction === CH.faction && g.id !== CH.immaculate) q.setGeneralStatus.run('dead', g.id);
+  };
 
   // Actions d'un général : +1 par tour, 4 au maximum.
   function genActions(row, t) {
@@ -962,14 +1012,16 @@ module.exports = function createCampaign(ctx) {
           spendGen(row, cur, t, path.length);
           moveGeneral(row, home);
         }
-        genFight(row, cur, hb, 'defense', t, isLord(row.gid) && home === C.capitals[row.faction]); // un seigneur défend toujours sa capitale
+        genFight(row, cur, hb, 'defense', t, isLord(row.gid) && home === seatOf(row.faction)); // un seigneur défend toujours sa capitale
         continue;
       }
       // Seigneur dans sa capitale : il n'en bouge pas.
-      if (isLord(row.gid) && C.capitals[row.faction] && row.territory === C.capitals[row.faction] && owners.get(row.territory) === row.faction) continue;
+      if (isLord(row.gid) && seatOf(row.faction) && row.territory === seatOf(row.faction) && owners.get(row.territory) === row.faction) continue;
       // Engagé dans un combat là où il se trouve : il reste jusqu'à la fin (partir annulerait ses actions).
       const hereB = q.openBattle.get(row.territory);
       if (hereB && q.generalContribed.get(hereB.id, row.gid)) continue;
+      // Chevaliers de l'Église : garnison, croisade ou reprise de Garreg-Mach.
+      if (row.faction === CH.faction) { churchKnight(row, cur, owners, t, turn); continue; }
       // Ralliement : le seigneur a perdu sa capitale et a ordonné sa reprise ; tous les généraux de la faction marchent sur elle.
       const cap = C.capitals[row.faction];
       if (cap && q.meta.get(`retake:${row.faction}`)?.value === '1') {
@@ -1021,6 +1073,153 @@ module.exports = function createCampaign(ctx) {
     }
   }
 
+  // ------------------------------------------------------------ Église de Seiros
+  // Chemin le plus court vers le premier territoire qui remplit `goal` : les chevaliers de l'Église traversent toutes les terres.
+  function freePath(from, goal) {
+    if (goal(from)) return [];
+    const prev = new Map([[from, null]]);
+    const queue = [from];
+    while (queue.length) {
+      const cur = queue.shift();
+      for (const n of neighbors(cur)) {
+        if (prev.has(n)) continue;
+        prev.set(n, cur);
+        if (goal(n)) { const out = []; for (let x = n; x !== from; x = prev.get(x)) out.unshift(x); return out; }
+        queue.push(n);
+      }
+    }
+    return null;
+  }
+  const crusadeOf = () => q.meta.get('crusade')?.value || null;
+  // Éveil de l'Immaculée en cours : { holder, waves (assauts repoussés), next (prochain assaut sur Garreg-Mach), turn }.
+  function awakening() { try { return JSON.parse(q.meta.get('immaculate')?.value || 'null'); } catch { return null; } }
+  const knights = () => q.generals.all().filter((g) => g.faction === CH.faction && g.status === 'alive' && GEN.has(g.gid) && g.gid !== CH.lord && g.gid !== CH.immaculate);
+  function churchKnight(row, cur, owners, t, turn) {
+    if (row.gid === CH.lord || row.gid === CH.immaculate || row.move_turn >= turn || phase(t) !== 'open') return;
+    const here = row.territory;
+    const step = (to) => { spendGen(row, cur, t); moveGeneral(row, to); q.setGeneralMoveTurn.run(turn, row.gid); };
+    const march = (goal) => {
+      const path = freePath(here, goal);
+      if (path && path.length && cur.actions >= 1) step(path[0]);
+    };
+    // Garreg-Mach aux mains d'une autre faction (l'Immaculée l'assiège, ou Rhea n'est plus) : les chevaliers marchent dessus.
+    if ((owners.get(CH.seat) ?? null) !== CH.faction) {
+      if (here === CH.seat) { if (cur.actions >= 1) genAttack(row, cur, here, owners, t); return; }
+      return march((id) => id === CH.seat);
+    }
+    // Croisade : quelques chevaliers sortent (une garnison reste) et attaquent les terres de la faction visée, en commençant par les plus proches.
+    const target = crusadeOf();
+    if (target) {
+      const all = knights();
+      const out = all.filter((g) => g.territory !== CH.seat).length;
+      const home = all.length - out;
+      if (here !== CH.seat || (out < CH.crusade.sorties && home > CH.crusade.garrison)) {
+        if (owners.get(here) === target) { if (cur.actions >= 1) genAttack(row, cur, here, owners, t); return; }
+        return march((id) => {
+          const b = q.openBattle.get(id);
+          return owners.get(id) === target && !ANNEX.has(id) && !shieldUntil(id, owners, t) && (!b || b.attacker === CH.faction);
+        });
+      }
+      return;
+    }
+    // Sinon : retour à Garreg-Mach.
+    if (here !== CH.seat) march((id) => id === CH.seat);
+  }
+  // Croisade (déclarée par Rhea quand une faction tient trop de la carte, levée quand elle redescend) et assauts de l'Immaculée.
+  function churchTick(t) {
+    if (!GENERALS_ON || !GEN.has(CH.lord)) return;
+    const owners = ownersMap();
+    const aw = awakening();
+    if (aw) { awakeningTick(aw, owners, t); return; }
+    const rhea = q.general.get(CH.lord);
+    const able = !!rhea && rhea.status === 'alive' && owners.get(CH.seat) === CH.faction && phase(t) === 'open';
+    const main = TERR.filter((x) => !ANNEX.has(x.id));
+    const share = (f) => main.filter((x) => owners.get(x.id) === f).length / main.length;
+    const cur = crusadeOf();
+    if (cur) {
+      if (!able || share(cur) < CH.crusade.end) { q.setMeta.run('crusade', ''); journal('crusade_ended', { faction: cur }, t); }
+      return;
+    }
+    if (!able) return;
+    const [lead, pct] = [...PLAYABLE].map((f) => [f, share(f)]).sort((a, b) => b[1] - a[1])[0] || [];
+    if (!lead || pct < CH.crusade.start) return;
+    q.setMeta.run('crusade', lead);
+    journal('crusade_declared', { faction: lead, general: CH.lord }, t);
+    for (const c of q.chars.all()) notify(c.user_id, 'crusade_declared', { faction: lead });
+  }
+  // Garreg-Mach est tombé : Rhea s'éveille en l'Immaculée (elle quitte la carte, ses assauts commencent).
+  function awaken(holder, t) {
+    if (!GEN.has(CH.immaculate)) return killGeneral(q.general.get(CH.lord), holder, CH.seat, t);
+    q.setGeneralStatus.run('dormant', CH.lord);
+    q.setGeneralStatus.run('alive', CH.immaculate);
+    q.setMeta.run('immaculate', JSON.stringify({ holder, waves: 0, next: t, turn: -1 }));
+    q.setMeta.run('crusade', '');
+    journal('immaculate_awoke', { faction: holder || null, general: CH.immaculate }, t);
+    for (const c of q.chars.all()) notify(c.user_id, 'immaculate_awoke', { faction: holder || null, waves: CH.awakening.waves });
+    return null;
+  }
+  const immaculatePower = (id) => (CH.awakening.power || 3) * importance(id) * (GEN.get(CH.immaculate)?.coef || 1);
+  // Un assaut sur Garreg-Mach dès que le précédent est passé (pas pendant les heures calmes), et des raids sur ses voisins.
+  function awakeningTick(aw, owners, t) {
+    const A = CH.awakening;
+    const holder = owners.get(CH.seat) ?? null;
+    if (!holder || holder === CH.faction || phase(t) !== 'open') return;
+    const open = q.openBattles.all();
+    const raids = open.filter((b) => b.general === CH.immaculate);
+    const busy = new Set(open.map((b) => b.territory));
+    if (t >= aw.next && !busy.has(CH.seat) && !quietHour(t)) {
+      startBattle(CH.seat, CH.faction, holder, t, immaculatePower(CH.seat), CH.immaculate);
+      busy.add(CH.seat);
+    }
+    const turn = Math.floor(t / TURN_MS);
+    if (aw.turn === turn) return;
+    aw.turn = turn;
+    q.setMeta.run('immaculate', JSON.stringify(aw));
+    if (quietHour(t) || raids.filter((b) => b.territory !== CH.seat).length >= (A.maxRaids ?? 1) || raidRoll() >= A.raidChance) return;
+    const targets = neighbors(CH.seat).filter((n) => PLAYABLE.has(owners.get(n)) && !busy.has(n) && !ANNEX.has(n) && !shieldUntil(n, owners, t));
+    if (!targets.length) return;
+    const id = targets[Math.floor(Math.random() * targets.length) % targets.length];
+    startBattle(id, CH.faction, owners.get(id), t, immaculatePower(id), CH.immaculate);
+  }
+  // Assaut de l'Immaculée sur Garreg-Mach repoussé : au dernier, elle tombe.
+  function waveRepelled(b, by, t) {
+    const aw = awakening();
+    if (!aw) return;
+    aw.waves += 1;
+    aw.next = t + (CH.awakening.waveGapHours || 0) * 3_600_000;
+    if (aw.waves < CH.awakening.waves) {
+      q.setMeta.run('immaculate', JSON.stringify(aw));
+      journal('immaculate_wave', { faction: by || null, n: aw.waves, total: CH.awakening.waves }, t);
+      return;
+    }
+    awakeningOver(false, b, t, by);
+  }
+  // Fin de l'éveil : l'Immaculée a repris Garreg-Mach (Rhea revient), ou elle est tombée (bonus de points pour la faction qui l'a vaincue).
+  function awakeningOver(returned, b, t, by = null) {
+    q.setMeta.run('immaculate', '');
+    if (returned) {
+      const rhea = q.general.get(CH.lord);
+      if (rhea && rhea.status !== 'dead') { q.setGeneralStatus.run('alive', CH.lord); moveGeneral(rhea, CH.seat); }
+      q.setGeneralStatus.run('dormant', CH.immaculate);
+      journal('immaculate_returned', { faction: b.defender || null }, t);
+      for (const c of q.chars.all()) notify(c.user_id, 'immaculate_returned', { faction: b.defender || null });
+      return;
+    }
+    q.setGeneralStatus.run('dead', CH.immaculate);
+    q.setGeneralStatus.run('dead', CH.lord);
+    if (by && PLAYABLE.has(by)) { q.setMeta.run(`immac:${by}`, '1'); fp(by, 'generals'); }
+    const gain = genReward(CH.immaculate);
+    for (const { user_id: uid } of q.sideActors.all(b.id, 'defense')) {
+      const m = exileMult(uid);
+      const paid = { gold: Math.round(gain.gold * m), xp: Math.round(gain.xp * m) };
+      grant(uid, paid.gold, paid.xp, 'general');
+      cm(uid, 'general');
+      notify(uid, 'general_defeated', { general: CH.immaculate, ...paid });
+    }
+    journal('immaculate_fell', { faction: by || null }, t);
+    for (const c of q.chars.all()) notify(c.user_id, 'immaculate_fell', { faction: by || null });
+  }
+
   // Un général meurt (effacé de la carte). Epimenides : les Serpents ne reviennent plus et la faction qui l'a abattu gagne un bonus de points.
   function killGeneral(row, by, territory, t) {
     q.setGeneralStatus.run('dead', row.gid);
@@ -1036,7 +1235,7 @@ module.exports = function createCampaign(ctx) {
   // Le général est vaincu : récompense pour ceux qui l'ont battu, puis il meurt ou attend le verdict de ses vainqueurs.
   // Le seigneur a encore des généraux sous sa bannière : il ne meurt pas. Yuri retourne à Garreg-Mach ; les autres rejoignent un allié
   // et, si leur capitale est tombée, ordonnent sa reprise (ralliement de toute la faction).
-  const alliesOf = (row) => q.generals.all().filter((g) => g.gid !== row.gid && g.faction === row.faction && (g.status === 'alive' || g.status === 'captive') && GEN.has(g.gid));
+  const alliesOf = (row) => q.generals.all().filter((g) => g.gid !== row.gid && g.gid !== CH.immaculate && g.faction === row.faction && (g.status === 'alive' || g.status === 'captive') && GEN.has(g.gid));
   function protectLord(row, t, lost = null) {
     const owners = ownersMap();
     const cap = C.capitals[row.faction];
@@ -1061,6 +1260,8 @@ module.exports = function createCampaign(ctx) {
       cm(uid, 'general');
       notify(uid, 'general_defeated', { general: row.gid, ...paid });
     }
+    if (row.gid === CH.immaculate) return null; // l'Immaculée ne tombe qu'à son dernier assaut repoussé
+    if (row.gid === CH.lord && b.territory === CH.seat && ownersMap().get(CH.seat) !== CH.faction) return awaken(winner, t);
     if (isLord(row.gid) && alliesOf(row).length) return protectLord(row, t, b.territory);
     const cfg = GEN.get(row.gid);
     const spareable = !row.spared && winner && PLAYABLE.has(winner) && winner !== row.faction && (cfg.spare || []).includes(winner);
@@ -1103,7 +1304,11 @@ module.exports = function createCampaign(ctx) {
       q.joinGeneral.run(v.winner, gid);
       q.dropVerdict.run(gid);
       journal('general_spared', { general: gid, faction: v.winner }, t);
-      if (userId) cm(userId, 'spare');
+      if (userId) {
+        cm(userId, 'spare');
+        const xp = relSum(relBonuses(userId), 'spareXp'); // Ashe
+        if (xp) grant(userId, 0, xp, 'relation');
+      }
     } else killGeneral(row, v.winner, row.territory, t);
   }
 
@@ -1179,6 +1384,8 @@ module.exports = function createCampaign(ctx) {
     const within2 = { attack: presentOf(camp.attack, true, around2), defense: presentOf(camp.defense, true, around2) };
     const owners0 = ownersMap();
     const exiles = new Set(q.exilesAll.all().map((r) => r.user_id));
+    const relCache = new Map();
+    const relMemo = (uid) => { if (!relCache.has(uid)) relCache.set(uid, relBonuses(uid)); return relCache.get(uid); };
     // Contre-attaque : évaluée à l'ouverture de la bataille.
     const counter = b.boss_power === 0 && counterOn(b.attacker, T, owners0, b.started_at);
     const sums = { attack: 0, defense: 0 };
@@ -1230,6 +1437,8 @@ module.exports = function createCampaign(ctx) {
           }
         }
         add += Math.min(AURA_CAP, aura);
+        // Bonus de soutien des généraux alliés (Edelgard, Ferdinand, Dimitri, Felix, Annette, Mercedes, Petra).
+        if (typeof me.id === 'number') add += relPower(relMemo(me.id), { b, side, T, owners: owners0, rows, here, aura, row: r });
         let mult = 1 + add / 100;
         // Malus des ennemis présents : un même effet ne compte qu'une fois, quel que soit le nombre de porteurs.
         const seen = new Set();
@@ -1261,11 +1470,14 @@ module.exports = function createCampaign(ctx) {
     // Chevalier sacré en défense : la puissance d'attaque des Serpents est divisée.
     let bossPower = b.boss_power;
     const holy = here.defense.flatMap((p) => p.effects).find((e) => e.kind === 'holyKnight');
-    if (holy && bossPower > 0) bossPower /= holy.bossDivisor || 1;
+    if (holy && bossPower > 0 && b.attacker === boss) bossPower /= holy.bossDivisor || 1;
+    if (bossPower > 0 && b.attacker === boss) bossPower *= 1 - Math.min(90, Math.max(0, ...[...who.defense].filter((id) => typeof id === 'number').map((id) => relSum(relMemo(id), 'bossShield')))) / 100; // Hapi
     const attack = bossPower + sums.attack;
     // Capitale d'origine tenue par sa faction : plus elle a de territoires, plus sa capitale est dure à prendre.
     const defense = (C.baseDefense * importance(T) + (C.npcDefense[b.defender] || 0) + sums.defense) * (1 + buildEffect(T, 'defensePct') / 100) * capitalGuard(T, owners0);
-    const raw = attack / (attack + defense) + (b.help || 0) / 100;
+    // Bonus bruts de soutien (Hubert en attaque, Dedue en défense) : le meilleur de chaque camp s'ajoute aux chances.
+    const rawOf = (side, kind) => Math.max(0, ...[...who[side]].filter((id) => typeof id === 'number').map((id) => relSum(relMemo(id), kind)));
+    const raw = attack / (attack + defense) + (b.help || 0) / 100 + (rawOf('attack', 'rawAttack') - rawOf('defense', 'rawDefense')) / 100;
     let chance = Math.min(C.maxChance, Math.max(C.minChance, raw));
     let decisive = null;
     if (C.decisive && raw >= C.decisive) { chance = 1; decisive = 'win'; } else if (C.decisive && raw <= 1 - C.decisive) { chance = 0; decisive = 'lose'; }
@@ -1338,7 +1550,8 @@ module.exports = function createCampaign(ctx) {
       const attackers = q.sideUsers.all(b.id, 'attack').map((r) => r.user_id);
       for (const uid of attackers) {
         const m = isExile(uid) ? 1 : perkMult;
-        const paid = payout(uid, { gold: reward.gold * m, xp: reward.xp * m }, true);
+        const rbw = relBonuses(uid);
+        const paid = payout(uid, { gold: reward.gold * m * (1 + relSum(rbw, 'winGold') / 100), xp: reward.xp * m * (1 + relSum(rbw, 'attackXp') / 100) }, true);
         grant(uid, paid.gold, paid.xp, 'conquest');
         score(uid, C.ranking.victory);
         onEvent(uid, 'battle_won');
@@ -1375,6 +1588,7 @@ module.exports = function createCampaign(ctx) {
         forceRetreat(present, b.defender, 1, attackers.flatMap((uid) => effectsOfUser(uid)), t);
       }
       settleGenerals(b, true, null, t);
+      if (b.general === CH.immaculate && b.territory === CH.seat && awakening()) awakeningOver(true, b, t);
     } else {
       // Défense assurée en partie par les gardiens du territoire (Loups de cendre pour l'Église) : c'est eux qui en profitent.
       const guard = Object.keys(guardians).find((f) => guardians[f] === b.defender && q.defenderFactions.all(b.id).some((r) => r.faction === f));
@@ -1387,7 +1601,9 @@ module.exports = function createCampaign(ctx) {
       forceRetreat(stuck, b.attacker, C.revive.attackerMultiplier ?? 1, q.sideActors.all(b.id, 'defense').flatMap((r) => effectsOfUser(r.user_id)), t);
       settleGenerals(b, false, guard || b.defender, t);
       // Raid des Serpents mené par un général : repoussé, il meurt.
-      if (b.general) {
+      if (b.general === CH.immaculate) {
+        if (b.territory === CH.seat) waveRepelled(b, guard || b.defender, t); // assaut de l'Immaculée repoussé
+      } else if (b.general) {
         const gr = q.general.get(b.general);
         if (gr && gr.status === 'alive') defeatGeneral(gr, q.sideActors.all(b.id, 'defense').map((r) => r.user_id), guard || b.defender, b, t);
       }
@@ -1401,8 +1617,9 @@ module.exports = function createCampaign(ctx) {
       if (def.length === 1 && ctx.countStat) ctx.countStat(def[0], 'solo_defenses');
       const reward = { gold: C.defenseRewards.gold * scale, xp: C.defenseRewards.xp * scale };
       for (const { user_id: uid } of q.sideUsers.all(b.id, 'defense')) {
-        const paid = payout(uid, reward, false);
-        grant(uid, paid.gold, paid.xp, 'defense');
+        const rbd = relBonuses(uid);
+        const paid = payout(uid, { gold: reward.gold * (1 + relSum(rbd, 'winGold') / 100), xp: reward.xp }, false); // Sylvain
+        grant(uid, paid.gold + relSum(rbd, 'defenseGold'), paid.xp, 'defense'); // Alois
         score(uid, C.ranking.victory);
         onEvent(uid, 'battle_won');
         notify(uid, 'territory_defended', { territory: b.territory, ...paid });
@@ -1554,7 +1771,8 @@ module.exports = function createCampaign(ctx) {
         add('lowDeaths', regulars.length ? e.lowDeaths.max * Math.max(0, 1 - deaths / regulars.length / e.lowDeaths.deathsPerPlayer) : 0);
       }
       const base = parts.reduce((a, p) => a + p.points, 0);
-      const mult = q.meta.get(`epi:${f}`) ? 1 + (G.serpents.pointsBonus || 0) : 1; // Epimenides abattu par cette faction
+      // Epimenides ou l'Immaculée abattus par cette faction.
+      const mult = Math.round((1 + (q.meta.get(`epi:${f}`) ? G.serpents.pointsBonus || 0 : 0) + (q.meta.get(`immac:${f}`) ? CH.awakening.pointsBonus || 0 : 0)) * 100) / 100;
       out[f] = { held, pct, parts, base, mult, total: Math.round(base * mult) };
     }
     return out;
@@ -1704,6 +1922,7 @@ module.exports = function createCampaign(ctx) {
         if (ids.length) ctx.freezeStreaks(ids);
       }
       spawnBosses(t);
+      churchTick(t);
       // Quelques heures avant la clôture : tout le monde est prévenu que tout se joue maintenant (notification et push).
       const nc = phase(t) === 'open' ? nextClose(t) : null;
       const cidW = currentCampaign().id;
@@ -1717,6 +1936,7 @@ module.exports = function createCampaign(ctx) {
 
   // ------------------------------------------------------------ Ce que voit le joueur
   function playerPayload(userId, t = Date.now()) {
+    const regenGold = ensurePlayer(userId) ? collectRegen(userId, t) : 0;
     const ps = ensurePlayer(userId);
     if (!ps) return null;
     const s = settle(ps, t);
@@ -1726,6 +1946,7 @@ module.exports = function createCampaign(ctx) {
       now: t, // heure du serveur, pour que l'app affiche des comptes à rebours justes
       territory: ps.territory || null, status: ps.status, retreatUntil: ps.retreat_until,
       actions: s.actions, maxActions: s.max, nextActionAt: s.next,
+      regenGold, // or gagné à l'instant grâce à Hilda (actions rendues par le compteur)
       rewardDebuff: ps.reward_debuff || 0, // actions restantes pendant lesquelles les récompenses sont réduites (téléportation)
       faction: side, exile: !!ps.exile_faction,
       factionOut: isOut(side), reviveAsked: !!ps.revive_asked,
@@ -1781,6 +2002,8 @@ module.exports = function createCampaign(ctx) {
       player: playerPayload(userId, t),
       homeBases: C.homeBases,
       capitals: C.capitals,
+      // Église : croisade en cours (faction visée) et éveil de l'Immaculée (assauts repoussés, prochain assaut).
+      church: (() => { const aw = awakening(); return { crusade: crusadeOf(), awakening: aw ? { holder: aw.holder, waves: aw.waves, total: CH.awakening.waves, next: aw.next } : null }; })(),
       journalLatest: q.latestEvent.get()?.id || 0,
       lord: lordPayload(side),
       objective: side ? objectiveStatus(side, owners) : null,
@@ -1789,9 +2012,9 @@ module.exports = function createCampaign(ctx) {
       guardians,
       // hire : bataillon en attaque ; fortify : fortification en défense (moitié prix pour un Prêtre) ; teleport : Évêque noir.
       costs: {
-        hire: Math.round(C.hire.gold * (isExile(userId) ? 1 : hireFactor(side))), fortify: ch ? fortifyCost(userId) : C.hire.gold, hireMax: C.hire.perBattle,
+        hire: Math.round(C.hire.gold * (isExile(userId) ? 1 : hireFactor(side)) * hireDiscount(userId, here)), fortify: ch ? Math.round(fortifyCost(userId) * hireDiscount(userId, here)) : C.hire.gold, hireMax: C.hire.perBattle,
         build: C.build.costs, buildMax: C.build.maxLevel,
-        revive: side ? Math.round(reviveCost(side) * (q.state.get(userId)?.fall_mult || 1)) : C.revive.gold,
+        revive: side ? Math.round(reviveCost(side) * (q.state.get(userId)?.fall_mult || 1) * reviveFactor(userId)) : C.revive.gold,
         teleport: ch ? (effectsOfUser(userId).find((e) => e.kind === 'teleport')?.gold ?? null) : null,
       },
       // Avantages de ma faction, s'il y en a (affichés dans le menu).
@@ -1839,6 +2062,7 @@ module.exports = function createCampaign(ctx) {
     const t = Date.now();
     tick(t);
     if (phase(t) === 'break') throw new HttpError(409, 'campaign_break');
+    collectRegen(user.id, t); // payer les actions rendues avant de les dépenser
     const ps = ensurePlayer(user.id);
     if (!ps) throw new HttpError(409, 'no_character');
     const own = q.char.get(user.id);
@@ -1869,6 +2093,7 @@ module.exports = function createCampaign(ctx) {
     if (e.type === 'rally' && p.faction === side && p.actor !== userId && open) return [{ k: 'help', until: b.ends_at }];
     return [];
   }
+  const reviveFactor = (userId) => Math.max(0, 1 - relSum(relBonuses(userId), 'reviveDiscount') / 100);
   const reviveCost = (faction) => (perks(faction).freeRevive ? 0 : C.revive.gold);
   // Quitter un territoire où l'on combat annule ses actions d'attaque ou de défense en cours (sans remboursement) :
   // on ne peut pas peser sur plusieurs batailles à la fois. Sans `leave`, le serveur demande confirmation (409 engaged).
@@ -1885,7 +2110,142 @@ module.exports = function createCampaign(ctx) {
     return spot;
   }
 
+  // ------------------------------------------------------------ Relations avec les généraux
+  // Niveaux de soutien (C à S) gagnés en offrant des fleurs ou en envoyant des lettres aux généraux alliés à son camp.
+  // Le niveau S n'est possible qu'avec un seul général : les autres plafonnent juste en dessous.
+  const R = {
+    levels: [{ id: 'C', points: 250 }, { id: 'C+', points: 400 }, { id: 'B', points: 600 }, { id: 'B+', points: 850 }, { id: 'A', points: 1050 }, { id: 'A+', points: 1400 }, { id: 'S', points: 2000 }],
+    gifts: { flower: { actions: 1, gold: 50, points: 5 }, letter: { actions: 1, gold: 200, points: 25 } },
+    exclude: ['immaculate'],
+    ...(config.relations || {}),
+  };
+  const S_POINTS = R.levels[R.levels.length - 1].points;
+  const relLevel = (points) => [...R.levels].reverse().find((l) => points >= l.points)?.id || null;
+  const relPoints = (userId) => new Map(db.prepare('SELECT gid, points FROM relations WHERE user_id = ?').all(userId).map((r) => [r.gid, r.points]));
+  // Généraux qu'on peut fréquenter : ni Serpents, ni exclus (l'Immaculée).
+  const befriendable = (gid) => GEN.has(gid) && GEN.get(gid).faction !== C.boss.faction && !R.exclude.includes(gid);
+  // Liste de son camp : les généraux vivants alliés d'abord, puis ceux de la faction qui sont morts, captifs ou passés ailleurs (grisés).
+  function relationsPayload(userId) {
+    const side = effFaction(userId);
+    const pts = relPoints(userId);
+    const sWith = [...pts].find(([, n]) => n >= S_POINTS)?.[0] || null;
+    const rows = q.generals.all().filter((g) => befriendable(g.gid));
+    const item = (g, state) => {
+      const cfg = GEN.get(g.gid);
+      const n = pts.get(g.gid) || 0;
+      return { id: g.gid, name: cfg.name, avatar: cfg.avatar, faction: g.faction || null, origin: cfg.faction || null, state, lord: isLord(g.gid), class: genClass(g.gid), points: n, level: relLevel(n) };
+    };
+    const allied = rows.filter((g) => side && g.status === 'alive' && g.faction === side).map((g) => item(g, 'allied'));
+    const gone = rows.filter((g) => side && GEN.get(g.gid).faction === side && !(g.status === 'alive' && g.faction === side))
+      .map((g) => item(g, g.status === 'dead' ? 'dead' : g.status === 'captive' ? 'captive' : g.status === 'dormant' ? 'dormant' : 'joined'));
+    const byName = (a, b) => (b.lord - a.lord) || (b.points - a.points) || a.name.localeCompare(b.name);
+    return { side, levels: R.levels, gifts: R.gifts, sWith, generals: [...allied.sort(byName), ...gone.sort(byName)] };
+  }
+  // Bonus de soutien : un joueur profite du bonus de chaque général vivant allié à son camp, selon son niveau de soutien avec lui
+  // (relations.bonuses : kind, values pour C … S, et des précisions selon le bonus : territory, partner, partnerLevel, allies).
+  const RB = R.bonuses || {};
+  const levelIdx = (points) => R.levels.reduce((i, l, k) => (points >= l.points ? k : i), -1);
+  function relBonuses(userId) {
+    const side = effFaction(userId);
+    if (!side || typeof userId !== 'number') return [];
+    const pts = relPoints(userId);
+    const out = [];
+    for (const g of q.generals.all()) {
+      const def = RB[g.gid];
+      if (!def || g.status !== 'alive' || g.faction !== side) continue;
+      const i = levelIdx(pts.get(g.gid) || 0);
+      if (i < 0) continue;
+      // Lien croisé (Annette et Mercedes) : il faut aussi ce niveau de soutien avec le partenaire.
+      if (def.partner && levelIdx(pts.get(def.partner) || 0) < R.levels.findIndex((l) => l.id === (def.partnerLevel || 'C'))) continue;
+      out.push({ ...def, gid: g.gid, value: def.values[i] });
+    }
+    return out;
+  }
+  const relSum = (list, kind, filter = () => true) => list.filter((b) => b.kind === kind && filter(b)).reduce((a, b) => a + b.value, 0);
+  const relRoll = () => (process.env.TEST_REL_ROLL !== undefined ? Number(process.env.TEST_REL_ROLL) : Math.random());
+  // Réduction du prix des bataillons et fortifications (Caspar partout, Petra sur son territoire).
+  const hireDiscount = (userId, here) => {
+    const rb = relBonuses(userId);
+    return Math.max(0, 1 - relSum(rb, 'hireDiscount') / 100) * Math.max(0, 1 - relSum(rb, 'territoryBoost', (b) => b.territory === here) / 100);
+  };
+  // Dorothea : avec au moins `allies` alliés sur place (joueurs ou généraux), une chance de ne pas consommer l'action.
+  function saveAction(userId, here, side) {
+    const rb = relBonuses(userId);
+    const def = rb.find((b) => b.kind === 'saveAction');
+    if (!def) return false;
+    const players = db.prepare(`SELECT COUNT(*) AS n FROM player_state ps JOIN characters c ON c.user_id = ps.user_id
+      WHERE ps.territory = ? AND ps.status = 'alive' AND ps.user_id <> ? AND COALESCE(ps.exile_faction, c.faction) = ?`).get(here, userId, side).n;
+    const gens = q.generals.all().filter((g) => g.status === 'alive' && g.territory === here && g.faction === side).length;
+    if (players + gens < (def.allies || 2) || relRoll() * 100 >= relSum(rb, 'saveAction')) return false;
+    giveActions(userId, 1);
+    return true;
+  }
+  // Bonus de puissance d'une action de combat (en %), selon la bataille : x = { b, side, T, owners, rows, here, aura, row }.
+  function relPower(rb, x) {
+    if (!rb.length) return 0;
+    const { b, side, T, owners, rows, here, aura, row } = x;
+    const mine = row.faction;
+    const other = side === 'attack' ? 'defense' : 'attack';
+    const atk = side === 'attack';
+    let add = 0;
+    for (const r of rb) {
+      const k = r.kind;
+      const ok = (k === 'vsChurch' && (b.attacker === CH.faction || b.defender === CH.faction))
+        || (k === 'withGeneral' && (rows.some((w) => w.user_id === `g:${r.gid}` && w.side === side) || here[side].some((p) => p.id === `g:${r.gid}`)))
+        || (k === 'nearChurch' && [T, ...neighbors(T)].some((n) => owners.get(n) === CH.faction))
+        || (k === 'annexAttack' && atk && ANNEX.has(T))
+        || (k === 'partnerAttack' && atk)
+        || (k === 'partnerDefense' && !atk)
+        || ((k === 'territoryBoost' || k === 'territoryPower') && r.territory === T)
+        || (k === 'zoneDefense' && !atk && (T === r.territory || neighbors(r.territory).includes(T)))
+        || (k === 'homeDefense' && !atk && startFaction(terr(T)) === mine)
+        || (k === 'outnumbered' && here[side].length < here[other].length)
+        || (k === 'auraBoost' && aura > 0)
+        || (k === 'crowdPower' && new Set(rows.filter((w) => w.side === side && typeof w.user_id === 'number' && w.user_id !== row.user_id).map((w) => w.user_id)).size >= 3)
+        || (k === 'lateStrike' && row.created_at >= b.ends_at - 2 * TURN_MS)
+        || (k === 'capitalAttack' && atk && CAPITALS.has(T))
+        || (k === 'flankAttack' && atk && neighbors(T).filter((n) => owners.get(n) === mine).length >= 2)
+        || (k === 'crusadeAttack' && atk && b.defender && crusadeOf() === b.defender)
+        || (k === 'emptyAttack' && atk && !here.defense.length);
+      if (ok) add += r.value;
+    }
+    return add;
+  }
+
+  // Offrir une fleur ou envoyer une lettre : 1 action et de l'or, à un général vivant allié à son camp.
+  function giveGift(userId, ps, gid, kind, t) {
+    const gift = R.gifts[kind];
+    if (!gift || !befriendable(gid)) throw new HttpError(400, 'invalid_action');
+    const g = q.general.get(gid);
+    if (!g || g.status !== 'alive' || g.faction !== effFaction(userId)) throw new HttpError(409, 'not_allied');
+    const pts = relPoints(userId);
+    const cur = pts.get(gid) || 0;
+    const sElsewhere = [...pts].some(([id, n]) => id !== gid && n >= S_POINTS);
+    const cap = sElsewhere ? S_POINTS - 1 : S_POINTS;
+    if (cur >= cap) throw new HttpError(409, sElsewhere && cur < S_POINTS ? 'support_s_taken' : 'support_max');
+    if (settle(ps, t).actions < (gift.actions || 0)) throw new HttpError(409, 'no_actions');
+    if (!pay(userId, gift.gold || 0, 'gift')) throw new HttpError(409, 'not_enough_gold');
+    for (let i = 0; i < (gift.actions || 0); i += 1) spend(q.state.get(userId), t);
+    const next = Math.min(cap, cur + gift.points);
+    db.prepare(`INSERT INTO relations (user_id, gid, points, updated_at) VALUES (?, ?, ?, ?)
+                ON CONFLICT (user_id, gid) DO UPDATE SET points = excluded.points, updated_at = excluded.updated_at`).run(userId, gid, next, t);
+    metric(`gift:${kind}`, 1);
+    return { general: gid, kind, gained: next - cur, points: next, level: relLevel(next), up: relLevel(next) !== relLevel(cur) };
+  }
+
   const routes = {
+    'GET /api/relations': async (req, res) => {
+      const user = currentUser(req);
+      if (!user) throw new HttpError(401, 'unauthorized');
+      if (!q.char.get(user.id)) throw new HttpError(409, 'no_character');
+      send(res, 200, relationsPayload(user.id));
+    },
+    'POST /api/relations/gift': async (req, res) => {
+      const { general, kind } = await readJson(req);
+      const { user, ps, t } = actor(req);
+      const gift = giveGift(user.id, ps, String(general || ''), String(kind || ''), t);
+      reply(res, user, { gift, relations: relationsPayload(user.id) });
+    },
     // Se déplacer vers un territoire voisin (1 action, sauf déplacement gratuit : Chevalier pégase et Chevalier faucon).
     'POST /api/move': async (req, res) => {
       const { to, leave } = await readJson(req);
@@ -1902,7 +2262,7 @@ module.exports = function createCampaign(ctx) {
       if (!raid && settle(ps, t).actions < 1) throw new HttpError(409, 'no_actions');
       const cancelled = leaveEngagements(user.id, ps.territory, leave === true, t);
       if (raid) q.addFreeMove.run(dest.id, user.id);
-      const free = raid || moveRoll() * 100 < freeMoveChance(user.id);
+      const free = raid || moveRoll() * 100 < freeMoveChance(user.id) + relSum(relBonuses(user.id), 'freeMove'); // Judith
       const bonus = free ? 0 : spend(ps, t);
       q.setTerritory.run(to, user.id);
       q.tickDebuff.run(user.id);
@@ -1925,6 +2285,15 @@ module.exports = function createCampaign(ctx) {
       // Série d'actions de combat sur un même territoire (Combattant) : nombre d'actions précédentes d'affilée.
       const streak = ps.streak_territory === here ? ps.streak_count : 0;
       let bonus = 0;
+      const relFx = []; // effets de soutien déclenchés, affichés au joueur
+      const rb = relBonuses(user.id);
+      const relGold = (kind, gold) => { if (gold > 0) { grant(user.id, gold, 0, 'relation'); relFx.push({ kind, gold }); } };
+      // Ingrid : rejoindre une bataille où un allié a déjà agi, la première fois.
+      const joinAlly = (b, side) => {
+        if (!b || q.myContribution.get(b.id, user.id)) return;
+        if (db.prepare("SELECT COUNT(*) AS n FROM contributions WHERE battle_id = ? AND side = ? AND user_id <> ? AND kind = 'action'").get(b.id, side, user.id).n) relGold('joinGold', relSum(rb, 'joinGold'));
+      };
+      const homeXp = () => { const xp = relSum(rb, 'homeXp', (x) => x.territory === here); if (xp) { grant(user.id, 0, xp, 'relation'); relFx.push({ kind: 'homeXp', xp }); } };
       if (action === 'attack') {
         if (owner === ch.faction || guardians[ch.faction] === owner) throw new HttpError(409, 'invalid_action');
         if (battle && battle.attacker !== ch.faction) throw new HttpError(409, 'battle_busy');
@@ -1932,18 +2301,24 @@ module.exports = function createCampaign(ctx) {
         if (phase(t) === 'closing') throw new HttpError(409, 'campaign_closing');
         bonus = spend(ps, t);
         const b = battle || startBattle(here, ch.faction, owner, t, 0, null, user.id);
+        joinAlly(battle, 'attack');
+        if (streak >= 1) relGold('streakGold', relSum(rb, 'streakGold')); // Bernadetta
         q.setStreak.run(here, streak + 1, user.id);
         onEvent(user.id, 'attack_action');
         cm(user.id, 'combat');
         q.addContribution.run(b.id, here, user.id, ch.faction, 'attack', power(ch), t, null, 'action', streak);
         score(user.id, C.ranking.combat);
         addGauge(ch.faction, C.gauge.perAction);
+        if (relRoll() * 100 < relSum(rb, 'gaugeBoost')) addGauge(ch.faction, C.gauge.perAction); // Claude
         onEvent(user.id, 'combat');
         if (ps.exile_faction) { onEvent(user.id, 'exile_combat'); q.addExileCombat.run(currentCampaign().id, user.id); }
         q.tickDebuff.run(user.id);
       } else if (action === 'defend') {
         if (owner !== ch.faction && !guarding(ch.faction, owner, battle)) throw new HttpError(409, 'invalid_action');
         bonus = spend(ps, t);
+        joinAlly(battle, 'defense');
+        if (streak >= 1) relGold('streakGold', relSum(rb, 'streakGold')); // Bernadetta
+        homeXp(); // Monica
         // Pendant une bataille, l'action renforce la défense ; sinon elle pose une garnison qui tient le temps d'une bataille.
         q.setStreak.run(here, streak + 1, user.id);
         onEvent(user.id, 'defend_action');
@@ -1952,6 +2327,7 @@ module.exports = function createCampaign(ctx) {
           battle ? null : t + C.battleTurns * TURN_MS, 'action', streak);
         score(user.id, C.ranking.combat);
         addGauge(ch.faction, C.gauge.perAction);
+        if (relRoll() * 100 < relSum(rb, 'gaugeBoost')) addGauge(ch.faction, C.gauge.perAction); // Claude
         onEvent(user.id, 'combat');
         if (ps.exile_faction) { onEvent(user.id, 'exile_combat'); q.addExileCombat.run(currentCampaign().id, user.id); }
         q.tickDebuff.run(user.id);
@@ -1959,8 +2335,9 @@ module.exports = function createCampaign(ctx) {
         if (owner !== ch.faction) throw new HttpError(409, 'invalid_action');
         if (battle) throw new HttpError(409, 'battle_here');
         bonus = spend(ps, t);
-        const m = exileMult(user.id);
+        const m = exileMult(user.id) * (1 + relSum(rb, 'territoryBoost', (x) => x.territory === here) / 100); // Petra
         grant(user.id, Math.round(C.gather.gold * m * (1 + buildEffect(here, 'goldPct') / 100)), Math.round(C.gather.xp * m * (1 + buildEffect(here, 'xpPct') / 100)), 'gather');
+        homeXp(); // Monica
         score(user.id, C.ranking.gather);
         onEvent(user.id, 'gather');
         q.tickDebuff.run(user.id);
@@ -1974,9 +2351,11 @@ module.exports = function createCampaign(ctx) {
         const level = cur ? cur.level : 0;
         if (level >= C.build.maxLevel) throw new HttpError(409, 'build_max');
         if (settle(ps, t).actions < 1) throw new HttpError(409, 'no_actions');
-        if (!pay(user.id, C.build.costs[level], 'build')) throw new HttpError(409, 'not_enough_gold');
+        const price = Math.round(C.build.costs[level] * Math.max(0, 1 - relSum(rb, 'territoryBoost', (x) => x.territory === here) / 100) * Math.max(0, 1 - relSum(rb, 'buildDiscount') / 100)); // Petra, Lorenz
+        if (!pay(user.id, price, 'build')) throw new HttpError(409, 'not_enough_gold');
         bonus = spend(ps, t);
         q.buildSet.run(here, use, level + 1);
+        homeXp(); // Monica
         score(user.id, C.ranking.gather);
         onEvent(user.id, 'build');
         cm(user.id, 'build');
@@ -1988,7 +2367,7 @@ module.exports = function createCampaign(ctx) {
         if (side === 'attack' && (!battle || battle.attacker !== ch.faction)) throw new HttpError(409, 'invalid_action');
         const already = battle ? q.hiredInBattle.get(user.id, battle.id).n : q.hiredGarrison.get(user.id, here, t).n;
         if (already >= C.hire.perBattle) throw new HttpError(409, 'hire_limit');
-        const cost = side === 'defense' ? fortifyCost(user.id) : Math.round(C.hire.gold * (ch.home !== ch.faction ? 1 : hireFactor(ch.faction)));
+        const cost = Math.round((side === 'defense' ? fortifyCost(user.id) : C.hire.gold * (ch.home !== ch.faction ? 1 : hireFactor(ch.faction))) * hireDiscount(user.id, here)); // Caspar, Petra
         const strength = side === 'defense' ? fortifyPower(user.id) : C.hire.power;
         if (!pay(user.id, cost, 'hire')) throw new HttpError(409, 'not_enough_gold');
         q.addContribution.run(battle ? battle.id : null, here, user.id, ch.faction, side, strength, t,
@@ -1996,7 +2375,10 @@ module.exports = function createCampaign(ctx) {
         score(user.id, C.ranking.combat);
         if (side === 'attack') onEvent(user.id, 'battalion');
       } else throw new HttpError(400, 'invalid_action');
-      reply(res, user, { bonus });
+      // Dorothea : l'action peut ne pas être consommée.
+      if (['attack', 'defend', 'gather', 'build'].includes(action) && saveAction(user.id, here, ch.faction)) relFx.push({ kind: 'saveAction' });
+      else if (action === 'gather' && relRoll() * 100 < relSum(rb, 'gatherSave')) { giveActions(user.id, 1); relFx.push({ kind: 'saveAction' }); } // Cyril
+      reply(res, user, { bonus, relFx });
     },
 
     // Téléportation (Évêque noir) : vers un territoire de sa faction ou voisin d'un territoire de sa faction, contre de l'or,
@@ -2026,6 +2408,8 @@ module.exports = function createCampaign(ctx) {
       const battle = q.openBattle.get(ps.territory);
       if (!battle || (battle.attacker !== ch.faction && battle.defender !== ch.faction && !guarding(ch.faction, battle.defender, battle))) throw new HttpError(409, 'invalid_action');
       if (q.addRally.run(battle.id, user.id).changes !== 1) throw new HttpError(409, 'rally_done');
+      const boost = relSum(relBonuses(user.id), 'rallyHelp'); // Ignatz
+      if (boost) q.addHelp.run(battle.attacker === ch.faction ? boost : -boost, battle.id);
       for (const p of q.factionPlayers.all(ch.faction)) {
         if (p.user_id !== user.id) notify(p.user_id, 'rally', { pseudo: ch.pseudo, territory: ps.territory });
       }
@@ -2053,7 +2437,7 @@ module.exports = function createCampaign(ctx) {
       if (isOut(ch.faction)) throw new HttpError(409, 'faction_out');
       const mult = ps.fall_mult || 1; // x2 après une attaque ratée
       if (mode === 'gold') {
-        const cost = Math.round(reviveCost(ch.faction) * mult);
+        const cost = Math.round(reviveCost(ch.faction) * mult * reviveFactor(user.id)); // Marianne
         if (!pay(user.id, cost, 'revive')) throw new HttpError(409, 'not_enough_gold');
         revive(user.id, ch.faction);
       } else if (mode === 'renown') {

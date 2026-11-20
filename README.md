@@ -139,6 +139,20 @@ Après une bataille perdue ou un territoire perdu, les joueurs présents ont `re
 
 Au-delà de `decisive` (0,8, soit 4 contre 1) du rapport attaque / (attaque + défense), l'issue est certaine : pas de tirage (`battle.decisive` = `win` ou `lose`). Les chances de l'attaque reçoivent aussi l'aide des alliés (`battles.help`).
 
+### Relations avec les généraux (patch 1.6)
+
+- Table `relations (user_id, gid, points)` : permanente, jamais effacée entre les campagnes.
+- `GET /api/relations` : généraux vivants alliés au camp du joueur (sa faction, ou sa faction d'exil), puis ceux de cette faction morts, captifs, en sommeil ou passés ailleurs (`state`), avec points et niveau ; `sWith` = général au niveau S.
+- `POST /api/relations/gift { general, kind: 'flower' | 'letter' }` : réglages `relations.gifts` (1 action, 50 or, +5 ; 1 action, 200 or, +25), seulement pour un général vivant allié (`not_allied`). Niveaux `relations.levels` (C 250 … S 2000) ; un seul général au niveau S, les autres plafonnent à S − 1 (`support_s_taken`).
+- Les bonus de soutien ne sont pas encore définis.
+
+### Église de Seiros (patch 1.6)
+
+- **Garnison** : Rhea (seigneur de l'Église, `generals.lords.eglise`) et ses chevaliers (faction `eglise`, maison `garreg-mach`) défendent Garreg-Mach ; Rhea ne le quitte pas et le défend sans dépenser d'action.
+- **Croisade** (`generals.church.crusade`) : quand une faction tient `start` (45 %) des territoires hors annexes, meta `crusade` = faction, notification `crusade_declared` ; jusqu'à `sorties` chevaliers sortent (au moins `garrison` restent) et attaquent ses territoires les plus proches en traversant toute la carte. Levée sous `end` (38 %), ou si Rhea n'est plus à Garreg-Mach.
+- **L'Immaculée** (`generals.church.awakening`, général `immaculate`) : Garreg-Mach conquis, Rhea passe `dormant` et l'Immaculée lance un assaut sur Garreg-Mach (puissance `power` × importance × coef), puis un toutes les `waveGapHours` heures (pas pendant les heures calmes), plus des raids sur un voisin (`raidChance` par tour). Un assaut réussi rend Garreg-Mach à l'Église et Rhea revient ; `waves` assauts repoussés l'abattent (Rhea meurt), et la faction qui tient Garreg-Mach gagne `pointsBonus` (meta `immac:<faction>`). État dans la meta `immaculate`, affiché via `church` sur `/api/map`.
+- Tests : `TEST_RAID_ROLL` fixe le tirage des raids.
+
 ### Engagement, seigneurs, exil (patch 1.5)
 
 - **Rester pour combattre** : `POST /api/move` et `/api/teleport` refusent de quitter un territoire où le joueur a des actions de combat en cours (bataille ouverte ou garnison) avec l'erreur `engaged`, sauf avec `leave: true` : ses actions y sont alors annulées, sans remboursement. Un général qui se déplace perd aussi ses actions en cours ; engagé dans un combat, il reste jusqu'à sa fin.

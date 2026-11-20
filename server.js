@@ -564,7 +564,7 @@ let rewardMods = () => ({ gold: 1, xp: 1 });
 function grant(userId, gold, xp, source = 'other') {
   const ch = q.character.get(userId);
   if (!ch) return;
-  const mods = rewardMods(userId);
+  const mods = rewardMods(userId, source);
   gold = Math.round(gold * mods.gold);
   xp = Math.round(xp * mods.xp);
   if (gold > 0) { metric('gold_in', gold); metric(`gold_in:${source}`, gold); }
@@ -622,6 +622,8 @@ function tutorialState(userId) {
   return { steps, complete: steps.every((x) => x.done), rewards: TUTORIAL.rewards };
 }
 function mePayload(user) {
+  // L'état de campagne d'abord : il peut verser de l'or (Hilda) avant qu'on lise le personnage.
+  const player = q.character.get(user.id) ? campaign.playerPayload(user.id) : null;
   const ch = q.character.get(user.id);
   const claimable = missionState(user.id).filter((m) => m.status === 'done').length + (ch ? daily.claimable(user.id) : 0) + (ch ? campaign.missionsClaimable(user.id) : 0);
   return {
@@ -633,7 +635,7 @@ function mePayload(user) {
     // Mise à jour la plus récente et celle que le joueur a lue en dernier (différentes : pastille sur « Mises à jour »).
     patch: { latest: LATEST_PATCH, seen: q.patchSeen.get(user.id)?.patch_seen || null },
     // Position, actions disponibles et état du joueur dans la campagne en cours.
-    player: ch ? campaign.playerPayload(user.id) : null,
+    player,
     // Premier pas dans le jeu : étapes à accomplir, et si la récompense est à récupérer (ou déjà prise / masquée).
     tutorial: ch ? tutorialState(user.id) : null,
     // Résultat de la dernière campagne terminée, tant que le joueur ne l'a pas lu (fenêtre de fin de campagne).

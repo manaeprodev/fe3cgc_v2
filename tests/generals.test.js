@@ -152,7 +152,7 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
     const ed = terrOf(map, 'hresvelg').occupants.find((o) => o.pseudo === 'Edelgard');
     check('un général porte sa faction, sa classe finale, son niveau et son portrait',
       ed.general === true && ed.faction === 'rouge' && ed.class === 'emperor' && ed.level >= 1 && ed.avatar === 'assets/characters/black_eagles/edelgard.webp', JSON.stringify(ed));
-    check('les Loups de cendre sont cachés à Garreg-Mach', terrOf(map, 'garreg-mach').occupants.length === 0, names('garreg-mach'));
+    check('les Loups de cendre sont cachés à Garreg-Mach (seuls Rhea et ses chevaliers se montrent)', terrOf(map, 'garreg-mach').occupants.every((o) => o.faction === 'eglise'), names('garreg-mach'));
     check('les Serpents attendent hors carte', !map.territories.some((t) => t.occupants.some((o) => ['Cornelia', 'Epimenides'].includes(o.pseudo))));
     check('la présence compte les généraux dans leur faction', terrOf(map, 'blaiddyd').players.bleue === 2, JSON.stringify(terrOf(map, 'blaiddyd').players));
 

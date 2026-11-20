@@ -53,8 +53,8 @@
         "en": "Territories"
       },
       "text": {
-        "fr": "La carte compte 59 territoires. Chacun est teinté de la couleur de la faction qui le contrôle ; un territoire sans couleur est neutre.\n\nTouche un territoire pour voir qui le contrôle, les joueurs présents, la bataille en cours et ses voisins. On ne se déplace que d'un territoire à un voisin.\n\nCertains territoires comptent plus que d'autres : les capitales (Hresvelg, Blaiddyd, Riegan, marquées d'une couronne) et surtout Garreg-Mach. Ils sont mieux défendus et rapportent davantage.\n\nLa capitale est le cœur d'une faction. Tenue par sa faction d'origine, sa défense augmente de 4 % par territoire que possède la faction : plus une faction est grande, plus sa capitale est dure à prendre (une capitale conquise n'a pas ce bonus). Si elle tombe, la faction perd 10 % de puissance tant qu'elle ne l'a pas reprise. En fin de campagne, tenir sa capitale et prendre celles des autres rapporte des points.\n\nGarreg-Mach est tenu par l'Église de Seiros, une faction non jouable qui se défend seule et qui est très difficile à faire tomber.\n\nLes territoires annexes, en bordure de carte, peuvent être conquis mais ne comptent pas pour remporter la campagne.\n\nLes Serpents des Ténèbres n'ont pas de joueurs : leurs mini-boss surgissent au hasard pour attaquer un territoire. S'ils l'emportent, il faut le reprendre. Ils n'apparaissent jamais entre minuit et 6 h (heure de Paris).",
-        "en": "The map has 59 territories. Each is tinted with the colour of the faction controlling it; a territory with no colour is neutral.\n\nTap a territory to see who controls it, the players there, any battle under way and its neighbours. You can only move from a territory to a neighbour.\n\nSome territories matter more than others: the capitals (Hresvelg, Blaiddyd, Riegan, marked with a crown) and above all Garreg Mach. They are better defended and more rewarding.\n\nThe capital is a faction's heart. Held by its original faction, its defence grows by 4% per territory the faction owns: the bigger the faction, the harder its capital is to take (a conquered capital gets no such bonus). If it falls, the faction loses 10% power until it is retaken. At the end of the campaign, holding your own capital and taking the others' earns points.\n\nGarreg-Mach is held by the Church of Seiros, a non-playable faction that defends itself and is very hard to bring down.\n\nAnnex territories, on the edges of the map, can be conquered but do not count towards winning the campaign.\n\nThose Who Slither in the Dark have no players: their mini-bosses appear at random to attack a territory. If they win, it has to be retaken. They never appear between midnight and 6 a.m. (Paris time)."
+        "fr": "La carte compte 59 territoires. Chacun est teinté de la couleur de la faction qui le contrôle ; un territoire sans couleur est neutre.\n\nTouche un territoire pour voir qui le contrôle, les joueurs présents, la bataille en cours et ses voisins. On ne se déplace que d'un territoire à un voisin.\n\nCertains territoires comptent plus que d'autres : les capitales (Hresvelg, Blaiddyd, Riegan, marquées d'une couronne) et surtout Garreg-Mach. Ils sont mieux défendus et rapportent davantage.\n\nLa capitale est le cœur d'une faction. Tenue par sa faction d'origine, sa défense augmente de 4 % par territoire que possède la faction : plus une faction est grande, plus sa capitale est dure à prendre (une capitale conquise n'a pas ce bonus). Si elle tombe, la faction perd 10 % de puissance tant qu'elle ne l'a pas reprise. En fin de campagne, tenir sa capitale et prendre celles des autres rapporte des points.\n\nGarreg-Mach est tenu par l'Église de Seiros, une faction non jouable très difficile à faire tomber : Rhea et ses chevaliers le défendent (voir Généraux).\n\nLes territoires annexes, en bordure de carte, peuvent être conquis mais ne comptent pas pour remporter la campagne.\n\nLes Serpents des Ténèbres n'ont pas de joueurs : leurs mini-boss surgissent au hasard pour attaquer un territoire. S'ils l'emportent, il faut le reprendre. Ils n'apparaissent jamais entre minuit et 6 h (heure de Paris).",
+        "en": "The map has 59 territories. Each is tinted with the colour of the faction controlling it; a territory with no colour is neutral.\n\nTap a territory to see who controls it, the players there, any battle under way and its neighbours. You can only move from a territory to a neighbour.\n\nSome territories matter more than others: the capitals (Hresvelg, Blaiddyd, Riegan, marked with a crown) and above all Garreg Mach. They are better defended and more rewarding.\n\nThe capital is a faction's heart. Held by its original faction, its defence grows by 4% per territory the faction owns: the bigger the faction, the harder its capital is to take (a conquered capital gets no such bonus). If it falls, the faction loses 10% power until it is retaken. At the end of the campaign, holding your own capital and taking the others' earns points.\n\nGarreg Mach is held by the Church of Seiros, a non-playable faction that is very hard to take: Rhea and her knights defend it (see Generals).\n\nAnnex territories, on the edges of the map, can be conquered but do not count towards winning the campaign.\n\nThose Who Slither in the Dark have no players: their mini-bosses appear at random to attack a territory. If they win, it has to be retaken. They never appear between midnight and 6 a.m. (Paris time)."
       }
     },
     {
@@ -73,8 +73,8 @@
         "en": "Generals"
       },
       "text": {
-        "fr": "Les généraux sont des personnages du jeu, dirigés par l'ordinateur. Chacun se tient sur son territoire d'origine au début de la campagne et le défend coûte que coûte quand il est attaqué, s'il lui reste assez d'actions. Ils ont 4 actions au maximum (au lieu de 8), une classe avec ses bonus et un niveau de renommée calculé d'après la médiane des joueurs actifs de leur faction (relevé pour une faction en retard, et qui évolue en douceur), selon leur puissance et leur importance. Les Loups de cendre défendent tous Garreg-Mach ; quelques généraux sont indépendants et défendent leur propre territoire.\n\nUne fois un premier territoire conquis sur la carte, les généraux peuvent aussi partir en sortie contre un territoire ennemi voisin, et n'attaquent qu'une fois par bataille.\n\nUn général n'a qu'une vie par campagne : battu en attaque comme en défense, ou si son territoire d'origine est conquis, il meurt et disparaît de la carte (sauf s'il est épargné, voir plus bas). Ceux qui l'ont vaincu reçoivent de l'or et de la renommée en plus, selon son importance.\n\nCertains généraux peuvent être épargnés, seulement par certaines factions, et une seule fois. Les vainqueurs ont alors 1 heure pour décider : l'épargner (il rejoint leur faction, mais défend toujours son territoire d'origine) ou le faire mourir. Sans décision, il meurt. Un général déjà épargné qui est battu à nouveau meurt.\n\nLes seigneurs (Edelgard, Dimitri, Claude) ne quittent jamais leur capitale tant qu'ils la tiennent et la défendent toujours, même sans action. Ils ne peuvent pas mourir tant qu'il reste un autre général sous leur bannière : vaincus, ils se replient auprès des leurs. S'ils perdent leur capitale, ils ordonnent sa reprise et tous les généraux de la faction marchent sur elle. Yuri ne peut mourir que s'il est le dernier général des Loups de cendre (les autres morts ou passés à une autre faction) : vaincu avant cela, il est renvoyé à Garreg-Mach.\n\nLes Serpents des Ténèbres ont aussi leurs généraux : un raid sur trois environ est mené par l'un d'eux. Epimenides est toujours le dernier à venir. Une fois tombé, les Serpents ne reviennent plus jusqu'à la fin de la campagne, et la faction qui l'a abattu gagne +15 % de points.",
-        "en": "Generals are game characters controlled by the computer. Each one stands on their home territory at the start of the campaign and defends it at all costs when it is attacked, as long as they have enough actions left. They have at most 4 actions (instead of 8), a class with its bonuses and a renown level computed from the median of their faction's active players (raised for a faction lagging behind, and changing gradually), according to their strength and importance. The Ashen Wolves all defend Garreg Mach; a few generals are independent and defend their own territory.\n\nOnce a first territory has been conquered on the map, generals may also sortie against a neighbouring enemy territory, and attack only once per battle.\n\nA general has one life per campaign: beaten, whether attacking or defending, or if their home territory is conquered, they die and vanish from the map (unless spared, see below). Those who defeated them earn extra gold and renown, depending on their importance.\n\nSome generals can be spared, only by certain factions, and only once. The victors then have 1 hour to decide: spare them (they join their faction, but still defend their home territory) or put them to death. With no decision, they die. A general who was already spared and is beaten again dies.\n\nThe lords (Edelgard, Dimitri, Claude) never leave their capital while they hold it and always defend it, even without actions. They cannot die while another general remains under their banner: beaten, they fall back to their own. If they lose their capital, they order it retaken and all the faction's generals march on it. Yuri can only die if he is the last general of the Ashen Wolves (the others dead or gone to another faction): beaten before that, he is sent back to Garreg Mach.\n\nThose Who Slither in the Dark have generals too: roughly one raid in three is led by one of them. Epimenides always comes last. Once fallen, the Serpents do not return until the end of the campaign, and the faction that slew them gains +15% points."
+        "fr": "Les généraux sont des personnages du jeu, dirigés par l'ordinateur. Chacun se tient sur son territoire d'origine au début de la campagne et le défend coûte que coûte quand il est attaqué, s'il lui reste assez d'actions. Ils ont 4 actions au maximum (au lieu de 8), une classe avec ses bonus et un niveau de renommée calculé d'après la médiane des joueurs actifs de leur faction (relevé pour une faction en retard, et qui évolue en douceur), selon leur puissance et leur importance. Les Loups de cendre défendent tous Garreg-Mach ; quelques généraux sont indépendants et défendent leur propre territoire.\n\nUne fois un premier territoire conquis sur la carte, les généraux peuvent aussi partir en sortie contre un territoire ennemi voisin, et n'attaquent qu'une fois par bataille.\n\nUn général n'a qu'une vie par campagne : battu en attaque comme en défense, ou si son territoire d'origine est conquis, il meurt et disparaît de la carte (sauf s'il est épargné, voir plus bas). Ceux qui l'ont vaincu reçoivent de l'or et de la renommée en plus, selon son importance.\n\nCertains généraux peuvent être épargnés, seulement par certaines factions, et une seule fois. Les vainqueurs ont alors 1 heure pour décider : l'épargner (il rejoint leur faction, mais défend toujours son territoire d'origine) ou le faire mourir. Sans décision, il meurt. Un général déjà épargné qui est battu à nouveau meurt.\n\nLes seigneurs (Edelgard, Dimitri, Claude) ne quittent jamais leur capitale tant qu'ils la tiennent et la défendent toujours, même sans action. Ils ne peuvent pas mourir tant qu'il reste un autre général sous leur bannière : vaincus, ils se replient auprès des leurs. S'ils perdent leur capitale, ils ordonnent sa reprise et tous les généraux de la faction marchent sur elle. Yuri ne peut mourir que s'il est le dernier général des Loups de cendre (les autres morts ou passés à une autre faction) : vaincu avant cela, il est renvoyé à Garreg-Mach.\n\nL'Église de Seiros a ses généraux : Rhea et les chevaliers de Seiros (Seteth, Catherine, Shamir, Gilbert, Alois, Hanneman, Cyril, Flayn). Ils gardent Garreg-Mach, et Rhea, comme un seigneur, ne le quitte jamais et le défend toujours. Croisade : dès qu'une faction tient 45 % des territoires (hors annexes), Rhea lui déclare la croisade. Trois chevaliers au plus sortent de Garreg-Mach et attaquent ses territoires, en commençant par les plus proches. Ils passent partout, et les territoires qu'ils prennent reviennent à l'Église. La croisade est levée quand la faction redescend sous 38 %.\n\nL'Immaculée : si Garreg-Mach tombe, Rhea ne meurt pas, elle s'éveille en l'Immaculée. Elle lance alors des assauts sur Garreg-Mach, un toutes les 4 heures (jamais entre minuit et 6 h), et ravage parfois un territoire voisin. Les chevaliers survivants marchent avec elle. Un seul assaut réussi, et l'Église reprend Garreg-Mach : Rhea retrouve son siège. Repousser 3 assauts abat l'Immaculée pour de bon, et la faction qui tient Garreg-Mach gagne 10 % de points en fin de campagne.\n\nLes Serpents des Ténèbres ont aussi leurs généraux : un raid sur trois environ est mené par l'un d'eux. Epimenides est toujours le dernier à venir. Une fois tombé, les Serpents ne reviennent plus jusqu'à la fin de la campagne, et la faction qui l'a abattu gagne +15 % de points.",
+        "en": "Generals are game characters controlled by the computer. Each one stands on their home territory at the start of the campaign and defends it at all costs when it is attacked, as long as they have enough actions left. They have at most 4 actions (instead of 8), a class with its bonuses and a renown level computed from the median of their faction's active players (raised for a faction lagging behind, and changing gradually), according to their strength and importance. The Ashen Wolves all defend Garreg Mach; a few generals are independent and defend their own territory.\n\nOnce a first territory has been conquered on the map, generals may also sortie against a neighbouring enemy territory, and attack only once per battle.\n\nA general has one life per campaign: beaten, whether attacking or defending, or if their home territory is conquered, they die and vanish from the map (unless spared, see below). Those who defeated them earn extra gold and renown, depending on their importance.\n\nSome generals can be spared, only by certain factions, and only once. The victors then have 1 hour to decide: spare them (they join their faction, but still defend their home territory) or put them to death. With no decision, they die. A general who was already spared and is beaten again dies.\n\nThe lords (Edelgard, Dimitri, Claude) never leave their capital while they hold it and always defend it, even without actions. They cannot die while another general remains under their banner: beaten, they fall back to their own. If they lose their capital, they order it retaken and all the faction's generals march on it. Yuri can only die if he is the last general of the Ashen Wolves (the others dead or gone to another faction): beaten before that, he is sent back to Garreg Mach.\n\nThe Church of Seiros has generals of its own: Rhea and the Knights of Seiros (Seteth, Catherine, Shamir, Gilbert, Alois, Hanneman, Cyril, Flayn). They guard Garreg Mach, and Rhea, like a lord, never leaves it and always defends it. Crusade: as soon as a faction holds 45% of the territories (annexes excluded), Rhea declares a crusade against it. Up to three knights leave Garreg Mach and attack its territories, nearest first. They can pass anywhere, and the territories they take go to the Church. The crusade is lifted when the faction falls back below 38%.\n\nThe Immaculate One: if Garreg Mach falls, Rhea does not die, she awakens as the Immaculate One. She then launches assaults on Garreg Mach, one every 4 hours (never between midnight and 6 am), and sometimes ravages a neighbouring territory. The surviving knights march with her. A single successful assault and the Church retakes Garreg Mach: Rhea returns to her seat. Repelling 3 assaults slays the Immaculate One for good, and the faction holding Garreg Mach gains 10% more points at the end of the campaign.\n\nThose Who Slither in the Dark have generals too: roughly one raid in three is led by one of them. Epimenides always comes last. Once fallen, the Serpents do not return until the end of the campaign, and the faction that slew them gains +15% points."
       }
     },
     {
@@ -105,6 +105,16 @@
       "text": {
         "fr": "Signalements : sur un territoire, « Signaler à ma faction » envoie un marqueur visible de tes alliés pendant 30 minutes : À l'attaque !, Défendons !, Danger, En chemin ou Regroupement. Un signalement actif par joueur, et une minute d'attente entre deux.\n\nJournal du monde : tu peux réagir à l'action d'un allié (jamais à la tienne), une fois par événement et 10 fois par jour pour chaque réaction : 👏 féliciter un territoire pris ou défendu (+10 xp pour toi), 💪 soutenir une attaque en cours (+10 or pour l'allié), 🤝 envoyer de l'aide après un appel (+1 point de chances pour son camp).\n\nPremiers pas : un petit parcours de 7 étapes t'accompagne la première heure ; l'accomplir rapporte une récompense.",
         "en": "Signals: on a territory, \"Signal to my faction\" sends a marker visible to your allies for 30 minutes: Attack!, Let's defend!, Danger, On my way or Regroup. One active signal per player, and a one-minute wait between two.\n\nWorld journal: you can react to an ally's action (never your own), once per event and 10 times a day for each reaction: 👏 cheer a territory taken or defended (+10 xp for you), 💪 support an attack in progress (+10 gold for the ally), 🤝 send help after a call (+1 point of chance for their side).\n\nFirst steps: a short 7-step course guides you through the first hour; completing it earns a reward."
+      }
+    },
+    {
+      "title": {
+        "fr": "Relations",
+        "en": "Relationships"
+      },
+      "text": {
+        "fr": "Dans le menu, sous les effets de classe, la partie Relations liste les généraux alliés à ton camp, seigneurs compris. Ceux de ta faction qui sont morts (tête de mort), captifs ou passés à une autre faction (sa bannière) y restent, grisés, en fin de liste.\n\nTouche un général pour voir ton niveau de soutien avec lui et renforcer votre lien :\n- Offrir une fleur : 1 action et 50 or, +5 points de soutien.\n- Envoyer une lettre : 1 action et 200 or, +25 points de soutien.\n\nNiveaux : C (250 points), C+ (400), B (600), B+ (850), A (1 050), A+ (1 400) et S (2 000). Le niveau S n'est possible qu'avec un seul général. Le soutien est permanent : il se garde d'une campagne à l'autre.\n\nOn ne peut renforcer un lien qu'avec un général vivant allié à son camp. En exil, ce sont les généraux de ta faction d'adoption, y compris ceux qui l'ont rejointe après leur défaite. Se lier d'amitié avec un général pendant l'exil peut donc servir plus tard, quand il rejoindra peut-être ta faction.\n\nChaque général vivant allié à ton camp t'accorde son bonus, selon ton niveau de soutien avec lui (le détail est affiché en touchant le général). Un général mort, captif ou passé ailleurs ne donne plus rien, mais ton soutien est gardé : s'il rejoint un jour ton camp, son bonus revient.",
+        "en": "In the menu, below the class effects, the Relationships section lists the generals allied to your side, lords included. Those of your faction who are dead (skull), captive or gone to another faction (its banner) stay there, greyed out, at the end of the list.\n\nTap a general to see your support rank with them and strengthen your bond:\n- Give a flower: 1 action and 50 gold, +5 support points.\n- Send a letter: 1 action and 200 gold, +25 support points.\n\nRanks: C (250 points), C+ (400), B (600), B+ (850), A (1,050), A+ (1,400) and S (2,000). Rank S is only possible with a single general. Support is permanent: it carries over from one campaign to the next.\n\nYou can only strengthen a bond with a living general allied to your side. In exile, these are your adopted faction's generals, including those who joined it after their defeat. Befriending a general during exile can therefore pay off later, if they ever join your faction.\n\nEvery living general allied to your side grants you their bonus, based on your support rank with them (details shown when you tap the general). A dead, captive or departed general gives nothing, but your support is kept: if they ever join your side, their bonus comes back."
       }
     }
   ],
@@ -1462,14 +1472,16 @@
       "color": "#ffffff",
       "logo": "assets/banners/church_of_seiros.webp",
       "description": {
-        "fr": "Faction non jouable. Elle tient Garreg-Mach et le défend seule.",
-        "en": "Non-playable faction. It holds Garreg-Mach and defends it alone."
+        "fr": "Faction non jouable. Rhea et les chevaliers de Seiros tiennent Garreg-Mach, et partent en croisade contre la faction qui domine la carte.",
+        "en": "Non-playable faction. Rhea and the Knights of Seiros hold Garreg Mach, and march on a crusade against the faction that dominates the map."
       },
       "npc": true,
       "plural": {
         "fr": false,
         "en": false
-      }
+      },
+      "nation": "assets/banners/church_of_seiros.webp",
+      "lord": "assets/characters/lords_full_sprites/rhea.webp"
     },
     {
       "id": "serpents",
@@ -2694,6 +2706,56 @@
     }
   ],
   "patches": [
+    {
+      "id": "1.6",
+      "date": "2026-11-20",
+      "title": {
+        "fr": "Patch 1.6",
+        "en": "Patch 1.6"
+      },
+      "intro": {
+        "fr": "L'Église de Seiros entre dans la guerre, et les généraux deviennent des amis.",
+        "en": "The Church of Seiros joins the war, and generals become friends."
+      },
+      "sections": [
+        {
+          "title": {
+            "fr": "Église de Seiros",
+            "en": "Church of Seiros"
+          },
+          "items": [
+            {
+              "fr": "Rhea et 8 chevaliers de Seiros gardent Garreg-Mach. On peut les vaincre, et certains peuvent être épargnés.",
+              "en": "Rhea and 8 Knights of Seiros guard Garreg Mach. They can be defeated, and some can be spared."
+            },
+            {
+              "fr": "Croisade : une faction qui tient 45 % de la carte voit les chevaliers marcher sur ses territoires, jusqu'à ce qu'elle redescende sous 38 %.",
+              "en": "Crusade: a faction holding 45% of the map sees the knights march on its territories until it falls back below 38%."
+            },
+            {
+              "fr": "L'Immaculée : si Garreg-Mach tombe, Rhea s'éveille et lance ses assauts. Un assaut réussi rend Garreg-Mach à l'Église, 3 assauts repoussés l'abattent et rapportent 10 % de points.",
+              "en": "The Immaculate One: if Garreg Mach falls, Rhea awakens and launches her assaults. One successful assault returns Garreg Mach to the Church; repelling 3 slays her and earns 10% more points."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Relations",
+            "en": "Relationships"
+          },
+          "items": [
+            {
+              "fr": "Nouvelle partie Relations dans le menu : offre des fleurs (1 action, 50 or) ou écris des lettres (1 action, 200 or) aux généraux alliés pour gagner leur soutien, du niveau C au niveau S.",
+              "en": "New Relationships section in the menu: give flowers (1 action, 50 gold) or write letters (1 action, 200 gold) to allied generals to earn their support, from rank C to rank S."
+            },
+            {
+              "fr": "Le soutien est permanent, et un seul général peut atteindre le niveau S. Chacun des 45 généraux t'accorde son propre bonus de soutien tant qu'il est vivant et allié à ton camp.",
+              "en": "Support is permanent, and only one general can reach rank S. Each of the 45 generals grants you their own support bonus while alive and allied to your side."
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "1.5",
       "date": "2026-11-20",
@@ -3960,13 +4022,209 @@
         "coef": 3,
         "spare": [],
         "avatar": "assets/characters/those_who_slither_in_the_dark/epimenides.webp"
+      },
+      {
+        "id": "rhea",
+        "name": "Rhea",
+        "faction": "eglise",
+        "home": "garreg-mach",
+        "path": [
+          "monk",
+          "priest",
+          "bishop",
+          "holy-knight"
+        ],
+        "coef": 3,
+        "spare": [],
+        "avatar": "assets/characters/church_of_seiros/seiros.webp"
+      },
+      {
+        "id": "seteth",
+        "name": "Seteth",
+        "faction": "eglise",
+        "home": "garreg-mach",
+        "path": [
+          "soldier",
+          "pegasus-knight",
+          "wyvern-rider",
+          "wyvern-knight"
+        ],
+        "coef": 3,
+        "spare": [
+          "bleue",
+          "jaune"
+        ],
+        "avatar": "assets/characters/church_of_seiros/seteth.webp"
+      },
+      {
+        "id": "catherine",
+        "name": "Catherine",
+        "faction": "eglise",
+        "home": "garreg-mach",
+        "path": [
+          "myrmidon",
+          "mercenary",
+          "swordsmaster",
+          "falcon-knight"
+        ],
+        "coef": 3,
+        "spare": [
+          "bleue",
+          "jaune"
+        ],
+        "avatar": "assets/characters/church_of_seiros/catherine.webp"
+      },
+      {
+        "id": "shamir",
+        "name": "Shamir",
+        "faction": "eglise",
+        "home": "garreg-mach",
+        "path": [
+          "fighter",
+          "archer",
+          "sniper",
+          "bow-knight"
+        ],
+        "coef": 2.5,
+        "spare": [
+          "rouge",
+          "bleue",
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/church_of_seiros/shamir.webp"
+      },
+      {
+        "id": "gilbert",
+        "name": "Gilbert",
+        "faction": "eglise",
+        "home": "garreg-mach",
+        "path": [
+          "soldier",
+          "armored-knight",
+          "fortress-knight",
+          "great-knight"
+        ],
+        "coef": 2.5,
+        "spare": [
+          "bleue"
+        ],
+        "avatar": "assets/characters/church_of_seiros/gilbert.webp"
+      },
+      {
+        "id": "alois",
+        "name": "Alois",
+        "faction": "eglise",
+        "home": "garreg-mach",
+        "path": [
+          "fighter",
+          "brigand",
+          "warrior",
+          "war-master"
+        ],
+        "coef": 2,
+        "spare": [
+          "rouge",
+          "bleue",
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/church_of_seiros/alois.webp"
+      },
+      {
+        "id": "hanneman",
+        "name": "Hanneman",
+        "faction": "eglise",
+        "home": "garreg-mach",
+        "path": [
+          "monk",
+          "mage",
+          "warlock"
+        ],
+        "coef": 2,
+        "spare": [
+          "rouge",
+          "jaune"
+        ],
+        "avatar": "assets/characters/church_of_seiros/hanneman.webp"
+      },
+      {
+        "id": "cyril",
+        "name": "Cyril",
+        "faction": "eglise",
+        "home": "garreg-mach",
+        "path": [
+          "fighter",
+          "archer",
+          "sniper"
+        ],
+        "coef": 1.5,
+        "spare": [
+          "bleue",
+          "jaune",
+          "violette"
+        ],
+        "avatar": "assets/characters/church_of_seiros/cyril.webp"
+      },
+      {
+        "id": "flayn",
+        "name": "Flayn",
+        "faction": "eglise",
+        "home": "garreg-mach",
+        "path": [
+          "monk",
+          "priest",
+          "bishop"
+        ],
+        "coef": 1,
+        "spare": [
+          "bleue",
+          "jaune"
+        ],
+        "avatar": "assets/characters/church_of_seiros/flayn.webp"
+      },
+      {
+        "id": "immaculate",
+        "name": "Seiros",
+        "faction": "eglise",
+        "home": "",
+        "path": [
+          "monk",
+          "priest",
+          "bishop",
+          "holy-knight"
+        ],
+        "coef": 4,
+        "spare": [],
+        "avatar": "assets/characters/church_of_seiros/seiros.webp"
       }
     ],
     "lords": {
       "rouge": "edelgard",
       "bleue": "dimitri",
       "jaune": "claude",
-      "violette": "yuri"
+      "violette": "yuri",
+      "eglise": "rhea"
+    },
+    "church": {
+      "faction": "eglise",
+      "seat": "garreg-mach",
+      "lord": "rhea",
+      "immaculate": "immaculate",
+      "crusade": {
+        "start": 0.45,
+        "end": 0.38,
+        "sorties": 3,
+        "garrison": 2
+      },
+      "awakening": {
+        "waves": 3,
+        "waveGapHours": 4,
+        "power": 3,
+        "raidChance": 0.15,
+        "maxRaids": 1,
+        "pointsBonus": 0.1
+      }
     }
   },
   "tutorial": {
@@ -4060,5 +4318,603 @@
         }
       }
     ]
+  },
+  "relations": {
+    "levels": [
+      {
+        "id": "C",
+        "points": 250
+      },
+      {
+        "id": "C+",
+        "points": 400
+      },
+      {
+        "id": "B",
+        "points": 600
+      },
+      {
+        "id": "B+",
+        "points": 850
+      },
+      {
+        "id": "A",
+        "points": 1050
+      },
+      {
+        "id": "A+",
+        "points": 1400
+      },
+      {
+        "id": "S",
+        "points": 2000
+      }
+    ],
+    "gifts": {
+      "flower": {
+        "actions": 1,
+        "gold": 50,
+        "points": 5
+      },
+      "letter": {
+        "actions": 1,
+        "gold": 200,
+        "points": 25
+      }
+    },
+    "exclude": [
+      "immaculate"
+    ],
+    "bonuses": {
+      "bernadetta": {
+        "kind": "streakGold",
+        "values": [
+          3,
+          5,
+          7,
+          9,
+          12,
+          15,
+          30
+        ]
+      },
+      "caspar": {
+        "kind": "hireDiscount",
+        "values": [
+          10,
+          14,
+          18,
+          22,
+          26,
+          30,
+          60
+        ]
+      },
+      "dorothea": {
+        "kind": "saveAction",
+        "allies": 2,
+        "values": [
+          3,
+          5,
+          7,
+          10,
+          13,
+          16,
+          30
+        ]
+      },
+      "edelgard": {
+        "kind": "vsChurch",
+        "values": [
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          50
+        ]
+      },
+      "ferdinand": {
+        "kind": "withGeneral",
+        "values": [
+          5,
+          7,
+          9,
+          11,
+          13,
+          15,
+          30
+        ]
+      },
+      "hubert": {
+        "kind": "rawAttack",
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          10
+        ]
+      },
+      "jeritza": {
+        "kind": "attackXp",
+        "values": [
+          5,
+          7,
+          9,
+          11,
+          13,
+          15,
+          30
+        ]
+      },
+      "linhardt": {
+        "kind": "woundRelief",
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          10
+        ]
+      },
+      "manuela": {
+        "kind": "maxActions",
+        "values": [
+          1,
+          1,
+          2,
+          2,
+          3,
+          3,
+          4
+        ]
+      },
+      "monica": {
+        "kind": "homeXp",
+        "territory": "hresvelg",
+        "values": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          8,
+          15
+        ]
+      },
+      "petra": {
+        "kind": "territoryBoost",
+        "territory": "brigid",
+        "values": [
+          10,
+          12,
+          14,
+          16,
+          18,
+          20,
+          50
+        ]
+      },
+      "annette": {
+        "kind": "partnerAttack",
+        "partner": "mercedes",
+        "partnerLevel": "C+",
+        "values": [
+          5,
+          7,
+          9,
+          11,
+          13,
+          15,
+          25
+        ]
+      },
+      "ashe": {
+        "kind": "spareXp",
+        "values": [
+          25,
+          35,
+          45,
+          55,
+          65,
+          80,
+          150
+        ]
+      },
+      "dedue": {
+        "kind": "rawDefense",
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          10
+        ]
+      },
+      "dimitri": {
+        "kind": "nearChurch",
+        "values": [
+          6,
+          10,
+          14,
+          18,
+          22,
+          26,
+          45
+        ]
+      },
+      "felix": {
+        "kind": "annexAttack",
+        "values": [
+          15,
+          17,
+          19,
+          21,
+          23,
+          25,
+          45
+        ]
+      },
+      "ingrid": {
+        "kind": "joinGold",
+        "values": [
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          90
+        ]
+      },
+      "mercedes": {
+        "kind": "partnerDefense",
+        "partner": "annette",
+        "partnerLevel": "C+",
+        "values": [
+          5,
+          7,
+          9,
+          11,
+          13,
+          15,
+          25
+        ]
+      },
+      "hilda": {
+        "kind": "regenGold",
+        "values": [
+          3,
+          4,
+          5,
+          6,
+          8,
+          10,
+          20
+        ]
+      },
+      "yuri": {
+        "kind": "territoryPower",
+        "territory": "garreg-mach",
+        "values": [
+          5,
+          8,
+          11,
+          14,
+          17,
+          20,
+          40
+        ]
+      },
+      "constance": {
+        "kind": "auraBoost",
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          12
+        ]
+      },
+      "hapi": {
+        "kind": "bossShield",
+        "values": [
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          50
+        ]
+      },
+      "balthus": {
+        "kind": "outnumbered",
+        "values": [
+          5,
+          8,
+          11,
+          14,
+          17,
+          20,
+          40
+        ]
+      },
+      "rodrigue": {
+        "kind": "homeDefense",
+        "values": [
+          4,
+          6,
+          8,
+          11,
+          14,
+          18,
+          35
+        ]
+      },
+      "sylvain": {
+        "kind": "winGold",
+        "values": [
+          5,
+          8,
+          11,
+          14,
+          17,
+          20,
+          40
+        ]
+      },
+      "claude": {
+        "kind": "gaugeBoost",
+        "values": [
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          50
+        ]
+      },
+      "holst": {
+        "kind": "zoneDefense",
+        "territory": "goneril",
+        "values": [
+          5,
+          8,
+          11,
+          14,
+          17,
+          20,
+          40
+        ]
+      },
+      "judith": {
+        "kind": "freeMove",
+        "values": [
+          2,
+          3,
+          5,
+          6,
+          8,
+          10,
+          20
+        ]
+      },
+      "ignatz": {
+        "kind": "rallyHelp",
+        "values": [
+          1,
+          1,
+          2,
+          2,
+          3,
+          3,
+          6
+        ]
+      },
+      "leonie": {
+        "kind": "xpAll",
+        "values": [
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          25
+        ]
+      },
+      "lorenz": {
+        "kind": "buildDiscount",
+        "values": [
+          5,
+          8,
+          11,
+          14,
+          17,
+          20,
+          40
+        ]
+      },
+      "marianne": {
+        "kind": "reviveDiscount",
+        "values": [
+          10,
+          15,
+          20,
+          25,
+          30,
+          40,
+          75
+        ]
+      },
+      "lysithea": {
+        "kind": "lateStrike",
+        "values": [
+          5,
+          8,
+          11,
+          14,
+          17,
+          20,
+          40
+        ]
+      },
+      "raphael": {
+        "kind": "crowdPower",
+        "values": [
+          4,
+          6,
+          8,
+          11,
+          14,
+          18,
+          35
+        ]
+      },
+      "nader": {
+        "kind": "capitalAttack",
+        "values": [
+          5,
+          8,
+          11,
+          14,
+          17,
+          20,
+          40
+        ]
+      },
+      "shadid": {
+        "kind": "flankAttack",
+        "values": [
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          30
+        ]
+      },
+      "rhea": {
+        "kind": "scoreBonus",
+        "values": [
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          25
+        ]
+      },
+      "seteth": {
+        "kind": "dailyBonus",
+        "values": [
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          50
+        ]
+      },
+      "catherine": {
+        "kind": "crusadeAttack",
+        "values": [
+          5,
+          9,
+          13,
+          17,
+          21,
+          25,
+          50
+        ]
+      },
+      "shamir": {
+        "kind": "emptyAttack",
+        "values": [
+          4,
+          6,
+          8,
+          10,
+          12,
+          15,
+          30
+        ]
+      },
+      "gilbert": {
+        "kind": "fortifyBoost",
+        "values": [
+          10,
+          14,
+          18,
+          22,
+          26,
+          30,
+          60
+        ]
+      },
+      "alois": {
+        "kind": "defenseGold",
+        "values": [
+          10,
+          15,
+          20,
+          25,
+          30,
+          40,
+          80
+        ]
+      },
+      "hanneman": {
+        "kind": "gatherXp",
+        "values": [
+          5,
+          8,
+          11,
+          14,
+          17,
+          20,
+          40
+        ]
+      },
+      "cyril": {
+        "kind": "gatherSave",
+        "values": [
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          25
+        ]
+      },
+      "flayn": {
+        "kind": "retreatDelay",
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          12
+        ]
+      }
+    }
   }
 }

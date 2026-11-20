@@ -139,6 +139,18 @@ Après une bataille perdue ou un territoire perdu, les joueurs présents ont `re
 
 Au-delà de `decisive` (0,8, soit 4 contre 1) du rapport attaque / (attaque + défense), l'issue est certaine : pas de tirage (`battle.decisive` = `win` ou `lose`). Les chances de l'attaque reçoivent aussi l'aide des alliés (`battles.help`).
 
+### Engagement, seigneurs, exil (patch 1.5)
+
+- **Rester pour combattre** : `POST /api/move` et `/api/teleport` refusent de quitter un territoire où le joueur a des actions de combat en cours (bataille ouverte ou garnison) avec l'erreur `engaged`, sauf avec `leave: true` : ses actions y sont alors annulées, sans remboursement. Un général qui se déplace perd aussi ses actions en cours ; engagé dans un combat, il reste jusqu'à sa fin.
+- **Seigneurs** (`generals.lords`) : immobiles dans leur capitale tant qu'ils la tiennent, ils la défendent sans dépenser d'action et ne meurent pas tant qu'un autre général (vivant ou captif) reste sous leur bannière ; vaincus, ils se replient auprès d'un allié. Capitale perdue : meta `retake:<faction>`, notification `lord_rally`, et tous les généraux de la faction marchent sur elle. Yuri suit la même règle mais retourne à Garreg-Mach.
+- **Capitale** : `capital.perTerritory` × territoires de la faction s'ajoute à la défense de sa capitale d'origine tant qu'elle la tient (`capitalBonus` sur la carte).
+- **Exil** : `exile.rewardMultiplier` 0,5 ; un exilé n'a ni capacité de seigneur, ni avantages `underdogs`, ni bonus de contre-attaque propre à sa faction d'adoption.
+- **Énergie** : `rewards.actions` d'une mission ajoute des actions au-delà du maximum ; au-dessus du maximum la réserve ne se recharge plus.
+- **Profils** : `GET /api/profile?pseudo=` ou `?general=`.
+- **Bugs** : `POST /api/bug` (500 caractères, 3 par heure), table `bug_reports`, envoi par mail via `mailer.js` si `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` et `BUG_REPORT_TO` sont définis (Gmail : port 465 et mot de passe d'application). Les signalements apparaissent aussi sur `/admin.html`.
+- **Confirmation d'email** : dès que l'envoi de mails est configuré (variables SMTP), un nouveau compte reçoit un code à 6 chiffres (30 minutes, 5 essais, renvoi après une minute, table `email_codes`) et doit le saisir (`POST /api/verify`, `/api/verify/resend`) avant de créer son personnage. Les comptes existants restent valides (`users.email_verified`). `EMAIL_VERIFY=0` coupe la confirmation.
+- **Notifications** : `campaign_ending` à tous `endWarningHours` heures avant la clôture (aussi en push), `lord_ability` à tous (dans l'app).
+
 ### Capitales, constructions, seigneurs, objectifs, signalements
 
 - `capitals` : une faction qui a perdu sa capitale perd `capital.lossPct` % de puissance tant qu'elle ne l'a pas reprise. La couronne s'affiche sur la carte.

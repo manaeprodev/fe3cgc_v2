@@ -93,7 +93,7 @@ const setStat = (pseudo, n) => withDb((d) => d.prepare(`INSERT INTO player_event
     setStat('Joueur1', 3);
     const gold = (await call('/me')).d.character.gold;
     r = await call('/class', { class: 'dark-mage' });
-    check('3 attaques repoussées : Dark Mage accordé et facturé 50 000 or', r.s === 200 && r.d.character.class === 'dark-mage' && r.d.character.gold === gold - 50000, r.d.error || `${r.d.character?.class} ${r.d.character?.gold}`);
+    check('3 attaques repoussées : Dark Mage accordé et facturé 7 250 or', r.s === 200 && r.d.character.class === 'dark-mage' && r.d.character.gold === gold - 7250, r.d.error || `${r.d.character?.class} ${r.d.character?.gold}`);
     r = await call('/class', { class: 'dark-bishop' });
     check('Dark Bishop refusé avec 3 seulement', r.d.error === 'class_unlock', r.d.error);
     setStat('Joueur1', 14);

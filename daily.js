@@ -71,7 +71,7 @@ module.exports = function createDaily(ctx) {
       const current = Math.min(progress.get(m.condition?.event) || 0, target);
       return {
         id: m.id, title: m.title, description: m.description || '', current, target,
-        rewards: { gold: Math.round((m.rewards?.gold || 0) * mult), xp: m.rewards?.xp || 0 },
+        rewards: { gold: Math.round((m.rewards?.gold || 0) * mult), xp: m.rewards?.xp || 0, actions: m.rewards?.actions || 0 },
         status: claimed.has(m.id) ? 'claimed' : current >= target ? 'done' : 'active',
       };
     });
@@ -107,6 +107,8 @@ module.exports = function createDaily(ctx) {
     const s = q.streak.get(userId);
     if (!s || s.last_day !== day) q.setStreak.run(userId, day, streakOf(userId) + 1);
     grant(userId, mission.rewards.gold, mission.rewards.xp, 'daily');
+    // Certaines missions rendent de l'énergie (actions), même au-delà du maximum.
+    if (mission.rewards.actions && ctx.giveActions) ctx.giveActions(userId, mission.rewards.actions);
     return state(userId);
   }
 

@@ -43,7 +43,10 @@ module.exports = function createCampaign(ctx) {
     // Missions de campagne : { id, title, description, condition: { event, count }, rewards: { gold, xp } }.
     missions: [], keyTerritory: 'garreg-mach', reactions: { cheerXp: 10, supportGold: 10, helpPct: 1, dailyCap: 10, cheerMinutes: 60 },
     // Capitale perdue : -lossPct % de puissance pour la faction tant qu'elle ne l'a pas reprise.
-    capital: { lossPct: 10 },
+    // Capitale d'origine : -lossPct % si elle est perdue ; tenue, sa défense gagne perTerritory × nombre de territoires de la faction.
+    capital: { lossPct: 10, perTerritory: 0.04 },
+    // Avertissement de fin de campagne (notification à tous) quelques heures avant la clôture.
+    endWarningHours: 3,
     // Saison : nombre de campagnes (une par semaine) avant le sacre des champions.
     season: { campaigns: 4 },
     // Constructions : une spécialité par territoire (fortress, market, academy), jusqu'à maxLevel niveaux payés en or (costs) ; perdues à la conquête.
@@ -67,6 +70,10 @@ module.exports = function createCampaign(ctx) {
     serpents: { chance: 0.3, finalBoss: null, pointsBonus: 0.15 }, roster: [], ...(config.generals || {}),
   };
   const GEN = new Map(G.roster.map((g) => [g.id, g]));
+  // Seigneurs : ils ne quittent pas leur capitale tant qu'ils la tiennent, la défendent toujours, et ne meurent pas tant qu'il reste
+  // un autre général sous leur bannière (Yuri retourne alors à Garreg-Mach, les autres rejoignent un allié et ordonnent la reprise).
+  const LORDS = G.lords || {};
+  const isLord = (gid) => Object.values(LORDS).includes(gid);
   // Pour les tests : TURN_SECONDS raccourcit les tours, TEST_ROLL fixe le tirage des batailles (0 = réussite),
   // BOSS_CHANCE remplace la probabilité d'apparition d'un mini-boss.
   const TURN_MS = (Number(process.env.TURN_SECONDS) || C.turnMinutes * 60) * 1000;
@@ -316,7 +323,7 @@ module.exports = function createCampaign(ctx) {
     presence: db.prepare(`SELECT p.territory, COALESCE(p.exile_faction, c.faction) AS faction, count(*) AS n FROM player_state p JOIN characters c ON c.user_id = p.user_id
                           WHERE p.status != 'dead' GROUP BY p.territory, COALESCE(p.exile_faction, c.faction)`),
     // Joueurs en vie avec leur position, et ceux qui attaquent ou défendent là où ils se trouvent (bataille en cours ou garnison).
-    occupants: db.prepare(`SELECT p.user_id, p.territory, p.status, COALESCE(p.exile_faction, c.faction) AS faction, c.pseudo, c.avatar, c.class, c.xp
+    occupants: db.prepare(`SELECT p.user_id, p.territory, p.status, COALESCE(p.exile_faction, c.faction) AS faction, p.exile_faction, c.pseudo, c.avatar, c.class, c.xp
                            FROM player_state p JOIN characters c ON c.user_id = p.user_id WHERE p.status != 'dead' AND p.territory != ''`),
     engaged: db.prepare(`SELECT DISTINCT k.user_id, k.territory FROM contributions k LEFT JOIN battles b ON b.id = k.battle_id
                          WHERE k.kind = 'action' AND ((b.id IS NOT NULL AND b.resolved_at IS NULL) OR (k.battle_id IS NULL AND k.expires_at > ?))`),
@@ -355,7 +362,7 @@ module.exports = function createCampaign(ctx) {
                            ON CONFLICT (faction) DO UPDATE SET points = points + excluded.points`),
     meta: db.prepare('SELECT value FROM campaign_meta WHERE key = ?'),
     setMeta: db.prepare('INSERT INTO campaign_meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value'),
-    clearFactionMeta: db.prepare("DELETE FROM campaign_meta WHERE key LIKE 'held:%' OR key LIKE 'out:%' OR key LIKE 'epi:%' OR key LIKE 'finished:%' OR key LIKE 'gauge:%' OR key LIKE 'buff:%' OR key IN ('conquest', 'serpents_gone', 'reset_at', 'summary')"),
+    clearFactionMeta: db.prepare("DELETE FROM campaign_meta WHERE key LIKE 'held:%' OR key LIKE 'out:%' OR key LIKE 'epi:%' OR key LIKE 'finished:%' OR key LIKE 'gauge:%' OR key LIKE 'buff:%' OR key LIKE 'retake:%' OR key LIKE 'warned:%' OR key IN ('conquest', 'serpents_gone', 'reset_at', 'summary')"),
     addEvent: db.prepare('INSERT INTO world_events (campaign_id, type, params, created_at) VALUES (?, ?, ?, ?)'),
     events: db.prepare('SELECT id, type, params, created_at FROM world_events ORDER BY id DESC LIMIT 40'),
     purgeEvents: db.prepare('DELETE FROM world_events WHERE id <= (SELECT max(id) FROM world_events) - 300'),
@@ -387,6 +394,15 @@ module.exports = function createCampaign(ctx) {
     addResult: db.prepare('INSERT OR REPLACE INTO campaign_results (campaign_id, user_id, data, seen) VALUES (?, ?, ?, 0)'),
     resultFor: db.prepare('SELECT campaign_id, data FROM campaign_results WHERE user_id = ? AND seen = 0 ORDER BY campaign_id DESC LIMIT 1'),
     markResultSeen: db.prepare('UPDATE campaign_results SET seen = 1 WHERE user_id = ?'),
+    // Engagement : actions de combat d'un joueur sur un territoire (bataille en cours ou garnison active), annulées s'il en part.
+    myEngagements: db.prepare(`SELECT count(*) AS n FROM contributions k LEFT JOIN battles b ON b.id = k.battle_id
+                               WHERE k.user_id = ? AND k.territory = ? AND k.kind = 'action' AND ((b.id IS NOT NULL AND b.resolved_at IS NULL) OR (k.battle_id IS NULL AND k.expires_at > ?))`),
+    dropEngagements: db.prepare(`DELETE FROM contributions WHERE user_id = ? AND territory = ? AND kind = 'action'
+                                 AND (battle_id IS NULL OR battle_id IN (SELECT id FROM battles WHERE resolved_at IS NULL))`),
+    dropGenEngagements: db.prepare('DELETE FROM general_contribs WHERE gid = ? AND battle_id IN (SELECT id FROM battles WHERE resolved_at IS NULL AND territory = ?)'),
+    exilesAll: db.prepare('SELECT user_id FROM player_state WHERE exile_faction IS NOT NULL'),
+    latestEvent: db.prepare('SELECT max(id) AS id FROM world_events'),
+    profileOf: db.prepare('SELECT user_id, pseudo, faction, class, class_path, xp, avatar, birthday FROM characters WHERE pseudo = ?'),
     buildGet: db.prepare('SELECT spec, level FROM territory_builds WHERE territory = ?'),
     buildSet: db.prepare(`INSERT INTO territory_builds (territory, spec, level) VALUES (?, ?, ?)
                           ON CONFLICT (territory) DO UPDATE SET spec = excluded.spec, level = excluded.level`),
@@ -461,7 +477,7 @@ module.exports = function createCampaign(ctx) {
     const side = effFaction(uid);
     const spot = side && spawnTerritory(side, ownersMap());
     if (!spot) { q.setDead.run(uid); notify(uid, 'fallen', { wounded: false }); return; }
-    const fine = Math.min(q.gold.get(uid)?.gold || 0, Math.round(reviveCost(side) * mult) + snipe);
+    const fine = Math.min(q.gold.get(uid)?.gold || 0, Math.round((isExile(uid) ? C.revive.gold : reviveCost(side)) * mult) + snipe);
     if (fine > 0) q.takeGold.run(fine, uid);
     q.setTerritory.run(spot, uid);
     q.setActions.run(0, t, uid);
@@ -474,7 +490,7 @@ module.exports = function createCampaign(ctx) {
     const enemyAdj = Math.min(0, ...foes.filter((e) => e.kind === 'retreat').map((e) => e.enemy || 0));
     const penalty = Math.max(0, ...foes.filter((e) => e.kind === 'sniper').map((e) => e.gold || 0));
     for (const uid of players) {
-      const refuge = perks(faction).autoRetreat && C.homeBases[faction];
+      const refuge = !isExile(uid) && perks(faction).autoRetreat && C.homeBases[faction];
       if (refuge) {
         // Une faction dotée d'un refuge s'y replie d'elle-même.
         const from = q.state.get(uid)?.territory;
@@ -541,6 +557,11 @@ module.exports = function createCampaign(ctx) {
   const CAPITALS = new Set(Object.values(C.capitals));
   // Une faction qui a perdu sa capitale (et n'est pas hors jeu) perd de la puissance tant qu'elle ne l'a pas reprise.
   const capitalLost = (f, owners) => !!C.capitals[f] && owners.get(C.capitals[f]) !== f && !isOut(f);
+  const capitalGuard = (territory, owners) => {
+    const f = Object.keys(C.capitals).find((x) => C.capitals[x] === territory);
+    if (!f || owners.get(territory) !== f) return 1;
+    return 1 + (C.capital.perTerritory || 0) * TERR.filter((x) => owners.get(x.id) === f).length;
+  };
   const capMult = (f, owners) => (f && capitalLost(f, owners) ? 1 - (C.capital.lossPct || 0) / 100 : 1);
   // Constructions.
   const buildOf = (territory) => q.buildGet.get(territory) || null;
@@ -587,7 +608,7 @@ module.exports = function createCampaign(ctx) {
     q.setMeta.run(`gauge:${f}`, '0');
     q.setMeta.run(`buff:${f}`, String(Date.now() + lordMs(lord)));
     journal('lord_ability', { faction: f, lord: lord.id });
-    for (const pl of q.factionPlayers.all(f)) notify(pl.user_id, 'lord_ability', { faction: f, lord: lord.id });
+    for (const c of q.chars.all()) notify(c.user_id, 'lord_ability', { faction: f, lord: lord.id }); // tout le monde est prévenu, dans l'app
   }
   const lordMult = (f, side) => { const b = activeBuff(f); return b && b.kind === 'power' && (b.side === 'both' || b.side === side) ? 1 + b.pct / 100 : 1; };
   const hireFactor = (f) => { const b = activeBuff(f); return b && b.kind === 'hireCost' ? 1 - b.pct / 100 : 1; };
@@ -610,7 +631,7 @@ module.exports = function createCampaign(ctx) {
       const current = Math.min(progress.get(m.condition?.event) || 0, target);
       return {
         id: m.id, title: m.title, description: m.description || '', current, target,
-        rewards: { gold: m.rewards?.gold || 0, xp: m.rewards?.xp || 0 },
+        rewards: { gold: m.rewards?.gold || 0, xp: m.rewards?.xp || 0, actions: m.rewards?.actions || 0 },
         status: claimed.has(m.id) ? 'claimed' : current >= target ? 'done' : 'active',
       };
     });
@@ -621,6 +642,7 @@ module.exports = function createCampaign(ctx) {
     if (!m) throw new HttpError(404, 'mission_unknown');
     if (m.status !== 'done' || q.cmClaim.run(currentCampaign().id, userId, id).changes !== 1) throw new HttpError(409, 'reward_unavailable');
     grant(userId, m.rewards.gold, m.rewards.xp, 'mission');
+    if (m.rewards.actions) giveActions(userId, m.rewards.actions);
     return missionState(userId);
   }
 
@@ -655,6 +677,7 @@ module.exports = function createCampaign(ctx) {
     return { options: exileOptions(ch.faction), malus: Math.round((1 - (C.exile.rewardMultiplier ?? 1)) * 100) };
   }
   // Un exilé est moins bien payé : ses gains d'or et d'expérience sont réduits (rewardMultiplier).
+  const isExile = (userId) => !!q.state.get(userId)?.exile_faction;
   const exileMult = (userId) => (q.state.get(userId)?.exile_faction ? C.exile.rewardMultiplier ?? 1 : 1);
   // Joueur tombé dont la faction est hors jeu : sa série de missions du jour est gelée.
   function fallenState(userId) {
@@ -721,7 +744,8 @@ module.exports = function createCampaign(ctx) {
     }
     return { gold, xp };
   }
-  const fortifyCost = (userId) => Math.round(C.hire.gold * productOf(effectsOfUser(userId), 'fortifyCost', 'factor') * hireFactor(effFaction(userId)));
+  // Un exilé ne profite d'aucun avantage de la faction qu'il sert (capacité du seigneur, avantages des Loups de cendre…).
+  const fortifyCost = (userId) => Math.round(C.hire.gold * productOf(effectsOfUser(userId), 'fortifyCost', 'factor') * (isExile(userId) ? 1 : hireFactor(effFaction(userId))));
   const fortifyPower = (userId) => C.hire.power * productOf(effectsOfUser(userId), 'fortifyPower', 'factor');
 
   // Crée l'état du joueur s'il n'existe pas encore (nouveau personnage ou nouvelle campagne).
@@ -743,7 +767,16 @@ module.exports = function createCampaign(ctx) {
       const gained = Math.floor((t - at) / lim.ms);
       if (gained > 0) { actions = Math.min(lim.max, actions + gained); at += gained * lim.ms; }
     }
-    return actions >= lim.max ? { actions: lim.max, at: t, next: null, max: lim.max } : { actions, at, next: at + lim.ms, max: lim.max };
+    // Au-delà du maximum (récompenses de missions), la réserve est gardée mais ne se recharge plus.
+    return actions >= lim.max ? { actions, at: t, next: null, max: lim.max } : { actions, at, next: at + lim.ms, max: lim.max };
+  }
+  // Actions offertes (missions) : elles peuvent dépasser le maximum.
+  function giveActions(userId, n) {
+    const ps = ensurePlayer(userId);
+    if (!ps || !n) return;
+    const t = Date.now();
+    const s = settle(ps, t);
+    q.setActions.run(s.actions + n, s.actions >= s.max ? t : s.at, userId);
   }
   // Dépense 1 action. La première action de chaque tour rapporte un petit bonus de régularité.
   function spend(ps, t) {
@@ -763,7 +796,7 @@ module.exports = function createCampaign(ctx) {
   // Force d'une action de combat : dépend du rang de la classe et de la renommée du joueur.
   function power(ch) {
     const tier = config.classes.find((c) => c.id === ch.class)?.tier;
-    return (C.tierPower[tier] ?? 1) * (1 + renown(ch.xp).level * C.renownPower) * powerBonus(ch.faction);
+    return (C.tierPower[tier] ?? 1) * (1 + renown(ch.xp).level * C.renownPower) * (ch.home && ch.home !== ch.faction ? 1 : powerBonus(ch.faction));
   }
   // Force du petit nombre : une faction moins nombreuse que la moyenne des autres frappe plus fort, dans la même proportion (plafonnée).
   function powerBonus(faction) {
@@ -883,9 +916,9 @@ module.exports = function createCampaign(ctx) {
     }
     return null;
   }
-  function genFight(row, cur, battle, side, t) {
-    if (cur.actions < 1 || q.generalContribed.get(battle.id, row.gid)) return false;
-    spendGen(row, cur, t);
+  function genFight(row, cur, battle, side, t, free = false) {
+    if ((!free && cur.actions < 1) || q.generalContribed.get(battle.id, row.gid)) return false;
+    if (!free) spendGen(row, cur, t);
     q.addGeneralContrib.run(battle.id, row.gid, side, genPower(row));
     return true;
   }
@@ -899,6 +932,12 @@ module.exports = function createCampaign(ctx) {
     return genFight(row, cur, b, 'attack', t);
   }
 
+  // Un général qui quitte un territoire y perd ses actions de combat en cours (comme un joueur).
+  function moveGeneral(row, to) {
+    if (row.territory && row.territory !== to) q.dropGenEngagements.run(row.gid, row.territory);
+    q.setGeneralAt.run(to, row.gid);
+    row.territory = to;
+  }
   // L'IA des généraux, à chaque tick.
   function generalsTick(t) {
     const owners = ownersMap();
@@ -921,11 +960,26 @@ module.exports = function createCampaign(ctx) {
           const path = pathTo(row.territory, home, row.faction, owners);
           if (!path || cur.actions < path.length + 1) continue;
           spendGen(row, cur, t, path.length);
-          q.setGeneralAt.run(home, row.gid);
-          row.territory = home;
+          moveGeneral(row, home);
         }
-        genFight(row, cur, hb, 'defense', t);
+        genFight(row, cur, hb, 'defense', t, isLord(row.gid) && home === C.capitals[row.faction]); // un seigneur défend toujours sa capitale
         continue;
+      }
+      // Seigneur dans sa capitale : il n'en bouge pas.
+      if (isLord(row.gid) && C.capitals[row.faction] && row.territory === C.capitals[row.faction] && owners.get(row.territory) === row.faction) continue;
+      // Engagé dans un combat là où il se trouve : il reste jusqu'à la fin (partir annulerait ses actions).
+      const hereB = q.openBattle.get(row.territory);
+      if (hereB && q.generalContribed.get(hereB.id, row.gid)) continue;
+      // Ralliement : le seigneur a perdu sa capitale et a ordonné sa reprise ; tous les généraux de la faction marchent sur elle.
+      const cap = C.capitals[row.faction];
+      if (cap && q.meta.get(`retake:${row.faction}`)?.value === '1') {
+        if (owners.get(cap) === row.faction) q.setMeta.run(`retake:${row.faction}`, '0');
+        else if (phase(t) === 'open') {
+          if (row.territory === cap) { if (row.move_turn < turn) genAttack(row, cur, cap, owners, t); continue; }
+          const path = pathTo(row.territory, cap, row.faction, owners);
+          if (path && path.length && row.move_turn < turn && cur.actions >= 1) { spendGen(row, cur, t); moveGeneral(row, path[0]); q.setGeneralMoveTurn.run(turn, row.gid); continue; }
+          if (path) continue;
+        }
       }
       if (!conquered || phase(t) !== 'open' || !row.faction || !PLAYABLE.has(row.faction)) continue; // pas d'offensive avant la première conquête, pendant la clôture, ni pour un indépendant
       const here = row.territory;
@@ -938,14 +992,14 @@ module.exports = function createCampaign(ctx) {
         if (cur.actions >= 1 && (!hereBattle || hereBattle.attacker === row.faction) && genAttack(row, cur, here, owners, t)) continue;
         if (cur.actions >= 1) {
           const step = (pathTo(here, home, row.faction, owners) || [])[0] || neighbors(here).find((n) => isHome(row.faction, n, owners));
-          if (step) { spendGen(row, cur, t); q.setGeneralAt.run(step, row.gid); q.setGeneralMoveTurn.run(turn, row.gid); }
+          if (step) { spendGen(row, cur, t); moveGeneral(row, step); q.setGeneralMoveTurn.run(turn, row.gid); }
         }
         continue;
       }
       if (!rested || cur.actions < 2) continue;
       if (here !== home && homeOwner === row.faction) {
         const step = (pathTo(here, home, row.faction, owners) || [])[0];
-        if (step) { spendGen(row, cur, t); q.setGeneralAt.run(step, row.gid); q.setGeneralMoveTurn.run(turn, row.gid); }
+        if (step) { spendGen(row, cur, t); moveGeneral(row, step); q.setGeneralMoveTurn.run(turn, row.gid); }
         continue;
       }
       // Sortie : un territoire ennemi voisin, de préférence là où sa faction attaque déjà.
@@ -961,7 +1015,7 @@ module.exports = function createCampaign(ctx) {
       const pool = joining.length ? joining : targets;
       const target = pool[Math.floor(genRand() * pool.length) % pool.length];
       spendGen(row, cur, t);
-      q.setGeneralAt.run(target, row.gid);
+      moveGeneral(row, target);
       q.setGeneralMoveTurn.run(turn, row.gid);
       sorties += 1;
     }
@@ -980,6 +1034,23 @@ module.exports = function createCampaign(ctx) {
     }
   }
   // Le général est vaincu : récompense pour ceux qui l'ont battu, puis il meurt ou attend le verdict de ses vainqueurs.
+  // Le seigneur a encore des généraux sous sa bannière : il ne meurt pas. Yuri retourne à Garreg-Mach ; les autres rejoignent un allié
+  // et, si leur capitale est tombée, ordonnent sa reprise (ralliement de toute la faction).
+  const alliesOf = (row) => q.generals.all().filter((g) => g.gid !== row.gid && g.faction === row.faction && (g.status === 'alive' || g.status === 'captive') && GEN.has(g.gid));
+  function protectLord(row, t, lost = null) {
+    const owners = ownersMap();
+    const cap = C.capitals[row.faction];
+    // Un allié sur un territoire encore tenu par la faction (jamais celui qui vient de tomber).
+    const allies = alliesOf(row).filter((g) => g.status === 'alive' && g.territory && g.territory !== lost && owners.get(g.territory) === row.faction);
+    const refuge = !cap ? C.homeBases[row.faction] : (allies.find((g) => g.territory === cap)?.territory || allies[0]?.territory || spawnTerritory(row.faction, owners) || C.homeBases[row.faction]);
+    if (refuge) moveGeneral(row, refuge);
+    journal('lord_escaped', { general: row.gid, faction: row.faction, territory: refuge || null }, t);
+    if (cap && ownersMap().get(cap) !== row.faction) {
+      q.setMeta.run(`retake:${row.faction}`, '1');
+      journal('lord_rally', { general: row.gid, faction: row.faction, territory: cap }, t);
+      for (const pl of q.factionPlayers.all(row.faction)) notify(pl.user_id, 'lord_rally', { general: row.gid, territory: cap });
+    }
+  }
   function defeatGeneral(row, foes, winner, b, t) {
     const gain = genReward(row.gid);
     fp(winner, 'generals');
@@ -990,6 +1061,7 @@ module.exports = function createCampaign(ctx) {
       cm(uid, 'general');
       notify(uid, 'general_defeated', { general: row.gid, ...paid });
     }
+    if (isLord(row.gid) && alliesOf(row).length) return protectLord(row, t, b.territory);
     const cfg = GEN.get(row.gid);
     const spareable = !row.spared && winner && PLAYABLE.has(winner) && winner !== row.faction && (cfg.spare || []).includes(winner);
     const voters = spareable ? q.sideActors.all(b.id, winner === b.attacker ? 'attack' : 'defense').map((r) => r.user_id) : [];
@@ -1002,9 +1074,11 @@ module.exports = function createCampaign(ctx) {
   }
   // Bilan d'une bataille pour les généraux : ceux du camp battu sont vaincus, les autres généraux présents sur un territoire perdu reculent.
   function settleGenerals(b, success, defWinner, t) {
+    const handled = new Set();
     for (const c of q.generalContribs.all(b.id)) {
       const row = q.general.get(c.gid);
       if (!row || row.status !== 'alive' || (c.side === 'attack') === success) continue;
+      handled.add(row.gid);
       if (c.side === 'defense') defeatGeneral(row, q.sideActors.all(b.id, 'attack').map((r) => r.user_id), b.attacker, b, t);
       else defeatGeneral(row, q.sideActors.all(b.id, 'defense').map((r) => r.user_id), defWinner, b, t);
     }
@@ -1015,7 +1089,7 @@ module.exports = function createCampaign(ctx) {
       const mine = (row) => camps.includes(row.faction) || (row.faction === null && !b.defender);
       const attackers = q.sideActors.all(b.id, 'attack').map((r) => r.user_id);
       for (const row of q.generals.all()) {
-        if (row.status !== 'alive' || !GEN.has(row.gid) || !mine(row)) continue;
+        if (row.status !== 'alive' || !GEN.has(row.gid) || !mine(row) || handled.has(row.gid)) continue;
         if (row.territory === b.territory || GEN.get(row.gid).home === b.territory) defeatGeneral(row, attackers, b.attacker, b, t);
       }
     }
@@ -1104,6 +1178,9 @@ module.exports = function createCampaign(ctx) {
     const dist = (id) => (id === T ? 0 : around.has(id) ? 1 : around2.has(id) ? 2 : 9);
     const within2 = { attack: presentOf(camp.attack, true, around2), defense: presentOf(camp.defense, true, around2) };
     const owners0 = ownersMap();
+    const exiles = new Set(q.exilesAll.all().map((r) => r.user_id));
+    // Contre-attaque : évaluée à l'ouverture de la bataille.
+    const counter = b.boss_power === 0 && counterOn(b.attacker, T, owners0, b.started_at);
     const sums = { attack: 0, defense: 0 };
     const who = { attack: new Set(), defense: new Set() };
     const perUser = new Map();
@@ -1175,7 +1252,9 @@ module.exports = function createCampaign(ctx) {
         if (hk && b.defender === boss) mult *= hk.conqueredFactor || 1;
         power *= mult;
       }
-      power *= capMult(r.faction, owners0) * lordMult(r.faction, r.side);
+      const exiled = exiles.has(r.user_id);
+      power *= capMult(r.faction, owners0) * (exiled ? 1 : lordMult(r.faction, r.side));
+      if (counter && r.side === 'attack') power *= 1 + (exiled ? C.counter.attackBonus : counterBonus(b.attacker)) / 100;
       sums[r.side] += power;
       perUser.set(r.user_id, (perUser.get(r.user_id) || 0) + power);
     }
@@ -1183,10 +1262,9 @@ module.exports = function createCampaign(ctx) {
     let bossPower = b.boss_power;
     const holy = here.defense.flatMap((p) => p.effects).find((e) => e.kind === 'holyKnight');
     if (holy && bossPower > 0) bossPower /= holy.bossDivisor || 1;
-    // Contre-attaque : évaluée à l'ouverture de la bataille.
-    const counter = b.boss_power === 0 && counterOn(b.attacker, T, ownersMap(), b.started_at);
-    const attack = bossPower + sums.attack * (counter ? 1 + counterBonus(b.attacker) / 100 : 1);
-    const defense = (C.baseDefense * importance(T) + (C.npcDefense[b.defender] || 0) + sums.defense) * (1 + buildEffect(T, 'defensePct') / 100);
+    const attack = bossPower + sums.attack;
+    // Capitale d'origine tenue par sa faction : plus elle a de territoires, plus sa capitale est dure à prendre.
+    const defense = (C.baseDefense * importance(T) + (C.npcDefense[b.defender] || 0) + sums.defense) * (1 + buildEffect(T, 'defensePct') / 100) * capitalGuard(T, owners0);
     const raw = attack / (attack + defense) + (b.help || 0) / 100;
     let chance = Math.min(C.maxChance, Math.max(C.minChance, raw));
     let decisive = null;
@@ -1255,11 +1333,12 @@ module.exports = function createCampaign(ctx) {
       addGauge(b.attacker, C.gauge.perWin);
       q.dropGarrison.run(b.territory, t);
       journal('territory_taken', { territory: b.territory, faction: b.attacker, from: b.defender, battle: b.id }, t);
-      const gain = scale * (perks(b.attacker).rewardMultiplier || 1);
-      const reward = { gold: C.attackRewards.gold * gain, xp: C.attackRewards.xp * gain };
+      const perkMult = perks(b.attacker).rewardMultiplier || 1; // gains accrus des Loups de cendre, pas pour leurs exilés
+      const reward = { gold: C.attackRewards.gold * scale, xp: C.attackRewards.xp * scale };
       const attackers = q.sideUsers.all(b.id, 'attack').map((r) => r.user_id);
       for (const uid of attackers) {
-        const paid = payout(uid, reward, true);
+        const m = isExile(uid) ? 1 : perkMult;
+        const paid = payout(uid, { gold: reward.gold * m, xp: reward.xp * m }, true);
         grant(uid, paid.gold, paid.xp, 'conquest');
         score(uid, C.ranking.victory);
         onEvent(uid, 'battle_won');
@@ -1625,6 +1704,13 @@ module.exports = function createCampaign(ctx) {
         if (ids.length) ctx.freezeStreaks(ids);
       }
       spawnBosses(t);
+      // Quelques heures avant la clôture : tout le monde est prévenu que tout se joue maintenant (notification et push).
+      const nc = phase(t) === 'open' ? nextClose(t) : null;
+      const cidW = currentCampaign().id;
+      if (nc && nc - t <= (C.endWarningHours || 0) * 3_600_000 && !q.meta.get(`warned:${cidW}`)) {
+        q.setMeta.run(`warned:${cidW}`, '1');
+        for (const c of q.chars.all()) notify(c.user_id, 'campaign_ending', { hours: C.endWarningHours });
+      }
       checkEnd(t);
     } finally { ticking = false; }
   }
@@ -1673,7 +1759,7 @@ module.exports = function createCampaign(ctx) {
       if (o.faction) presence.get(territory)[o.faction] = (presence.get(territory)[o.faction] || 0) + 1;
     };
     for (const r of q.occupants.all()) {
-      if (r.user_id !== userId && hidden.has(`${r.faction}:${r.territory}`) && !engaged.has(`${r.user_id}:${r.territory}`)) continue;
+      if (r.user_id !== userId && !r.exile_faction && hidden.has(`${r.faction}:${r.territory}`) && !engaged.has(`${r.user_id}:${r.territory}`)) continue;
       seat(r.territory, { pseudo: r.pseudo, avatar: r.avatar, faction: r.faction, class: r.class, level: renown(r.xp).level, me: r.user_id === userId, retreating: r.status === 'retreating' });
     }
     // Les généraux se voient comme les joueurs ; ceux des factions cachées sur leur base ne se montrent que s'ils y combattent.
@@ -1681,7 +1767,7 @@ module.exports = function createCampaign(ctx) {
     for (const g of q.generals.all()) {
       if (g.status !== 'alive' || !g.territory || !GEN.has(g.gid) || g.faction === C.boss.faction) continue;
       if (hidden.has(`${g.faction}:${g.territory}`) && !genEngaged.has(`${g.gid}:${g.territory}`)) continue;
-      seat(g.territory, { pseudo: GEN.get(g.gid).name, avatar: GEN.get(g.gid).avatar, faction: g.faction || null, class: genClass(g.gid), level: genLevel(g), me: false, retreating: false, general: true });
+      seat(g.territory, { pseudo: GEN.get(g.gid).name, gid: g.gid, avatar: GEN.get(g.gid).avatar, faction: g.faction || null, class: genClass(g.gid), level: genLevel(g), me: false, retreating: false, general: true, lord: isLord(g.gid) });
     }
     for (const list of occupants.values()) list.sort((a, b) => (b.me - a.me) || (b.level - a.level) || a.pseudo.localeCompare(b.pseudo));
     const campaign = currentCampaign();
@@ -1695,6 +1781,7 @@ module.exports = function createCampaign(ctx) {
       player: playerPayload(userId, t),
       homeBases: C.homeBases,
       capitals: C.capitals,
+      journalLatest: q.latestEvent.get()?.id || 0,
       lord: lordPayload(side),
       objective: side ? objectiveStatus(side, owners) : null,
       // Signalements de ma faction (les plus récents d'abord).
@@ -1702,7 +1789,7 @@ module.exports = function createCampaign(ctx) {
       guardians,
       // hire : bataillon en attaque ; fortify : fortification en défense (moitié prix pour un Prêtre) ; teleport : Évêque noir.
       costs: {
-        hire: Math.round(C.hire.gold * hireFactor(side)), fortify: ch ? fortifyCost(userId) : C.hire.gold, hireMax: C.hire.perBattle,
+        hire: Math.round(C.hire.gold * (isExile(userId) ? 1 : hireFactor(side))), fortify: ch ? fortifyCost(userId) : C.hire.gold, hireMax: C.hire.perBattle,
         build: C.build.costs, buildMax: C.build.maxLevel,
         revive: side ? Math.round(reviveCost(side) * (q.state.get(userId)?.fall_mult || 1)) : C.revive.gold,
         teleport: ch ? (effectsOfUser(userId).find((e) => e.kind === 'teleport')?.gold ?? null) : null,
@@ -1728,7 +1815,7 @@ module.exports = function createCampaign(ctx) {
           untouchableUntil: shieldUntil(x.id, owners, t) || null,
           counter: !!side && counterOn(side, x.id, owners, t),
           counterPct: side ? counterBonus(side) : 0,
-          build: buildOf(x.id), importance: importance(x.id), annex: ANNEX.has(x.id), players: presence.get(x.id) || {}, occupants: occupants.get(x.id) || [],
+          capitalBonus: Math.round((capitalGuard(x.id, owners) - 1) * 100), build: buildOf(x.id), importance: importance(x.id), annex: ANNEX.has(x.id), players: presence.get(x.id) || {}, occupants: occupants.get(x.id) || [],
           battle: b ? {
             attacker: b.attacker, defender: b.defender, boss: b.boss_power > 0, endsAt: b.ends_at,
             general: b.general ? { id: b.general, name: GEN.get(b.general)?.name, avatar: GEN.get(b.general)?.avatar } : null,
@@ -1783,6 +1870,13 @@ module.exports = function createCampaign(ctx) {
     return [];
   }
   const reviveCost = (faction) => (perks(faction).freeRevive ? 0 : C.revive.gold);
+  // Quitter un territoire où l'on combat annule ses actions d'attaque ou de défense en cours (sans remboursement) :
+  // on ne peut pas peser sur plusieurs batailles à la fois. Sans `leave`, le serveur demande confirmation (409 engaged).
+  function leaveEngagements(userId, territory, leave, t) {
+    if (!q.myEngagements.get(userId, territory, t).n) return 0;
+    if (!leave) throw new HttpError(409, 'engaged');
+    return q.dropEngagements.run(userId, territory).changes;
+  }
   // Remet en jeu un joueur tombé, à l'endroit où sa faction réapparaît.
   function revive(userId, faction) {
     const spot = spawnTerritory(faction, ownersMap());
@@ -1794,7 +1888,7 @@ module.exports = function createCampaign(ctx) {
   const routes = {
     // Se déplacer vers un territoire voisin (1 action, sauf déplacement gratuit : Chevalier pégase et Chevalier faucon).
     'POST /api/move': async (req, res) => {
-      const { to } = await readJson(req);
+      const { to, leave } = await readJson(req);
       const { user, ps, ch, t, owners } = actor(req);
       mustBeAlive(ps);
       if (!terr(to)) throw new HttpError(400, 'invalid_territory');
@@ -1806,6 +1900,7 @@ module.exports = function createCampaign(ctx) {
         && effectsOfUser(user.id).some((e) => e.kind === 'enemyMove') && !q.freeMoveUsed.get(dest.id, user.id);
       // Il faut au moins une action pour tenter un déplacement ; il peut alors ne rien coûter.
       if (!raid && settle(ps, t).actions < 1) throw new HttpError(409, 'no_actions');
+      const cancelled = leaveEngagements(user.id, ps.territory, leave === true, t);
       if (raid) q.addFreeMove.run(dest.id, user.id);
       const free = raid || moveRoll() * 100 < freeMoveChance(user.id);
       const bonus = free ? 0 : spend(ps, t);
@@ -1815,7 +1910,7 @@ module.exports = function createCampaign(ctx) {
       // Territoire ennemi : tenu par une autre faction, et ni refuge de la faction ni territoire qu'elle garde.
       const ruler = owners.get(to);
       if (ruler && ruler !== ch.faction && C.homeBases[ch.faction] !== to && guardians[ch.faction] !== ruler) onEvent(user.id, 'enemy_move');
-      reply(res, user, { bonus, free });
+      reply(res, user, { bonus, free, cancelled });
     },
 
     // Agir sur le territoire où l'on se trouve.
@@ -1893,7 +1988,7 @@ module.exports = function createCampaign(ctx) {
         if (side === 'attack' && (!battle || battle.attacker !== ch.faction)) throw new HttpError(409, 'invalid_action');
         const already = battle ? q.hiredInBattle.get(user.id, battle.id).n : q.hiredGarrison.get(user.id, here, t).n;
         if (already >= C.hire.perBattle) throw new HttpError(409, 'hire_limit');
-        const cost = side === 'defense' ? fortifyCost(user.id) : Math.round(C.hire.gold * hireFactor(ch.faction));
+        const cost = side === 'defense' ? fortifyCost(user.id) : Math.round(C.hire.gold * (ch.home !== ch.faction ? 1 : hireFactor(ch.faction)));
         const strength = side === 'defense' ? fortifyPower(user.id) : C.hire.power;
         if (!pay(user.id, cost, 'hire')) throw new HttpError(409, 'not_enough_gold');
         q.addContribution.run(battle ? battle.id : null, here, user.id, ch.faction, side, strength, t,
@@ -1907,15 +2002,17 @@ module.exports = function createCampaign(ctx) {
     // Téléportation (Évêque noir) : vers un territoire de sa faction ou voisin d'un territoire de sa faction, contre de l'or,
     // sans dépenser d'action. Les récompenses des actions suivantes sont ensuite réduites ; se téléporter à nouveau renouvelle l'effet.
     'POST /api/teleport': async (req, res) => {
-      const { to } = await readJson(req);
-      const { user, ps, ch, owners } = actor(req);
+      const { to, leave } = await readJson(req);
+      const { user, ps, ch, owners, t } = actor(req);
       mustBeAlive(ps);
       const tp = effectsOfUser(user.id).find((e) => e.kind === 'teleport');
       if (!tp) throw new HttpError(409, 'invalid_action');
       if (!terr(to)) throw new HttpError(400, 'invalid_territory');
       if (to === ps.territory) throw new HttpError(409, 'invalid_action');
       if (!canEnter(ch.faction, to, owners)) throw new HttpError(409, 'cannot_enter');
+      if (q.myEngagements.get(user.id, ps.territory, t).n && leave !== true) throw new HttpError(409, 'engaged');
       if (!pay(user.id, tp.gold, 'teleport')) throw new HttpError(409, 'not_enough_gold');
+      leaveEngagements(user.id, ps.territory, true, t);
       q.setTerritory.run(to, user.id);
       q.setRewardDebuff.run(tp.actions, user.id);
       reply(res, user);
@@ -2022,6 +2119,35 @@ module.exports = function createCampaign(ctx) {
       if (!user) throw new HttpError(401, 'unauthorized');
       q.markResultSeen.run(user.id);
       send(res, 200, { ...ctx.mePayload(user) });
+    },
+
+    // Profil public d'un joueur (?pseudo=) ou d'un général (?general=).
+    'GET /api/profile': async (req, res) => {
+      const user = currentUser(req);
+      if (!user) throw new HttpError(401, 'unauthorized');
+      const u = new URL(req.url, 'http://x');
+      const gid = u.searchParams.get('general');
+      if (gid) {
+        const g = q.general.get(gid);
+        const cfg = GEN.get(gid);
+        if (!g || !cfg) throw new HttpError(404, 'not_found');
+        send(res, 200, {
+          type: 'general', id: gid, name: cfg.name, avatar: cfg.avatar, faction: g.faction || null, origin: cfg.faction || null, home: cfg.home || null,
+          territory: g.territory || null, path: cfg.path, class: genClass(gid), level: genLevel(g), status: g.status, spared: !!g.spared,
+          spare: cfg.spare || [], coef: cfg.coef, lord: isLord(gid),
+        });
+        return;
+      }
+      const ch = q.profileOf.get(String(u.searchParams.get('pseudo') || ''));
+      if (!ch) throw new HttpError(404, 'not_found');
+      const ps = q.state.get(ch.user_id);
+      const cid = currentCampaign().id;
+      const sc = q.myScore.get(cid, ch.user_id)?.score || 0;
+      send(res, 200, {
+        type: 'player', pseudo: ch.pseudo, avatar: ch.avatar, faction: ch.faction, exile: ps?.exile_faction || null, class: ch.class, path: fx.pathOf(ch),
+        level: renown(ch.xp).level, birthday: ch.birthday, score: sc, rank: sc > 0 ? q.betterScores.get(cid, sc).n + 1 : null,
+        distinctions: distinctionsOf(ch.user_id), status: ps?.status || null, me: ch.user_id === user.id,
+      });
     },
 
     // Bilan personnel de la campagne en cours, et totaux à vie.
@@ -2143,5 +2269,5 @@ module.exports = function createCampaign(ctx) {
     try { return JSON.parse(r.data); } catch { return null; }
   }
 
-  return { routes, tick, phaseNow: () => phase(Date.now()), missionState, missionsClaimable, claimMission, playerPayload, mapPayload, ensurePlayer, TURN_MS, fallenState, distinctionsOf, rewardMods, resultFor };
+  return { routes, tick, giveActions, phaseNow: () => phase(Date.now()), missionState, missionsClaimable, claimMission, playerPayload, mapPayload, ensurePlayer, TURN_MS, fallenState, distinctionsOf, rewardMods, resultFor };
 };

@@ -229,7 +229,7 @@ const notifsOf = async (c) => (await c('/notifications')).d.notifications;
     await red('/move', { to: 'rowe' });
     r = await red('/act', { action: 'attack' });
     const openChance = terrOf(r.d.map, 'rowe').battle.chance;
-    await red('/move', { to: 'barnabas' }); await red('/move', { to: 'garreg-mach' });
+    await red('/move', { to: 'barnabas', leave: true }); await red('/move', { to: 'garreg-mach' });
     r = await red('/act', { action: 'attack' });
     const church = terrOf(r.d.map, 'garreg-mach').battle;
     check('Garreg-Mach bien plus dur à prendre', church.chance < openChance / 2, `${church.chance} % contre ${openChance} %`);

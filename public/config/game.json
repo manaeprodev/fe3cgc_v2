@@ -43,8 +43,8 @@
         "en": "Resources"
       },
       "text": {
-        "fr": "Actions : tu en gagnes 1 toutes les 10 minutes, jusqu'à 8 en réserve. Se déplacer, attaquer, défendre et récolter coûtent chacun 1 action.\n\nOr : tu en gagnes en récoltant sur un territoire allié, en remportant des batailles, en accomplissant des missions et avec le bonus de régularité. Il sert à changer de classe, à acheter des avatars, à construire sur tes territoires, à payer des renforts en bataille et à régler la pénalité d'un repli manqué.\n\nRenommée : c'est ton niveau. Elle monte avec l'expérience gagnée en jouant : 100 points pour le niveau 1, puis 10 % de plus à chaque niveau. Elle ouvre l'accès aux classes supérieures et rend chacune de tes actions de combat plus forte.",
-        "en": "Actions: you gain 1 every 10 minutes, up to 8 in reserve. Moving, attacking, defending and gathering each cost 1 action.\n\nGold: you earn it by gathering on an allied territory, winning battles, completing missions and through the regularity bonus. It pays for class changes, avatars, building on your territories, reinforcements in battle and the penalty of a missed retreat.\n\nRenown: this is your level. It rises with the experience you earn by playing: 100 points for level 1, then 10% more for each level. It unlocks higher classes and makes each of your combat actions stronger."
+        "fr": "Actions : tu en gagnes 1 toutes les 10 minutes, jusqu'à 8 en réserve. Certaines missions rendent de l'énergie, même au-delà de 8 : tant que tu en as plus que le maximum, elle ne se recharge pas. Se déplacer, attaquer, défendre et récolter coûtent chacun 1 action.\n\nOr : tu en gagnes en récoltant sur un territoire allié, en remportant des batailles, en accomplissant des missions et avec le bonus de régularité. Il sert à changer de classe, à acheter des avatars, à construire sur tes territoires, à payer des renforts en bataille et à régler la pénalité d'un repli manqué.\n\nRenommée : c'est ton niveau. Elle monte avec l'expérience gagnée en jouant : 100 points pour le niveau 1, puis 10 % de plus à chaque niveau. Elle ouvre l'accès aux classes supérieures et rend chacune de tes actions de combat plus forte.",
+        "en": "Actions: you gain 1 every 10 minutes, up to 8 in reserve. Some missions restore energy, even beyond 8: while you have more than the maximum, it does not recharge. Moving, attacking, defending and gathering each cost 1 action.\n\nGold: you earn it by gathering on an allied territory, winning battles, completing missions and through the regularity bonus. It pays for class changes, avatars, building on your territories, reinforcements in battle and the penalty of a missed retreat.\n\nRenown: this is your level. It rises with the experience you earn by playing: 100 points for level 1, then 10% more for each level. It unlocks higher classes and makes each of your combat actions stronger."
       }
     },
     {
@@ -53,8 +53,8 @@
         "en": "Territories"
       },
       "text": {
-        "fr": "La carte compte 59 territoires. Chacun est teinté de la couleur de la faction qui le contrôle ; un territoire sans couleur est neutre.\n\nTouche un territoire pour voir qui le contrôle, les joueurs présents, la bataille en cours et ses voisins. On ne se déplace que d'un territoire à un voisin.\n\nCertains territoires comptent plus que d'autres : les capitales (Hresvelg, Blaiddyd, Riegan, marquées d'une couronne) et surtout Garreg-Mach. Ils sont mieux défendus et rapportent davantage.\n\nLa capitale est le cœur d'une faction : si elle tombe, la faction perd 10 % de puissance tant qu'elle ne l'a pas reprise. En fin de campagne, tenir sa capitale et prendre celles des autres rapporte des points.\n\nGarreg-Mach est tenu par l'Église de Seiros, une faction non jouable qui se défend seule et qui est très difficile à faire tomber.\n\nLes territoires annexes, en bordure de carte, peuvent être conquis mais ne comptent pas pour remporter la campagne.\n\nLes Serpents des Ténèbres n'ont pas de joueurs : leurs mini-boss surgissent au hasard pour attaquer un territoire. S'ils l'emportent, il faut le reprendre. Ils n'apparaissent jamais entre minuit et 6 h (heure de Paris).",
-        "en": "The map has 59 territories. Each is tinted with the colour of the faction controlling it; a territory with no colour is neutral.\n\nTap a territory to see who controls it, the players there, any battle under way and its neighbours. You can only move from a territory to a neighbour.\n\nSome territories matter more than others: the capitals (Hresvelg, Blaiddyd, Riegan, marked with a crown) and above all Garreg Mach. They are better defended and more rewarding.\n\nThe capital is a faction's heart: if it falls, the faction loses 10% power until it is retaken. At the end of the campaign, holding your own capital and taking the others' earns points.\n\nGarreg-Mach is held by the Church of Seiros, a non-playable faction that defends itself and is very hard to bring down.\n\nAnnex territories, on the edges of the map, can be conquered but do not count towards winning the campaign.\n\nThose Who Slither in the Dark have no players: their mini-bosses appear at random to attack a territory. If they win, it has to be retaken. They never appear between midnight and 6 a.m. (Paris time)."
+        "fr": "La carte compte 59 territoires. Chacun est teinté de la couleur de la faction qui le contrôle ; un territoire sans couleur est neutre.\n\nTouche un territoire pour voir qui le contrôle, les joueurs présents, la bataille en cours et ses voisins. On ne se déplace que d'un territoire à un voisin.\n\nCertains territoires comptent plus que d'autres : les capitales (Hresvelg, Blaiddyd, Riegan, marquées d'une couronne) et surtout Garreg-Mach. Ils sont mieux défendus et rapportent davantage.\n\nLa capitale est le cœur d'une faction. Tenue par sa faction d'origine, sa défense augmente de 4 % par territoire que possède la faction : plus une faction est grande, plus sa capitale est dure à prendre (une capitale conquise n'a pas ce bonus). Si elle tombe, la faction perd 10 % de puissance tant qu'elle ne l'a pas reprise. En fin de campagne, tenir sa capitale et prendre celles des autres rapporte des points.\n\nGarreg-Mach est tenu par l'Église de Seiros, une faction non jouable qui se défend seule et qui est très difficile à faire tomber.\n\nLes territoires annexes, en bordure de carte, peuvent être conquis mais ne comptent pas pour remporter la campagne.\n\nLes Serpents des Ténèbres n'ont pas de joueurs : leurs mini-boss surgissent au hasard pour attaquer un territoire. S'ils l'emportent, il faut le reprendre. Ils n'apparaissent jamais entre minuit et 6 h (heure de Paris).",
+        "en": "The map has 59 territories. Each is tinted with the colour of the faction controlling it; a territory with no colour is neutral.\n\nTap a territory to see who controls it, the players there, any battle under way and its neighbours. You can only move from a territory to a neighbour.\n\nSome territories matter more than others: the capitals (Hresvelg, Blaiddyd, Riegan, marked with a crown) and above all Garreg Mach. They are better defended and more rewarding.\n\nThe capital is a faction's heart. Held by its original faction, its defence grows by 4% per territory the faction owns: the bigger the faction, the harder its capital is to take (a conquered capital gets no such bonus). If it falls, the faction loses 10% power until it is retaken. At the end of the campaign, holding your own capital and taking the others' earns points.\n\nGarreg-Mach is held by the Church of Seiros, a non-playable faction that defends itself and is very hard to bring down.\n\nAnnex territories, on the edges of the map, can be conquered but do not count towards winning the campaign.\n\nThose Who Slither in the Dark have no players: their mini-bosses appear at random to attack a territory. If they win, it has to be retaken. They never appear between midnight and 6 a.m. (Paris time)."
       }
     },
     {
@@ -63,8 +63,8 @@
         "en": "Campaign"
       },
       "text": {
-        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 8 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide. Quand une force écrase l'autre (4 contre 1 ou plus), il n'y a pas de tirage : victoire ou défaite certaine. L'écran de bataille affiche tes chances, ton camp et la force des deux côtés.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 heures pour se replier gratuitement sur un territoire allié, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue, les attaquants restés sur place doivent eux aussi se replier dans les 6 heures, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue contre une autre faction jouable, le territoire devient insaisissable pendant 4 heures et sa faction gagne +25 % de puissance d'attaque sur les territoires ennemis voisins (contre-attaque). Les Serpents des Ténèbres et l'Église de Seiros ne déclenchent pas cet effet.\n\nMis hors de combat, tu n'es pas privé de jeu mais puni : tu es renvoyé à ta capitale (ou sur un de tes territoires si elle est tombée), tu perds 100 or (le double après une attaque ratée), ton stock d'actions est vidé et tes gains sont réduits pendant tes 10 prochaines actions.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager un bataillon en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nSur ton territoire, hors bataille, tu peux construire (1 action et de l'or) : forteresse (+20 % de défense par niveau), marché (+30 % d'or récolté) ou académie (+30 % d'expérience récoltée). Une spécialité par territoire, 3 niveaux (800, 1 600 puis 3 200 or) ; la conquête détruit les constructions.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nHors jeu, tu peux prendre les armes comme Exilé sous la bannière d'une autre faction jusqu'à la fin de la campagne, mais avec 25 % d'or et d'expérience en moins sur tes gains. Les factions qui dominent la carte refusent les exilés, sauf les Loups de cendre ; l'Église de Seiros en accueille tant qu'elle tient Garreg-Mach. Un exilé ne rapporte aucun point à une faction, ni à l'ancienne ni à celle qu'il rejoint : il garde ses gains personnels, plus une prime d'or en fin de campagne s'il s'est battu. Si ta faction est déjà tombée quand tu rejoins la campagne, tu peux t'exiler tout de suite. Ta série de missions du jour est gelée, et des missions d'exil te sont réservées. Ceux qui ont combattu avant la chute de leur faction reçoivent une prime d'or et la distinction Vétéran ; le dernier défenseur gagne le titre de Dernier rempart.",
-        "en": "You gain 1 action every 10 minutes, up to 8 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides. When one force crushes the other (4 to 1 or more), there is no draw: certain victory or defeat. The battle screen shows your odds, your side and both sides' strength.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 hours to retreat for free to an allied territory, otherwise they are knocked out.\n\nIf the attack fails, the attackers who stayed on site must also retreat within 6 hours, otherwise they are knocked out.\n\nIf the attack fails against another playable faction, the territory becomes untouchable for 4 hours and its faction gets +25% attack power against neighbouring enemy territories (counter-attack). Those Who Slither In The Dark and The Church of Seiros do not trigger this effect.\n\nKnocked out, you are not barred from playing but you are punished: you are sent back to your capital (or to one of your territories if it has fallen), you lose 100 gold (double after a failed attack), your action stock is emptied and your gains are reduced for your next 10 actions.\n\nWith no action left, you can still weigh on a battle with your gold: hire a battalion when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nOn your territory, outside battle, you can build (1 action and gold): fortress (+20% defence per level), market (+30% gold gathered) or academy (+30% experience gathered). One speciality per territory, 3 levels (800, 1,600 then 3,200 gold); conquest destroys constructions.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nWhen out, you can take up arms as an Exile under another faction's banner until the end of the campaign, but with 25% less gold and experience on your gains. Factions that dominate the map refuse exiles, except the Ashen Wolves; the Church of Seiros takes them in as long as it holds Garreg-Mach. An Exile earns no points for any faction, neither the old one nor the one joined: they keep their personal gains, plus a gold bonus at the end of the campaign if they fought. If your faction has already fallen when you join the campaign, you can go into exile right away. Your daily mission streak is frozen, and exile missions are reserved for you. Those who fought before their faction fell receive a gold bonus and the Battle-Scarred distinction; the last defender earns the Last Stand title."
+        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 8 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance. Pour combattre, il faut rester sur place : quitter le territoire annule tes actions d'attaque ou de défense en cours, sans rembourser ton énergie (l'app te demande confirmation). Impossible donc de peser sur plusieurs batailles à la fois.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide. Quand une force écrase l'autre (4 contre 1 ou plus), il n'y a pas de tirage : victoire ou défaite certaine. L'écran de bataille affiche tes chances, ton camp et la force des deux côtés.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 heures pour se replier gratuitement sur un territoire allié, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue, les attaquants restés sur place doivent eux aussi se replier dans les 6 heures, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue contre une autre faction jouable, le territoire devient insaisissable pendant 4 heures et sa faction gagne +25 % de puissance d'attaque sur les territoires ennemis voisins (contre-attaque). Les Serpents des Ténèbres et l'Église de Seiros ne déclenchent pas cet effet.\n\nMis hors de combat, tu n'es pas privé de jeu mais puni : tu es renvoyé à ta capitale (ou sur un de tes territoires si elle est tombée), tu perds 100 or (le double après une attaque ratée), ton stock d'actions est vidé et tes gains sont réduits pendant tes 10 prochaines actions.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager un bataillon en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nSur ton territoire, hors bataille, tu peux construire (1 action et de l'or) : forteresse (+20 % de défense par niveau), marché (+30 % d'or récolté) ou académie (+30 % d'expérience récoltée). Une spécialité par territoire, 3 niveaux (800, 1 600 puis 3 200 or) ; la conquête détruit les constructions.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nHors jeu, tu peux prendre les armes comme Exilé sous la bannière d'une autre faction jusqu'à la fin de la campagne, mais avec 50 % d'or et d'expérience en moins sur tes gains, et sans aucun des avantages de ta faction d'adoption (capacité du seigneur, bonus de faction). Les factions qui dominent la carte refusent les exilés, sauf les Loups de cendre ; l'Église de Seiros en accueille tant qu'elle tient Garreg-Mach. Un exilé ne rapporte aucun point à une faction, ni à l'ancienne ni à celle qu'il rejoint : il garde ses gains personnels, plus une prime d'or en fin de campagne s'il s'est battu. Si ta faction est déjà tombée quand tu rejoins la campagne, tu peux t'exiler tout de suite. Ta série de missions du jour est gelée, et des missions d'exil te sont réservées. Ceux qui ont combattu avant la chute de leur faction reçoivent une prime d'or et la distinction Vétéran ; le dernier défenseur gagne le titre de Dernier rempart.",
+        "en": "You gain 1 action every 10 minutes, up to 8 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance. To fight you must stay on site: leaving the territory cancels your ongoing attack or defence actions, with no energy refund (the app asks you to confirm). So you cannot weigh on several battles at once.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides. When one force crushes the other (4 to 1 or more), there is no draw: certain victory or defeat. The battle screen shows your odds, your side and both sides' strength.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 hours to retreat for free to an allied territory, otherwise they are knocked out.\n\nIf the attack fails, the attackers who stayed on site must also retreat within 6 hours, otherwise they are knocked out.\n\nIf the attack fails against another playable faction, the territory becomes untouchable for 4 hours and its faction gets +25% attack power against neighbouring enemy territories (counter-attack). Those Who Slither In The Dark and The Church of Seiros do not trigger this effect.\n\nKnocked out, you are not barred from playing but you are punished: you are sent back to your capital (or to one of your territories if it has fallen), you lose 100 gold (double after a failed attack), your action stock is emptied and your gains are reduced for your next 10 actions.\n\nWith no action left, you can still weigh on a battle with your gold: hire a battalion when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nOn your territory, outside battle, you can build (1 action and gold): fortress (+20% defence per level), market (+30% gold gathered) or academy (+30% experience gathered). One speciality per territory, 3 levels (800, 1,600 then 3,200 gold); conquest destroys constructions.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nWhen out, you can take up arms as an Exile under another faction's banner until the end of the campaign, but with 50% less gold and experience on your gains, and without any of your adopted faction's advantages (lord's ability, faction bonuses). Factions that dominate the map refuse exiles, except the Ashen Wolves; the Church of Seiros takes them in as long as it holds Garreg-Mach. An Exile earns no points for any faction, neither the old one nor the one joined: they keep their personal gains, plus a gold bonus at the end of the campaign if they fought. If your faction has already fallen when you join the campaign, you can go into exile right away. Your daily mission streak is frozen, and exile missions are reserved for you. Those who fought before their faction fell receive a gold bonus and the Battle-Scarred distinction; the last defender earns the Last Stand title."
       }
     },
     {
@@ -73,8 +73,8 @@
         "en": "Generals"
       },
       "text": {
-        "fr": "Les généraux sont des personnages du jeu, dirigés par l'ordinateur. Chacun se tient sur son territoire d'origine au début de la campagne et le défend coûte que coûte quand il est attaqué, s'il lui reste assez d'actions. Ils ont 4 actions au maximum (au lieu de 8), une classe avec ses bonus et un niveau de renommée calculé d'après la médiane des joueurs actifs de leur faction, selon leur puissance et leur importance. Les Loups de cendre défendent tous Garreg-Mach ; quelques généraux sont indépendants et défendent leur propre territoire.\n\nUne fois un premier territoire conquis sur la carte, les généraux peuvent aussi partir en sortie contre un territoire ennemi voisin, et n'attaquent qu'une fois par bataille.\n\nUn général n'a qu'une vie par campagne : battu en attaque comme en défense, ou si son territoire d'origine est conquis, il meurt et disparaît de la carte (sauf s'il est épargné, voir plus bas). Ceux qui l'ont vaincu reçoivent de l'or et de la renommée en plus, selon son importance.\n\nCertains généraux peuvent être épargnés, seulement par certaines factions, et une seule fois. Les vainqueurs ont alors 1 heure pour décider : l'épargner (il rejoint leur faction, mais défend toujours son territoire d'origine) ou le faire mourir. Sans décision, il meurt. Un général déjà épargné qui est battu à nouveau meurt.\n\nLes Serpents des Ténèbres ont aussi leurs généraux : un raid sur trois environ est mené par l'un d'eux. Epimenides est toujours le dernier à venir. Une fois tombé, les Serpents ne reviennent plus jusqu'à la fin de la campagne, et la faction qui l'a abattu gagne +15 % de points.",
-        "en": "Generals are game characters controlled by the computer. Each one stands on their home territory at the start of the campaign and defends it at all costs when it is attacked, as long as they have enough actions left. They have at most 4 actions (instead of 8), a class with its bonuses and a renown level computed from the median of their faction's active players, according to their strength and importance. The Ashen Wolves all defend Garreg Mach; a few generals are independent and defend their own territory.\n\nOnce a first territory has been conquered on the map, generals may also sortie against a neighbouring enemy territory, and attack only once per battle.\n\nA general has one life per campaign: beaten, whether attacking or defending, or if their home territory is conquered, they die and vanish from the map (unless spared, see below). Those who defeated them earn extra gold and renown, depending on their importance.\n\nSome generals can be spared, only by certain factions, and only once. The victors then have 1 hour to decide: spare them (they join their faction, but still defend their home territory) or put them to death. With no decision, they die. A general who was already spared and is beaten again dies.\n\nThose Who Slither in the Dark have generals too: roughly one raid in three is led by one of them. Epimenides always comes last. Once fallen, the Serpents do not return until the end of the campaign, and the faction that slew them gains +15% points."
+        "fr": "Les généraux sont des personnages du jeu, dirigés par l'ordinateur. Chacun se tient sur son territoire d'origine au début de la campagne et le défend coûte que coûte quand il est attaqué, s'il lui reste assez d'actions. Ils ont 4 actions au maximum (au lieu de 8), une classe avec ses bonus et un niveau de renommée calculé d'après la médiane des joueurs actifs de leur faction (relevé pour une faction en retard, et qui évolue en douceur), selon leur puissance et leur importance. Les Loups de cendre défendent tous Garreg-Mach ; quelques généraux sont indépendants et défendent leur propre territoire.\n\nUne fois un premier territoire conquis sur la carte, les généraux peuvent aussi partir en sortie contre un territoire ennemi voisin, et n'attaquent qu'une fois par bataille.\n\nUn général n'a qu'une vie par campagne : battu en attaque comme en défense, ou si son territoire d'origine est conquis, il meurt et disparaît de la carte (sauf s'il est épargné, voir plus bas). Ceux qui l'ont vaincu reçoivent de l'or et de la renommée en plus, selon son importance.\n\nCertains généraux peuvent être épargnés, seulement par certaines factions, et une seule fois. Les vainqueurs ont alors 1 heure pour décider : l'épargner (il rejoint leur faction, mais défend toujours son territoire d'origine) ou le faire mourir. Sans décision, il meurt. Un général déjà épargné qui est battu à nouveau meurt.\n\nLes seigneurs (Edelgard, Dimitri, Claude) ne quittent jamais leur capitale tant qu'ils la tiennent et la défendent toujours, même sans action. Ils ne peuvent pas mourir tant qu'il reste un autre général sous leur bannière : vaincus, ils se replient auprès des leurs. S'ils perdent leur capitale, ils ordonnent sa reprise et tous les généraux de la faction marchent sur elle. Yuri ne peut mourir que s'il est le dernier général des Loups de cendre (les autres morts ou passés à une autre faction) : vaincu avant cela, il est renvoyé à Garreg-Mach.\n\nLes Serpents des Ténèbres ont aussi leurs généraux : un raid sur trois environ est mené par l'un d'eux. Epimenides est toujours le dernier à venir. Une fois tombé, les Serpents ne reviennent plus jusqu'à la fin de la campagne, et la faction qui l'a abattu gagne +15 % de points.",
+        "en": "Generals are game characters controlled by the computer. Each one stands on their home territory at the start of the campaign and defends it at all costs when it is attacked, as long as they have enough actions left. They have at most 4 actions (instead of 8), a class with its bonuses and a renown level computed from the median of their faction's active players (raised for a faction lagging behind, and changing gradually), according to their strength and importance. The Ashen Wolves all defend Garreg Mach; a few generals are independent and defend their own territory.\n\nOnce a first territory has been conquered on the map, generals may also sortie against a neighbouring enemy territory, and attack only once per battle.\n\nA general has one life per campaign: beaten, whether attacking or defending, or if their home territory is conquered, they die and vanish from the map (unless spared, see below). Those who defeated them earn extra gold and renown, depending on their importance.\n\nSome generals can be spared, only by certain factions, and only once. The victors then have 1 hour to decide: spare them (they join their faction, but still defend their home territory) or put them to death. With no decision, they die. A general who was already spared and is beaten again dies.\n\nThe lords (Edelgard, Dimitri, Claude) never leave their capital while they hold it and always defend it, even without actions. They cannot die while another general remains under their banner: beaten, they fall back to their own. If they lose their capital, they order it retaken and all the faction's generals march on it. Yuri can only die if he is the last general of the Ashen Wolves (the others dead or gone to another faction): beaten before that, he is sent back to Garreg Mach.\n\nThose Who Slither in the Dark have generals too: roughly one raid in three is led by one of them. Epimenides always comes last. Once fallen, the Serpents do not return until the end of the campaign, and the faction that slew them gains +15% points."
       }
     },
     {
@@ -204,7 +204,7 @@
         "en": "Intermediate classes"
       },
       "renown": 8,
-      "cost": 15000
+      "cost": 2500
     },
     {
       "id": "advanced",
@@ -213,7 +213,7 @@
         "en": "Advanced classes"
       },
       "renown": 18,
-      "cost": 50000
+      "cost": 7250
     },
     {
       "id": "master",
@@ -222,7 +222,7 @@
         "en": "Master classes"
       },
       "renown": 30,
-      "cost": 100000
+      "cost": 15000
     },
     {
       "id": "legendary",
@@ -2008,7 +2008,7 @@
     },
     "exile": {
       "trailingOnly": true,
-      "rewardMultiplier": 0.75,
+      "rewardMultiplier": 0.5,
       "alwaysOpen": [
         "violette"
       ],
@@ -2107,7 +2107,8 @@
         },
         "rewards": {
           "gold": 400,
-          "xp": 150
+          "xp": 150,
+          "actions": 3
         }
       },
       {
@@ -2126,7 +2127,8 @@
         },
         "rewards": {
           "gold": 300,
-          "xp": 120
+          "xp": 120,
+          "actions": 3
         }
       },
       {
@@ -2164,7 +2166,8 @@
         },
         "rewards": {
           "gold": 300,
-          "xp": 100
+          "xp": 100,
+          "actions": 2
         }
       },
       {
@@ -2230,7 +2233,8 @@
     },
     "decisive": 0.8,
     "capital": {
-      "lossPct": 10
+      "lossPct": 10,
+      "perTerritory": 0.04
     },
     "build": {
       "maxLevel": 3,
@@ -2502,7 +2506,8 @@
         "fr": "Capitale de l'Alliance de Leicester",
         "en": "Capital of the Leicester Alliance"
       }
-    }
+    },
+    "endWarningHours": 3
   },
   "daily": {
     "streakBonus": 0.1,
@@ -2524,7 +2529,8 @@
         },
         "rewards": {
           "gold": 60,
-          "xp": 20
+          "xp": 20,
+          "actions": 1
         }
       },
       {
@@ -2543,7 +2549,8 @@
         },
         "rewards": {
           "gold": 80,
-          "xp": 30
+          "xp": 30,
+          "actions": 2
         }
       },
       {
@@ -2562,7 +2569,8 @@
         },
         "rewards": {
           "gold": 40,
-          "xp": 10
+          "xp": 10,
+          "actions": 1
         }
       }
     ],
@@ -2686,6 +2694,112 @@
     }
   ],
   "patches": [
+    {
+      "id": "1.5",
+      "date": "2026-11-20",
+      "title": {
+        "fr": "Patch 1.5",
+        "en": "Patch 1.5"
+      },
+      "intro": {
+        "fr": "Les batailles demandent de l'engagement, les seigneurs tiennent leur rang, et le jeu prend vie.",
+        "en": "Battles demand commitment, lords hold their rank, and the game comes to life."
+      },
+      "sections": [
+        {
+          "title": {
+            "fr": "Combat",
+            "en": "Combat"
+          },
+          "items": [
+            {
+              "fr": "Rester pour combattre : quitter un territoire annule tes actions d'attaque ou de défense en cours, sans remboursement (avec confirmation). Les généraux aussi.",
+              "en": "Stay to fight: leaving a territory cancels your ongoing attack or defence actions, with no refund (with confirmation). Generals too."
+            },
+            {
+              "fr": "Capitales : leur défense grandit avec le nombre de territoires de leur faction (capitale d'origine seulement).",
+              "en": "Capitals: their defence grows with their faction's number of territories (original capital only)."
+            },
+            {
+              "fr": "Nouveaux voisins : Brigid et Menja, Mach et Hresvelg.",
+              "en": "New neighbours: Brigid and Menja, Mach and Hresvelg."
+            },
+            {
+              "fr": "Changement de classe moins cher : 2 500 or (intermédiaire), 7 250 or (avancée), 15 000 or (maître).",
+              "en": "Cheaper class changes: 2,500 gold (intermediate), 7,250 gold (advanced), 15,000 gold (master)."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Seigneurs et généraux",
+            "en": "Lords and generals"
+          },
+          "items": [
+            {
+              "fr": "Edelgard, Dimitri et Claude ne quittent pas leur capitale, la défendent toujours et ne meurent pas tant qu'un général reste sous leur bannière. Capitale perdue : ils ordonnent un ralliement pour la reprendre.",
+              "en": "Edelgard, Dimitri and Claude do not leave their capital, always defend it and cannot die while a general remains under their banner. Capital lost: they order a rally to retake it."
+            },
+            {
+              "fr": "Yuri ne meurt que s'il est le dernier Loup de cendre ; vaincu avant, il retourne à Garreg-Mach.",
+              "en": "Yuri only dies if he is the last Ashen Wolf; beaten before that, he returns to Garreg Mach."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Exil",
+            "en": "Exile"
+          },
+          "items": [
+            {
+              "fr": "Écran d'exil repensé : chaque bannière possible avec son drapeau, sa nation et son seigneur.",
+              "en": "Redesigned exile screen: each possible banner with its flag, nation and lord."
+            },
+            {
+              "fr": "Un exilé ne profite d'aucun avantage de sa faction d'adoption, et ses gains sont réduits de 50 %.",
+              "en": "An exile gets none of their adopted faction's advantages, and their gains are reduced by 50%."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Vie du jeu",
+            "en": "Quality of life"
+          },
+          "items": [
+            {
+              "fr": "Profils : touche un joueur ou un général (carte, classement, liste des joueurs, panthéon) pour voir son profil aux couleurs de sa faction.",
+              "en": "Profiles: tap a player or general (map, ranking, player list, pantheon) to see their profile in their faction's colours."
+            },
+            {
+              "fr": "Animations : attaque, défense, appel à l'aide, et déplacements fluides sur la carte.",
+              "en": "Animations: attack, defence, call for help, and smooth movement on the map."
+            },
+            {
+              "fr": "3 missions du jour et 3 missions de campagne rendent de l'énergie, même au-delà du maximum.",
+              "en": "3 daily missions and 3 campaign missions restore energy, even beyond the maximum."
+            },
+            {
+              "fr": "Nouvelle police, pastille sur le Journal, missions terminées repliées, détail des territoires plus facile à faire défiler, icône de classe des présents.",
+              "en": "New font, Journal badge, completed missions folded, easier scrolling of territory details, class icons for those present."
+            },
+            {
+              "fr": "« Signaler un bug » dans Informations & Aide.",
+              "en": "\"Report a bug\" in Information & Help."
+            },
+            {
+              "fr": "Notifications : capacité de seigneur pour tous (dans l'app), avertissement quelques heures avant la fin de la campagne, général à épargner.",
+              "en": "Notifications: lord's ability for everyone (in-app), warning a few hours before the end of the campaign, general to spare."
+            },
+            {
+              "fr": "Inscription : l'adresse email est confirmée par un code à 6 chiffres envoyé par email, avant de créer son personnage.",
+              "en": "Sign-up: the email address is confirmed with a 6-digit code sent by email, before creating your character."
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "1.4",
       "date": "2026-11-19",
@@ -3847,7 +3961,13 @@
         "spare": [],
         "avatar": "assets/characters/those_who_slither_in_the_dark/epimenides.webp"
       }
-    ]
+    ],
+    "lords": {
+      "rouge": "edelgard",
+      "bleue": "dimitri",
+      "jaune": "claude",
+      "violette": "yuri"
+    }
   },
   "tutorial": {
     "rewards": {

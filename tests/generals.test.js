@@ -396,7 +396,7 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
     r = await clients.Bleu2('/act', { action: 'gather' });
     const sc = row("SELECT score, faction_score FROM campaign_scores WHERE user_id = (SELECT user_id FROM characters WHERE pseudo = 'Bleu2')");
     check('exilé : il garde un score personnel mais rien pour sa faction', r.s === 200 && sc.score === 2 && sc.faction_score === 0, JSON.stringify(sc));
-    check('et ses gains sont réduits de 25 %', r.d.character.gold === 30, String(r.d.character?.gold));
+    check('et ses gains sont réduits de 50 %', r.d.character.gold === 20, String(r.d.character?.gold));
     withDb((d) => d.prepare("UPDATE player_state SET status = 'alive', territory = 'hresvelg' WHERE user_id = ?").run(uidOf(d, 'Bleu2')));
     await clients.Bleu2('/act', { action: 'defend' });
     check('un combat d\'exil est compté', row("SELECT exile_combats FROM campaign_scores WHERE user_id = (SELECT user_id FROM characters WHERE pseudo = 'Bleu2')").exile_combats === 1);

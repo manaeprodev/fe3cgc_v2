@@ -144,6 +144,7 @@ async function api(path, body) {
     const key = 'error.' + data.error;
     const err = new Error(hasText(key) ? t(key) : t('error.generic'));
     err.status = res.status;
+    err.code = data.error;
     throw err;
   }
   return data;
@@ -159,6 +160,7 @@ function render() {
   const ch = state.me && state.me.character;
   document.body.style.setProperty('--faction', ch ? faction(effFaction()).color : 'var(--accent)');
   if (!state.me) return renderAuth();
+  if (state.me.user && state.me.user.verified === false) return renderVerify();
   if (!ch) return state.step === 1 ? renderCharacter() : renderFaction();
   return renderGame();
 }
@@ -244,6 +246,43 @@ function renderAuth() {
 }
 
 // ------------------------------------------------------------ Création du personnage (étape 1)
+// Confirmation de l'adresse email : le code à 6 chiffres reçu par email, avant de créer son personnage.
+function renderVerify() {
+  app.innerHTML = `
+    <div class="page">
+      <div class="page-top"><div><p class="steps">${esc(t('verify.step'))}</p><h1 class="page-title">${esc(t('verify.title'))}</h1></div>${langPicker()}</div>
+      <p class="notice">${esc(t('verify.intro', { email: state.me.user.email }))}</p>
+      <form novalidate>
+        <label class="field"><span>${esc(t('verify.code'))}</span>
+          <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" class="code-input" required></label>
+        <p class="error" role="alert" hidden></p>
+        <button class="btn" type="submit">${esc(t('verify.submit'))}</button>
+      </form>
+      <p class="muted small">${esc(t('verify.spam'))}</p>
+      <div class="row"><button type="button" class="btn ghost compact" data-resend>${esc(t('verify.resend'))}</button>
+        <button type="button" class="btn ghost compact" data-logout>${esc(t('common.logout'))}</button></div>
+    </div>`;
+  const form = app.querySelector('form');
+  const err = app.querySelector('.error');
+  const show = (m) => { err.textContent = m; err.hidden = !m; };
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    show('');
+    try {
+      const me = await api('/verify', { code: form.code.value });
+      state.me = { ...state.me, ...me };
+      render();
+    } catch (ex) { show(ex.message); }
+  });
+  app.querySelector('[data-resend]').addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try { await api('/verify/resend', {}); flash(t('verify.sent')); } catch (ex) { show(ex.message); }
+    setTimeout(() => { e.target.disabled = false; }, 60_000);
+  });
+  app.querySelector('[data-logout]').addEventListener('click', logout);
+  form.code.focus();
+}
+
 function renderCharacter() {
   const d = state.draft;
   const today = new Date().toISOString().slice(0, 10);
@@ -360,7 +399,7 @@ function renderFaction() {
 const patchUnread = () => { const p = state.me?.patch; return !!(p && p.latest && p.latest !== p.seen); };
 
 // Onglets principaux : map, menu. Écrans secondaires : notifs, missions, rules.
-const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses, avatars: renderAvatars, journal: renderJournal, patches: renderPatches, install: renderInstall, impact: renderImpact, pantheon: renderPantheon, pushsettings: renderPush };
+const VIEWS = { map: renderMap, menu: renderMenu, notifs: renderNotifs, missions: renderMissions, rules: renderRules, classes: renderClasses, avatars: renderAvatars, journal: renderJournal, patches: renderPatches, install: renderInstall, impact: renderImpact, pantheon: renderPantheon, pushsettings: renderPush, bug: renderBug, exile: renderExile };
 
 function go(tab) {
   if (['map', 'menu', 'journal'].includes(state.tab)) state.back = state.tab;
@@ -369,13 +408,13 @@ function go(tab) {
 }
 
 function renderGame() {
-  const menuSide = ['menu', 'rules', 'classes', 'avatars', 'patches', 'install', 'impact', 'pantheon', 'pushsettings'].includes(state.tab);
+  const menuSide = ['menu', 'rules', 'classes', 'avatars', 'patches', 'install', 'impact', 'pantheon', 'pushsettings', 'bug'].includes(state.tab);
   app.innerHTML = `
     <header class="topbar" id="topbar"></header>
     <main class="view" id="view"></main>
     <nav class="tabbar">
       <button type="button" data-tab="map" class="${state.tab === 'map' ? 'active' : ''}">${esc(t('tab.map'))}</button>
-      <button type="button" data-tab="journal" class="${state.tab === 'journal' ? 'active' : ''}">${esc(t('tab.journal'))}</button>
+      <button type="button" data-tab="journal" class="${state.tab === 'journal' ? 'active' : ''}">${esc(t('tab.journal'))}${journalUnread() ? '<span class="new-dot journal-dot"></span>' : ''}</button>
       <button type="button" data-tab="menu" class="${menuSide ? 'active' : ''}">${esc(t('tab.menu'))}${patchUnread() ? '<span class="new-dot"></span>' : ''}</button>
     </nav>`;
   app.querySelectorAll('.tabbar [data-tab]').forEach((b) => b.addEventListener('click', () => go(b.dataset.tab)));
@@ -404,6 +443,25 @@ function setMap(map) {
   syncClock(map);
   if (state.me && map.player) state.me.player = map.player;
   maybeGameOver();
+  updateJournalDot();
+}
+// Pastille du Journal : un événement plus récent que le dernier lu sur cet appareil.
+const journalKey = () => `journalSeen:${state.me?.user?.id}`;
+function journalSeen() {
+  try { return Number(localStorage.getItem(journalKey()) || 0) || state.journalSeenMem || 0; } catch { return state.journalSeenMem || 0; }
+}
+function markJournalSeen(id) {
+  state.journalSeenMem = Math.max(state.journalSeenMem || 0, id || 0);
+  try { localStorage.setItem(journalKey(), String(state.journalSeenMem)); } catch { /* mémoire de la session */ }
+  updateJournalDot();
+}
+const journalUnread = () => state.tab !== 'journal' && (state.map?.journalLatest || 0) > journalSeen();
+function updateJournalDot() {
+  const btn = document.querySelector('.tabbar [data-tab="journal"]');
+  if (!btn) return;
+  const dot = btn.querySelector('.journal-dot');
+  if (journalUnread() && !dot) btn.insertAdjacentHTML('beforeend', '<span class="new-dot journal-dot"></span>');
+  if (!journalUnread() && dot) dot.remove();
 }
 let mapView = null; // fonctions de l'écran Carte ouvert, pour le rafraîchir sans tout redessiner
 // Chaque seconde : met à jour les comptes à rebours ; à l'échéance, redemande l'état au serveur.
@@ -490,7 +548,7 @@ function panelHead(title, extra = '') {
 function bindClose(view) {
   view.querySelector('[data-close]').addEventListener('click', () => {
     if (state.tab === 'classes' && state.classesFrom === 'rules') return go('rules');
-    go(['rules', 'classes', 'avatars', 'patches', 'install', 'impact', 'pantheon', 'pushsettings'].includes(state.tab) ? 'menu' : state.back || 'map');
+    go(['rules', 'classes', 'avatars', 'patches', 'install', 'impact', 'pantheon', 'pushsettings', 'bug'].includes(state.tab) ? 'menu' : state.back || 'map');
   });
 }
 
@@ -585,9 +643,12 @@ async function renderMap() {
   const SHIELD_L = 'M12 2.5 4 5.5v5.8c0 4.6 3.2 8.4 8 10.2L10.5 16 13 12 10.5 8z';
   const SHIELD_R = 'M12 2.5 20 5.5v5.8c0 4.6-3.2 8.4-8 10.2L10.5 16 13 12 10.5 8z';
   const shieldAt = (x, y, k, inner) => `<g transform="translate(${x} ${y}) scale(${k}) translate(-12 -12)">${inner}</g>`;
+  let lastPos = new Map(); // dernière position de chaque pastille, pour animer les déplacements
+  const fxQueue = []; // effets à jouer au prochain dessin (attaque, défense, appel à l'aide…)
   const drawMarkers = () => {
     const u = m.width / (inner.getBoundingClientRect().width || m.width); // unités de carte par pixel d'écran
     const parts = [];
+    const pos = new Map();
     const now = serverNow();
     for (const st of state.territories) {
       const s0 = shape(st.id);
@@ -637,7 +698,9 @@ async function renderMap() {
         shown.forEach((o, i) => {
           const cx = x0 + i * step;
           const id = `pin-${st.id}-${i}`;
-          parts.push(`<g class="pin"><clipPath id="${esc(id)}"><circle cx="${cx}" cy="${y}" r="${r}"/></clipPath>
+          const key = o.gid ? `g:${o.gid}` : `p:${o.pseudo}`;
+          pos.set(key, { x: cx, y });
+          parts.push(`<g class="pin" data-k="${esc(key)}" ${o.gid ? `data-gprofile="${esc(o.gid)}"` : `data-profile="${esc(o.pseudo)}"`}><clipPath id="${esc(id)}"><circle cx="${cx}" cy="${y}" r="${r}"/></clipPath>
             <circle cx="${cx}" cy="${y}" r="${r + 1.2 * u}" fill="#fff"/>
             <image href="${occImg(o)}" x="${cx - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" clip-path="url(#${esc(id)})" preserveAspectRatio="xMidYMin slice"/>
             <circle cx="${cx}" cy="${y}" r="${r - 0.6 * u}" fill="none" stroke="${esc(faction(o.faction)?.color || '#888')}" stroke-width="${2.6 * u}"/></g>`);
@@ -654,10 +717,31 @@ async function renderMap() {
     const s0 = p.territory && shape(p.territory);
     const s = s0 && { ...s0, x: s0.cx ?? s0.x, y: s0.cy ?? s0.y };
     if (s && p.status !== 'dead') {
-      parts.push(`<g transform="translate(${s.x} ${s.y})"><circle r="${8 * u}" fill="${esc(faction(myFaction()).color)}" stroke="#fff" stroke-width="${3 * u}"/>
-        <circle r="${2.5 * u}" fill="#fff"/></g>`);
+      pos.set('me', { x: s.x, y: s.y });
+      parts.push(`<g data-k="me"><g transform="translate(${s.x} ${s.y})"><circle r="${8 * u}" fill="${esc(faction(myFaction()).color)}" stroke="#fff" stroke-width="${3 * u}"/>
+        <circle r="${2.5 * u}" fill="#fff"/></g></g>`);
+    }
+    // Effets d'action : une icône qui grossit et s'efface au-dessus du territoire.
+    const FX = { attack: '\u2694\uFE0F', defend: '\u{1F6E1}\uFE0F', rally: '\u{1F4EF}', build: '\u{1F528}', ping: '\u{1F4E3}' };
+    while (fxQueue.length) {
+      const f = fxQueue.shift();
+      const c = f.territory && shape(f.territory);
+      if (!c) continue;
+      parts.push(`<g class="fx fx-${esc(f.kind)}" transform="translate(${c.cx ?? c.x} ${c.cy ?? c.y})"><circle class="fx-ring" r="${14 * u}" fill="none" stroke="#fff" stroke-width="${2 * u}"/>
+        <text class="fx-icon" font-size="${26 * u}" text-anchor="middle" dominant-baseline="central">${FX[f.kind] || '\u2728'}</text></g>`);
     }
     markers.innerHTML = parts.join('');
+    // Déplacements : chaque pastille glisse en ligne droite depuis son ancienne position.
+    markers.querySelectorAll('[data-k]').forEach((el) => {
+      const now = pos.get(el.dataset.k);
+      const was = lastPos.get(el.dataset.k);
+      if (!now || !was || (Math.abs(now.x - was.x) < 1 && Math.abs(now.y - was.y) < 1)) return;
+      el.style.transition = 'none';
+      el.style.transform = `translate(${was.x - now.x}px, ${was.y - now.y}px)`;
+      requestAnimationFrame(() => requestAnimationFrame(() => { el.style.transition = 'transform .9s linear'; el.style.transform = 'translate(0px, 0px)'; }));
+    });
+    lastPos = pos;
+    markers.querySelectorAll('.fx').forEach((el) => setTimeout(() => el.remove(), 1400));
   };
 
   // Les actions secondaires (renforts payés, appel à l'aide, retours alternatifs) ont un bouton discret.
@@ -680,7 +764,7 @@ async function renderMap() {
     const banner = p.status === 'dead'
       ? (state.map?.exile
         ? `<p class="banner">${esc(t('camp.outExile'))}</p>
-          <div class="row act-row"><button type="button" class="btn compact" data-goto-tab="journal">${esc(t('camp.chooseBanner'))}</button></div>`
+          <div class="row act-row"><button type="button" class="btn compact" data-goto-tab="exile">${esc(t('camp.chooseBanner'))}</button></div>`
         : p.factionOut ? `<p class="banner">${esc(t('camp.out'))}</p>` : `<p class="banner">${esc(t('camp.dead'))}</p>
           <div class="row act-row">${btn('revive-gold', costs.revive ? t('camp.reviveGold', { gold: fmtNum(costs.revive) }) : t('camp.reviveFree'), mine.gold < costs.revive)}
             ${btn('revive-renown', t('camp.reviveRenown'), mine.renown.level < 1)}
@@ -785,9 +869,9 @@ async function renderMap() {
     : esc(t('map.neutral'))}${tags.length ? ' · ' + esc(tags.join(' · ')) : ''}${present ? ` · ${present}` : ''}</p>
       ${(st.occupants || []).length ? `<div class="present-list" aria-label="${esc(t('camp.present'))}">${st.occupants.map((o) => {
     const of = faction(o.faction);
-    return `<span class="who ${o.me ? 'me' : ''} ${o.general ? 'general' : ''}" style="--c:${esc(of?.color || '#888')}" title="${esc(of ? loc(of.name) : '')}">
-        <img src="${occImg(o)}" alt=""><span><b>${esc(o.pseudo)}</b>
-        <small>${flag(o.faction)}${o.general ? `<em>${esc(t('camp.general'))}</em> · ` : ''}${esc(className(o.class))} · ${esc(t('menu.playerRenown', { level: o.level }))}${o.retreating ? ' · ' + esc(t('camp.retreatingTag')) : ''}</small></span></span>`;
+    return `<span class="who ${o.me ? 'me' : ''} ${o.general ? 'general' : ''}" style="--c:${esc(of?.color || '#888')}" title="${esc(of ? loc(of.name) : '')}" ${o.general ? `data-gprofile="${esc(o.gid)}"` : `data-profile="${esc(o.pseudo)}"`} role="button" tabindex="0">
+        <img src="${occImg(o)}" alt=""><span><b>${esc(o.pseudo)}${o.lord ? ' \u{1F451}' : ''}</b>
+        <small>${flag(o.faction)}<img class="class-icon tiny" src="${esc(klass(o.class)?.icon || '')}" alt="">${o.general ? `<em>${esc(t('camp.general'))}</em> · ` : ''}${esc(className(o.class))} · ${esc(t('menu.playerRenown', { level: o.level }))}${o.retreating ? ' · ' + esc(t('camp.retreatingTag')) : ''}</small></span></span>`;
   }).join('')}</div>` : ''}
       ${b ? battleHtml(b, st) : ''}
       ${shielded ? `<p class="small note">${withTimer('camp.untouchable', {}, st.untouchableUntil)}</p>` : ''}
@@ -854,12 +938,20 @@ async function renderMap() {
     actionError = '';
     actionNote = '';
     try {
-      const res = await api(path, body);
+      let res;
+      try { res = await api(path, body); } catch (err) {
+        // Quitter un territoire où l'on combat : confirmation, puis les actions de combat y sont annulées.
+        if (err.code !== 'engaged' || !(await confirmBox({ title: t('engage.title'), body: t('engage.body', { territory: loc(shape(me().territory)?.name) }), ok: t('engage.leave'), cancel: t('engage.stay') }))) throw err;
+        res = await api(path, { ...body, leave: true });
+      }
+      const from = me().territory;
       setMe(res);
       setMap(res.map);
+      if (res.cancelled) flash(t('engage.cancelled'));
+      if (['attack', 'defend', 'rally'].includes(act) || act.startsWith('build:')) fxQueue.push({ kind: act.split(':')[0], territory: from });
       if (res.bonus) flash(t('camp.bonus', { gold: res.bonus }));
       if (res.free) flash(t('camp.freeMove')); // déplacement gratuit (Chevalier pégase, Chevalier faucon)
-      if (act.startsWith('ping:')) flash(t('ping.sent'));
+      if (act.startsWith('ping:')) { flash(t('ping.sent')); fxQueue.push({ kind: 'ping', territory: state.selected }); }
       // De retour en jeu : la carte se place sur le territoire où l'on réapparaît.
       if (act.startsWith('revive-') && res.player.status === 'alive') state.selected = res.player.territory;
     } catch (err) {
@@ -929,18 +1021,19 @@ async function renderMenu() {
     const shownFactions = state.config.factions.filter((x) => (!x.secret && !x.npc) || x.id === ch.faction || counts[x.id] > 0
       || state.players.some((p) => p.faction === x.id));
     view.innerHTML = `
-      <details class="menu-fold" data-fold="help" ${state.menuFold?.help ? 'open' : ''}><summary>${esc(t('menu.helpFold'))}</summary>
+      <details class="menu-fold" data-fold="help" ${state.menuFold?.help ? 'open' : ''}><summary><span>\u2139\uFE0F ${esc(t('menu.helpFold'))}</span></summary>
         <div class="fold-body">
-          <button class="btn ghost" type="button" data-rules>${esc(t('menu.rules'))}</button>
-          <button class="btn ghost" type="button" data-pushsettings>${esc(t('menu.notifications'))}</button>
-          <button class="btn ghost" type="button" data-install>${esc(t('menu.install'))}</button>
+          <button class="btn ghost" type="button" data-rules>\u{1F4DC} ${esc(t('menu.rules'))}</button>
+          <button class="btn ghost" type="button" data-pushsettings>\u{1F514} ${esc(t('menu.notifications'))}</button>
+          <button class="btn ghost" type="button" data-install>\u{1F4F2} ${esc(t('menu.install'))}</button>
+          <button class="btn ghost" type="button" data-bug>\u{1F41E} ${esc(t('menu.bug'))}</button>
         </div></details>
-      <details class="menu-fold" data-fold="conquests" ${state.menuFold?.conquests ? 'open' : ''}><summary>${esc(t('menu.conquestFold'))}</summary>
+      <details class="menu-fold" data-fold="conquests" ${state.menuFold?.conquests ? 'open' : ''}><summary><span>\u{1F3C6} ${esc(t('menu.conquestFold'))}</span></summary>
         <div class="fold-body">
-          <button class="btn ghost" type="button" data-impact>${esc(t('menu.impact'))}</button>
-          <button class="btn ghost" type="button" data-pantheon>${esc(t('menu.pantheon'))}</button>
+          <button class="btn ghost" type="button" data-impact>\u{1F4CA} ${esc(t('menu.impact'))}</button>
+          <button class="btn ghost" type="button" data-pantheon>\u{1F3DB}\uFE0F ${esc(t('menu.pantheon'))}</button>
         </div></details>
-      <button class="btn ghost" type="button" data-patches>${esc(t('menu.patches'))}${patchUnread() ? `<span class="new-dot" title="${esc(t('patch.new'))}"></span>` : ''}</button>
+      <button class="btn ghost" type="button" data-patches>\u{1F4F0} ${esc(t('menu.patches'))}${patchUnread() ? `<span class="new-dot" title="${esc(t('patch.new'))}"></span>` : ''}</button>
 
       <section class="card">
         <h2>${esc(t('menu.character'))}</h2>
@@ -1001,7 +1094,7 @@ async function renderMenu() {
       ${rk ? `<section class="card">
         <h2>${esc(t('camp.ranking'))}</h2>
         <p class="muted small">${esc(t('camp.rankingHint', { rewards: rk.rewards.map(fmtNum).join(' / ') }))}</p>
-        ${rk.top.map((r) => `<div class="player rank ${r.me ? 'me' : ''}">
+        ${rk.top.map((r) => `<div class="player rank ${r.me ? 'me' : ''}" data-profile="${esc(r.pseudo)}" role="button" tabindex="0">
             <img class="avatar" src="${avatarUrl(r.avatar)}" alt="">
             <div><strong>${r.rank}. ${esc(r.pseudo)}</strong><small style="color:${esc(faction(r.faction)?.color || '#888')}">${flag(r.faction)}${esc(loc(faction(r.faction)?.name))}</small></div>
             <span class="n">${esc(t('camp.pts', { n: fmtNum(r.score) }))}</span></div>`).join('') || `<p class="muted small">${esc(t('camp.rankingEmpty'))}</p>`}
@@ -1018,7 +1111,7 @@ async function renderMenu() {
         <h2>${esc(t('menu.players', { n: state.players.length }))}</h2>
         ${state.players.map((p) => {
     const pf = faction(p.faction);
-    return `<div class="player">
+    return `<div class="player" data-profile="${esc(p.pseudo)}" role="button" tabindex="0">
             <img class="avatar" src="${avatarUrl(p.avatar)}" alt="">
             <div><strong>${esc(p.pseudo)}</strong><small>${esc(className(p.class))} · ${esc(t('menu.playerRenown', { level: Number(p.renown) || 0 }))} · ${esc(fmtDate(p.birthday))}</small></div>
             <span class="pill" style="--c:${esc(pf ? pf.color : '#888')}">${flag(p.faction)}${esc(pf ? loc(pf.name) : p.faction)}</span>
@@ -1034,6 +1127,7 @@ async function renderMenu() {
     view.querySelector('[data-install]').addEventListener('click', () => go('install'));
     view.querySelector('[data-impact]').addEventListener('click', () => go('impact'));
     view.querySelector('[data-pantheon]').addEventListener('click', () => go('pantheon'));
+    view.querySelector('[data-bug]').addEventListener('click', () => go('bug'));
     view.querySelector('[data-pushsettings]').addEventListener('click', () => go('pushsettings'));
     view.querySelector('[data-avatars]').addEventListener('click', () => go('avatars'));
     view.querySelector('[data-classes]').addEventListener('click', () => {
@@ -1061,6 +1155,11 @@ function notifText(n) {
   if (p.mission) p.mission = loc((state.config.missions || []).find((m) => m.id === p.mission)?.title) || p.mission;
   if (p.faction) p.faction = loc(faction(p.faction)?.name) || p.faction;
   if (p.general) p.general = generalName(p.general);
+  if (n.type === 'lord_ability' && n.params.faction) {
+    const ab = state.config.campaign?.lords?.[n.params.faction]?.ability;
+    p.ability = loc(ab?.title) || '';
+    p.effect = loc(ab?.description) || '';
+  }
   if (p.class) p.class = className(p.class);
   if (p.distinction) p.distinction = loc((state.config.distinctions || []).find((x) => x.id === p.distinction)?.name) || p.distinction;
   for (const k of ['territory', 'home']) if (p[k]) p[k] = loc(state.config.map.territories.find((x) => x.id === p[k])?.name) || p[k];
@@ -1117,7 +1216,9 @@ async function renderMissions() {
     rw.gold ? `<span class="res"><img src="assets/ui/gold.svg" alt="${esc(t('res.gold'))}">+${fmtNum(rw.gold)}</span>` : '',
     rw.xp ? `<span class="res"><img src="assets/ui/renown.svg" alt="${esc(t('missions.xpAlt'))}">+${fmtNum(rw.xp)} xp</span>` : '',
     rw.avatar ? `<span class="res"><img class="reward-avatar" src="${avatarUrl(rw.avatar)}" alt="">${esc(t('missions.avatarReward'))}</span>` : '',
+    rw.actions ? `<span class="res"><img src="assets/ui/action.svg" alt="${esc(t('res.actions'))}">+${fmtNum(rw.actions)}</span>` : '',
   ].join('');
+
   const order = { done: 0, active: 1, claimed: 2 };
   const card = (m, attr) => `
     <article class="card mission ${m.status}">
@@ -1130,7 +1231,12 @@ async function renderMissions() {
         ${m.status === 'done' ? `<button type="button" class="btn compact" ${attr}="${esc(m.id)}">${esc(t('missions.claim'))}</button>` : ''}</div>
     </article>`;
   const sorted = (list) => [...list].sort((a, b) => order[a.status] - order[b.status]);
-  // data : { missions, daily } tel que renvoyé par le serveur.
+  // Missions en cours et à récupérer en tête ; les missions terminées repliées dans un dépliant.
+  const listOf = (list, attr) => {
+    const open = sorted(list.filter((m) => m.status !== 'claimed'));
+    const done = list.filter((m) => m.status === 'claimed');
+    return open.map((m) => card(m, attr)).join('') + (done.length ? `<details class="done-fold"><summary>${esc(t('missions.doneFold', { n: done.length }))}</summary>${done.map((m) => card(m, attr)).join('')}</details>` : '');
+  };  // data : { missions, daily } tel que renvoyé par le serveur.
   const draw = (data, error) => {
     const { missions = [], daily, specials = [], campaignMissions = [] } = data;
     view.innerHTML = panelHead(t('missions.title'))
@@ -1140,15 +1246,15 @@ async function renderMissions() {
           <span class="pill">${esc(t('daily.streak', { n: daily.streak }))}</span></div>
         <p class="muted small">${esc(t('daily.hint'))} ${esc(t('daily.bonus', { n: daily.bonus }))}</p>
         ${daily.frozen ? `<p class="note small">${esc(t('daily.frozen'))}</p>` : ''}
-        ${sorted(daily.missions).map((m) => card(m, 'data-claim-daily')).join('')}
+        ${listOf(daily.missions, 'data-claim-daily')}
         ${daily.exile && daily.exile.length ? `<div class="section-head"><h2>${esc(t('daily.exile'))}</h2></div>
           <p class="muted small">${esc(t('daily.exileHint'))}</p>
-          ${sorted(daily.exile).map((m) => card(m, 'data-claim-daily')).join('')}` : ''}
+          ${listOf(daily.exile, 'data-claim-daily')}` : ''}
         <div class="section-head"><h2>${esc(t('missions.main'))}</h2></div>` : '')
       + (campaignMissions.length ? `<div class="section-head"><h2>${esc(t('campaignMissions.title'))}</h2></div>
         <p class="muted small">${esc(t('campaignMissions.hint'))}</p>
-        ${sorted(campaignMissions).map((m) => card(m, 'data-claim-campaign')).join('')}` : '')
-      + (missions.length ? sorted(missions).map((m) => card(m, 'data-claim')).join('') : (error ? '' : `<p class="muted">${esc(t('missions.empty'))}</p>`))
+        ${listOf(campaignMissions, 'data-claim-campaign')}` : '')
+      + (missions.length ? listOf(missions, 'data-claim') : (error ? '' : `<p class="muted">${esc(t('missions.empty'))}</p>`))
       + (specials.length ? `<details class="card specials" ${state.specialsOpen ? 'open' : ''}>
           <summary><strong>${esc(t('missions.specials'))}</strong>
             <span class="pill">${specials.filter((x) => x.done).length} / ${specials.length}</span></summary>
@@ -1225,15 +1331,13 @@ async function renderJournal() {
   };
   let error = '';
   const draw = (data) => {
+    markJournalSeen(Math.max(0, ...data.events.map((e) => e.id)));
     const events = data.events.map((e) => ({ e, d: describe(e) })).filter((x) => x.d);
     view.innerHTML = head
       + (error ? `<p class="error" role="alert">${esc(error)}</p>` : '')
       // Faction hors jeu : choix d'une bannière à rejoindre en exil.
-      + (data.exile ? `<section class="card exile"><h2>${esc(t('exile.title'))}</h2>
-          <p class="small">${esc(t('exile.intro', { malus: data.exile.malus }))}</p>
-          ${data.exile.options.length ? `<div class="row">${data.exile.options.map((f) => `<button type="button" class="btn compact" data-exile="${esc(f)}">${esc(t('exile.join', { faction: loc(faction(f)?.name) }))}</button>`).join('')}</div>
-            <p class="muted small">${esc(t('exile.note'))}</p>` : `<p class="muted small">${esc(t('exile.none'))}</p>`}
-        </section>` : '')
+      + (data.exile ? `<section class="card exile-call"><h2>${esc(t('exile.title'))}</h2><p class="small">${esc(t('exile.callout'))}</p>
+          <button type="button" class="btn" data-goto-exile>${esc(t('camp.chooseBanner'))}</button></section>` : '')
       + (data.fallen.length ? `<section class="card"><h2>${esc(t('journal.fallen'))}</h2>
           ${data.fallen.map((f) => `<div class="fallen"><strong>${esc(f.pseudo)}</strong>
             <button type="button" class="btn compact" data-pay="${f.id}" ${state.me.character.gold < (f.cost ?? data.reviveCost) ? 'disabled' : ''}>${esc(t('journal.pay', { gold: fmtNum(f.cost ?? data.reviveCost) }))}</button></div>`).join('')}
@@ -1259,6 +1363,7 @@ async function renderJournal() {
       }
       reload();
     }));
+    view.querySelector('[data-goto-exile]')?.addEventListener('click', () => go('exile'));
     view.querySelectorAll('[data-react]').forEach((b) => b.addEventListener('click', async () => {
       view.querySelectorAll('[data-react]').forEach((x) => { x.disabled = true; });
       try {
@@ -1360,7 +1465,131 @@ function maybeGameOver() {
       <button type="button" class="btn ${kind === 'faction' ? 'ghost' : ''}" data-close>${esc(t('gameover.close'))}</button></div></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('[data-close]').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('[data-exile]')?.addEventListener('click', () => { overlay.remove(); go('journal'); });
+  overlay.querySelector('[data-exile]')?.addEventListener('click', () => { overlay.remove(); go('exile'); });
+}
+
+// Fenêtre de confirmation (deux boutons) : renvoie une promesse vraie si le joueur confirme.
+function confirmBox({ title, body, ok, cancel }) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.innerHTML = `<div class="modal confirm" role="alertdialog" aria-modal="true"><h2>${esc(title)}</h2><p>${esc(body)}</p>
+      <div class="row"><button type="button" class="btn" data-no>${esc(cancel)}</button><button type="button" class="btn danger" data-yes>${esc(ok)}</button></div></div>`;
+    document.body.appendChild(overlay);
+    const done = (v) => { overlay.remove(); resolve(v); };
+    overlay.querySelector('[data-yes]').addEventListener('click', () => done(true));
+    overlay.querySelector('[data-no]').addEventListener('click', () => done(false));
+  });
+}
+
+// Profil d'un joueur ou d'un général : fenêtre aux couleurs de sa faction d'origine (drapeau, nation, seigneur, icônes de classe).
+async function showProfile(target) {
+  let d;
+  try { d = await api(`/profile?${target.general ? `general=${encodeURIComponent(target.general)}` : `pseudo=${encodeURIComponent(target.pseudo)}`}`); } catch (err) {
+    if (err.status === 401) return sessionLost();
+    flash(err.message, 'error');
+    return;
+  }
+  document.getElementById('profile-overlay')?.remove();
+  const home = faction(d.type === 'general' ? (d.origin || d.faction) : d.faction);
+  const now = d.type === 'general' ? faction(d.faction) : d.exile ? faction(d.exile) : home;
+  const pathHtml = (d.path || []).map((c) => `<span class="path-step">${classIcon(klass(c))}<small>${esc(className(c))}</small></span>`).join('<span class="path-arrow">\u203A</span>');
+  const img = d.type === 'general' ? esc(d.avatar) : avatarUrl(d.avatar);
+  const row = (k, v) => (v === null || v === undefined || v === '' ? '' : `<div class="pf-row"><span>${esc(k)}</span><b>${v}</b></div>`);
+  const statusTxt = d.type === 'general' ? t(`profile.status.${d.status}`) : '';
+  const dists = (d.distinctions || []).map((x) => { const def = (state.config.distinctions || []).find((y) => y.id === x.id); return def ? `<span class="pill">${esc(loc(def.name))}${x.count > 1 ? ` \u00D7${x.count}` : ''}</span>` : ''; }).join('');
+  const overlay = document.createElement('div');
+  overlay.id = 'profile-overlay';
+  overlay.className = 'overlay';
+  overlay.innerHTML = `<div class="modal profile-card" role="dialog" aria-modal="true" style="--c:${esc(home?.color || '#c9a25a')}">
+    <div class="pf-head">
+      ${home?.nation ? `<img class="pf-nation" src="${esc(home.nation)}" alt="">` : ''}
+      ${home?.lord ? `<img class="pf-lord" src="${esc(home.lord)}" alt="">` : ''}
+      <img class="pf-avatar" src="${img}" alt="">
+      <div class="pf-id"><h2>${esc(d.type === 'general' ? d.name : d.pseudo)}${d.lord ? ' \u{1F451}' : ''}</h2>
+        <p>${home?.logo ? `<img class="pf-flag" src="${esc(home.logo)}" alt="">` : ''}<span style="color:${esc(home?.color || 'inherit')}">${esc(home ? loc(home.name) : t('profile.independent'))}</span></p>
+        ${d.type === 'general' ? `<span class="pill">${esc(t(d.lord ? 'profile.lord' : 'camp.general'))}</span>` : ''}
+        ${d.exile ? `<span class="pill exile">${esc(t('exile.tag'))} ${flag(d.exile)} ${esc(loc(now?.name))}</span>` : ''}
+        ${d.type === 'general' && d.faction && d.faction !== d.origin ? `<span class="pill">${esc(t('profile.joined'))} ${flag(d.faction)} ${esc(loc(now?.name))}</span>` : ''}</div>
+    </div>
+    <div class="pf-body">
+      <div class="pf-class">${classIcon(klass(d.class))}<div><b>${esc(className(d.class))}</b><small>${esc(t('menu.playerRenown', { level: d.level }))}</small></div></div>
+      ${row(t('profile.birthday'), d.birthday ? esc(fmtDate(d.birthday)) : null)}
+      ${d.type === 'player' ? row(t('profile.score'), `${fmtNum(d.score)}${d.rank ? ` \u00B7 #${d.rank}` : ''}`) : ''}
+      ${d.type === 'general' ? row(t('profile.statusLabel'), esc(statusTxt)) : ''}
+      ${d.type === 'general' && d.home ? row(t('profile.home'), esc(loc(state.config.map.territories.find((x) => x.id === d.home)?.name))) : ''}
+      ${d.type === 'general' && (d.spare || []).length && !d.spared ? row(t('profile.spare'), d.spare.map((f) => flag(f)).join(' ')) : ''}
+      <h3>${esc(t('profile.path'))}</h3><div class="pf-path">${pathHtml}</div>
+      ${dists ? `<h3>${esc(t('menu.distinctions'))}</h3><div class="pf-dists">${dists}</div>` : ''}
+    </div>
+    <button type="button" class="btn" data-close>${esc(t('common.close'))}</button></div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('[data-close]').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-profile], [data-gprofile]');
+  if (!el || !state.me?.character) return;
+  e.stopPropagation();
+  showProfile(el.dataset.gprofile ? { general: el.dataset.gprofile } : { pseudo: el.dataset.profile });
+}, true);
+
+// Signaler un bug : un court message (500 caractères au plus) envoyé à l'équipe.
+function renderBug() {
+  const view = document.getElementById('view');
+  view.className = 'view scroll';
+  view.innerHTML = panelHead(`\u{1F41E} ${t('bug.title')}`) + `<p class="muted">${esc(t('bug.intro'))}</p>
+    <section class="card"><textarea class="bug-text" maxlength="500" rows="7" placeholder="${esc(t('bug.placeholder'))}"></textarea>
+      <div class="row"><small class="muted bug-count">0 / 500</small><button type="button" class="btn" data-send disabled>${esc(t('bug.send'))}</button></div></section>`;
+  bindClose(view);
+  const ta = view.querySelector('.bug-text');
+  const btn = view.querySelector('[data-send]');
+  ta.addEventListener('input', () => { view.querySelector('.bug-count').textContent = `${ta.value.length} / 500`; btn.disabled = !ta.value.trim(); });
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try { await api('/bug', { message: ta.value.trim() }); flash(t('bug.thanks')); go('menu'); } catch (err) {
+      if (err.status === 401) return sessionLost();
+      flash(err.message, 'error');
+      btn.disabled = false;
+    }
+  });
+}
+
+// Exil : la faction est tombée. Écran solennel, chaque bannière possible avec son drapeau, sa nation et son seigneur.
+async function renderExile() {
+  const view = document.getElementById('view');
+  view.className = 'view scroll exile-view';
+  view.innerHTML = panelHead(t('exile.title')) + `<p class="muted">${esc(t('common.loading'))}</p>`;
+  bindClose(view);
+  let data;
+  try { data = await api('/journal'); } catch (err) { if (err.status === 401) return sessionLost(); return; }
+  if (state.tab !== 'exile' || !view.isConnected) return;
+  const lost = faction(state.me.character.faction);
+  const info = data.exile;
+  view.innerHTML = panelHead(t('exile.title')) + `
+    <section class="exile-fall" style="--c:${esc(lost?.color || '#888')}">
+      ${lost?.logo ? `<img class="fallen-flag" src="${esc(lost.logo)}" alt="">` : ''}
+      <div><h2>${esc(t('exile.fallTitle', { faction: loc(lost?.name) }))}</h2><p>${esc(t('exile.fallBody'))}</p></div>
+    </section>
+    ${info ? `<p class="note">${esc(t('exile.rules', { malus: info.malus }))}</p>
+      ${info.options.length ? info.options.map((f) => `<div class="exile-option">${factionHero(faction(f), `<strong class="faction-name">${esc(loc(faction(f)?.name))}</strong><span class="faction-desc">${esc(loc(faction(f)?.description))}</span>`)}
+        <button type="button" class="btn" data-exile="${esc(f)}">${esc(t('exile.join', { faction: loc(faction(f)?.name) }))}</button></div>`).join('')
+    : `<p class="muted">${esc(t('exile.none'))}</p>`}` : `<p class="muted">${esc(t('exile.unavailable'))}</p>`}`;
+  bindClose(view);
+  view.querySelectorAll('[data-exile]').forEach((b) => b.addEventListener('click', async () => {
+    view.querySelectorAll('[data-exile]').forEach((x) => { x.disabled = true; });
+    try {
+      const res = await api('/exile', { faction: b.dataset.exile });
+      setMe(res);
+      setMap(res.map);
+      state.selected = res.player.territory;
+      go('map');
+    } catch (err) {
+      if (err.status === 401) return sessionLost();
+      flash(err.message, 'error');
+      view.querySelectorAll('[data-exile]').forEach((x) => { x.disabled = false; });
+    }
+  }));
 }
 
 // Fenêtre de fin de campagne : résultat de la faction, détail des points et classement, montrée une fois à chaque participant.
@@ -1424,7 +1653,7 @@ async function renderPantheon() {
   try { d = await api('/pantheon'); } catch (err) { if (err.status === 401) return sessionLost(); view.innerHTML = panelHead(t('pantheon.title')) + `<p class="error">${esc(err.message)}</p>`; bindClose(view); return; }
   if (state.tab !== 'pantheon' || !view.isConnected) return;
   const fname = (id) => (id ? `${flag(id)}<span style="color:${esc(faction(id)?.color || 'inherit')}">${esc(loc(faction(id)?.name))}</span>` : '');
-  const players = (list) => `<ol class="result-standings">${list.map((x, i) => `<li><span class="rk">${i + 1}</span><img class="avatar tiny" src="${avatarUrl(x.avatar)}" alt=""><span>${esc(x.pseudo)} ${flag(x.faction)}</span><b>${fmtNum(x.score)}</b></li>`).join('')}</ol>`;
+  const players = (list) => `<ol class="result-standings">${list.map((x, i) => `<li data-profile="${esc(x.pseudo)}" role="button" tabindex="0"><span class="rk">${i + 1}</span><img class="avatar tiny" src="${avatarUrl(x.avatar)}" alt=""><span>${esc(x.pseudo)} ${flag(x.faction)}</span><b>${fmtNum(x.score)}</b></li>`).join('')}</ol>`;
   const factions = (totals) => `<ol class="result-standings">${Object.entries(totals).sort((a, b) => b[1] - a[1]).map(([f, n]) => `<li>${flag(f)}<span>${esc(loc(faction(f)?.name))}</span><b>${fmtNum(n)}</b></li>`).join('')}</ol>`;
   view.innerHTML = panelHead(t('pantheon.title')) + `
     <section class="card"><h2>${esc(t('pantheon.season', { n: d.season.number, done: d.season.done, length: d.season.length }))}</h2>
@@ -1506,7 +1735,7 @@ function renderPatches() {
       ${(pt.sections || []).map((sec) => `<h3>${esc(loc(sec.title))}</h3>
         <ul class="patch-list">${(sec.items || []).map((i) => `<li>${esc(loc(i))}</li>`).join('')}</ul>`).join('')}`;
   const head = (pt) => `${esc(loc(pt.title))}${pt.date ? ` <span class="muted small">· ${esc(fmt(pt.date))}</span>` : ''}`;
-  view.innerHTML = panelHead(t('patch.title')) + (patches.length ? patches.map((pt, i) => (i === 0
+  view.innerHTML = panelHead(`\u{1F4F0} ${t('patch.title')}`) + (patches.length ? patches.map((pt, i) => (i === 0
     ? `<section class="card patch"><h2>${head(pt)}</h2>${body(pt)}</section>`
     : `<details class="card patch archived"><summary><strong>${head(pt)}</strong></summary>${body(pt)}</details>`)).join('') : `<p class="muted">${esc(t('patch.empty'))}</p>`);
   bindClose(view);

@@ -21,9 +21,10 @@ module.exports = function createPush(ctx) {
       stamina: { pref: 'stamina', cooldownMinutes: 360 },
       results: { pref: 'results', cooldownMinutes: 60 },
       verdict: { pref: 'verdict', cooldownMinutes: 30 },
+      endsoon: { pref: 'results', cooldownMinutes: 600 },
     },
     // Notifications du jeu qui deviennent des notifications push.
-    map: { territory_attacked: 'attacked', must_retreat: 'retreat', rally: 'rally', campaign_end: 'results', campaign_end_draw: 'results', general_verdict: 'verdict' },
+    map: { territory_attacked: 'attacked', must_retreat: 'retreat', rally: 'rally', campaign_end: 'results', campaign_end_draw: 'results', general_verdict: 'verdict', campaign_ending: 'endsoon' },
     dailyMax: 6,
     quiet: { from: 23, to: 8, timezone: 'Europe/Paris' },
     ...(config.push || {}),

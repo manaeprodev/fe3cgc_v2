@@ -315,7 +315,7 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     check('une action de moins sur le compteur de l\'effet (9)', (await me('Rouge5')).player.rewardDebuff === 9);
     t = await clients.Rouge5('/teleport', { to: 'hresvelg' });
     check('se téléporter à nouveau renouvelle l\'effet sans l\'additionner (10)', t.s === 200 && t.d.player.rewardDebuff === 10, String(t.d.player?.rewardDebuff));
-    t = await clients.Rouge5('/teleport', { to: 'brigid' });
+    t = await clients.Rouge5('/teleport', { to: 'dagda' });
     check('impossible vers un territoire hors de sa faction et de ses voisins', t.d.error === 'cannot_enter', t.d.error);
     t = await clients.Rouge1('/teleport', { to: 'varley' });
     check('impossible sans la classe', t.d.error === 'invalid_action', t.d.error);

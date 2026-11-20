@@ -89,7 +89,7 @@ const ids = (list) => list.map((x) => x.id).sort().join(',');
 
     // ---------- 2. Choix de la bannière : pas celle qui domine la carte
     map = (await blue('/map')).d;
-    check('options d\'exil : factions qui ne dominent pas, Loups de cendre et Église', map.exile && map.exile.options.sort().join(',') === 'eglise,jaune,violette' && map.exile.malus === 25, JSON.stringify(map.exile));
+    check('options d\'exil : factions qui ne dominent pas, Loups de cendre et Église', map.exile && map.exile.options.sort().join(',') === 'eglise,jaune,violette' && map.exile.malus === 50, JSON.stringify(map.exile));
     r = await blue('/exile', { faction: 'rouge' });
     check('pas d\'exil chez la faction dominante', r.d.error === 'exile_unavailable', r.d.error);
     r = await blue('/exile', { faction: 'bleue' });
@@ -114,12 +114,12 @@ const ids = (list) => list.map((x) => x.id).sort().join(',');
     check('il compte parmi les défenseurs de l\'Église sur la carte', terrOf(r.d.map, 'garreg-mach').players.eglise === 1, JSON.stringify(terrOf(r.d.map, 'garreg-mach').players));
     let g3 = (await blue3('/me')).d.character.gold;
     r = await blue3('/act', { action: 'gather' });
-    check('exilé de l\'Église : gains réduits de 25 % (30 or au lieu de 40)', r.d.character.gold === g3 + 30, `+${r.d.character?.gold - g3}`);
+    check('exilé de l\'Église : gains réduits de 50 % (20 or au lieu de 40)', r.d.character.gold === g3 + 20, `+${r.d.character?.gold - g3}`);
 
     // ---------- 3. Combattre en exilé : gains d'or et d'expérience réduits
     let before = (await blue('/me')).d.character;
     r = await blue('/act', { action: 'gather' });
-    check('récolte d\'exilé : -25 % (30 or au lieu de 40)', r.d.character.gold === before.gold + 30, `+${r.d.character.gold - before.gold}`);
+    check('récolte d\'exilé : -50 % (20 or au lieu de 40)', r.d.character.gold === before.gold + 20, `+${r.d.character.gold - before.gold}`);
     place('Joueur2', 'ailell');
     r = await blue('/move', { to: 'galatea' });
     check('l\'exilé entre en territoire ennemi depuis un territoire de sa bannière', r.d.player?.territory === 'galatea', r.d.error);
@@ -130,7 +130,7 @@ const ids = (list) => list.map((x) => x.id).sort().join(',');
     map = (await blue('/map')).d;
     const after = (await blue('/me')).d;
     check('conquête au nom des jaunes', terrOf(map, 'galatea').faction === 'jaune');
-    check('gains de bataille -25 % (113 or au lieu de 150, 45 xp au lieu de 60)', after.character.gold === before.gold + 113 && after.character.xp === before.xp + 45, `+${after.character.gold - before.gold} or, +${after.character.xp - before.xp} xp`);
+    check('gains de bataille -50 % (75 or au lieu de 150, 30 xp au lieu de 60)', after.character.gold === before.gold + 75 && after.character.xp === before.xp + 30, `+${after.character.gold - before.gold} or, +${after.character.xp - before.xp} xp`);
     check('le joueur reste une personne de la faction bleue', after.character.faction === 'bleue' && after.player.faction === 'jaune');
     nt = await notifsOf(red);
     check('personne n\'est prévenu à tort', !nt.some((x) => x.type === 'exile_lost'));

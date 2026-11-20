@@ -104,6 +104,28 @@ db.exec(`
   );
 `);
 
+// Signalements de bugs des joueurs : gardés en base (visibles sur /admin.html) et envoyés par mail si un serveur SMTP est configuré
+// (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS ; destinataire BUG_REPORT_TO). Voir mailer.js.
+db.exec(`CREATE TABLE IF NOT EXISTS bug_reports (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, pseudo TEXT, message TEXT NOT NULL, created_at TEXT NOT NULL, emailed INTEGER NOT NULL DEFAULT 0)`);
+const mailer = require('./mailer');
+// Confirmation des adresses email à l'inscription : active dès que l'envoi de mails est configuré (EMAIL_VERIFY=0 pour la couper).
+const VERIFY_EMAILS = () => mailer.configured() && process.env.EMAIL_VERIFY !== '0';
+async function sendCode(userId, email, lang) {
+  const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
+  const prev = db.prepare('SELECT sends FROM email_codes WHERE user_id = ?').get(userId);
+  db.prepare(`INSERT INTO email_codes (user_id, code_hash, expires_at, attempts, sent_at, sends) VALUES (?, ?, ?, 0, ?, ?)
+              ON CONFLICT (user_id) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0, sent_at = excluded.sent_at, sends = excluded.sends`)
+    .run(userId, sha256(`${userId}:${code}`), Date.now() + 30 * 60_000, Date.now(), (prev?.sends || 0) + 1);
+  const en = lang === 'en';
+  await mailer.send({
+    to: email,
+    subject: en ? `${code} is your Three Crowns code` : `${code} est ton code Three Crowns`,
+    text: en
+      ? `Welcome to Fire Emblem Three Crowns: Grand Conquests!\n\nYour confirmation code: ${code}\n\nEnter it in the game to confirm your email address. It is valid for 30 minutes.\nIf you did not create an account, ignore this message.`
+      : `Bienvenue dans Fire Emblem Three Crowns : Grand Conquests !\n\nTon code de confirmation : ${code}\n\nSaisis-le dans le jeu pour confirmer ton adresse email. Il est valable 30 minutes.\nSi tu n'as pas créé de compte, ignore ce message.`,
+  });
+}
+
 // Compteurs quotidiens pour régler l'économie : or gagné et dépensé (par source), actions, batailles, joueurs actifs.
 db.exec(`
   CREATE TABLE IF NOT EXISTS metrics_daily (day TEXT NOT NULL, key TEXT NOT NULL, value REAL NOT NULL DEFAULT 0, PRIMARY KEY (day, key));
@@ -165,6 +187,13 @@ const MISSION_EVENTS = new Set([...MISSIONS.filter((m) => m.condition?.type === 
   if (!ucols.includes('lang')) db.exec('ALTER TABLE users ADD COLUMN lang TEXT');
   // Dernière mise à jour (patch) lue par le joueur ; vide = jamais lue.
   if (!ucols.includes('patch_seen')) db.exec('ALTER TABLE users ADD COLUMN patch_seen TEXT');
+  // Adresse email confirmée (1 par défaut : les comptes créés avant la confirmation par email restent valides).
+  if (!ucols.includes('email_verified')) db.exec('ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1');
+  // Code de confirmation envoyé par email : haché, valable 30 minutes, 5 essais.
+  db.exec(`CREATE TABLE IF NOT EXISTS email_codes (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    code_hash TEXT NOT NULL, expires_at INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, sent_at INTEGER NOT NULL, sends INTEGER NOT NULL DEFAULT 1
+  )`);
   // Journal des changements de classe.
   db.exec(`CREATE TABLE IF NOT EXISTS class_changes (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -247,7 +276,7 @@ const q = {
   insertUser: db.prepare('INSERT INTO users (email, password_hash, password_salt, created_at, last_login_at) VALUES (?, ?, ?, ?, ?)'),
   touchLogin: db.prepare('UPDATE users SET last_login_at = ? WHERE id = ?'),
   insertSession: db.prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?)'),
-  sessionUser: db.prepare(`SELECT u.id, u.email, u.lang, u.created_at FROM sessions s JOIN users u ON u.id = s.user_id
+  sessionUser: db.prepare(`SELECT u.id, u.email, u.lang, u.created_at, u.email_verified FROM sessions s JOIN users u ON u.id = s.user_id
                            WHERE s.token_hash = ? AND s.expires_at > ?`),
   deleteSession: db.prepare('DELETE FROM sessions WHERE token_hash = ?'),
   purgeSessions: db.prepare('DELETE FROM sessions WHERE expires_at <= ?'),
@@ -596,7 +625,7 @@ function mePayload(user) {
   const ch = q.character.get(user.id);
   const claimable = missionState(user.id).filter((m) => m.status === 'done').length + (ch ? daily.claimable(user.id) : 0) + (ch ? campaign.missionsClaimable(user.id) : 0);
   return {
-    user: { id: user.id, email: user.email, lang: user.lang || null },
+    user: { id: user.id, email: user.email, lang: user.lang || null, verified: user.email_verified !== 0 },
     // `path` : lignée de classes du joueur (ses effets de classe se cumulent le long de ce chemin).
     character: ch ? (({ class_path: _p, ...rest }) => ({ ...rest, path: fx.pathOf(ch), renown: renown(ch.xp) }))(ch) : null,
     unread: q.unread.get(user.id).n,
@@ -636,11 +665,11 @@ function adminMetrics(req) {
       attackWinRate: won + lost ? Math.round((won / (won + lost)) * 100) : null,
     };
   });
-  return { days: out, players: db.prepare('SELECT count(*) AS n FROM characters').get().n };
+  return { days: out, players: db.prepare('SELECT count(*) AS n FROM characters').get().n, bugs: db.prepare('SELECT id, pseudo, message, created_at, emailed FROM bug_reports ORDER BY id DESC LIMIT 50').all() };
 }
 // Moteur de campagne : actions, déplacements, batailles, mini-boss, fin de campagne (voir campaign.js).
 // Missions du jour et série de jours consécutifs (voir daily.js).
-const daily = require('./daily')({ db, config, grant, HttpError, fallenState: (userId) => campaign.fallenState(userId) });
+const daily = require('./daily')({ db, config, grant, HttpError, fallenState: (userId) => campaign.fallenState(userId), giveActions: (userId, n) => campaign.giveActions(userId, n) });
 // Débloque un avatar verrouillé (distinction, mission…) et prévient le joueur.
 const unlockAvatar = (userId, file, source) => {
   if (LOCKED_AVATARS.has(file) && q.unlockAvatar.run(userId, file, source, now()).changes === 1) notify(userId, 'avatar_unlocked', { avatar: file });
@@ -711,8 +740,46 @@ const routes = {
     // Un nouveau joueur n'a pas à être prévenu des changements passés.
     if (LATEST_PATCH) q.setPatchSeen.run(LATEST_PATCH, userId);
     q.logEvent.run(userId, mail, 'register', 1, ip, ua, now());
+    // Confirmation par email quand l'envoi est configuré (sinon le compte est validé d'office).
+    let verified = 1;
+    if (VERIFY_EMAILS()) {
+      verified = 0;
+      db.prepare('UPDATE users SET email_verified = 0 WHERE id = ?').run(userId);
+      sendCode(userId, mail, (req.headers['accept-language'] || '').slice(0, 2)).catch((e) => console.error('mail', e.message));
+    }
     createSession(req, res, userId);
-    send(res, 201, mePayload({ id: userId, email: mail }));
+    send(res, 201, mePayload({ id: userId, email: mail, email_verified: verified }));
+  },
+
+  // Confirmer son adresse avec le code reçu par email.
+  'POST /api/verify': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    const { code } = await readJson(req);
+    if (user.email_verified) { send(res, 200, mePayload(user)); return; }
+    const row = db.prepare('SELECT * FROM email_codes WHERE user_id = ?').get(user.id);
+    if (!row || row.expires_at < Date.now()) throw new HttpError(409, 'code_expired');
+    if (row.attempts >= 5) throw new HttpError(429, 'code_attempts');
+    db.prepare('UPDATE email_codes SET attempts = attempts + 1 WHERE user_id = ?').run(user.id);
+    const given = String(code || '').replace(/\D/g, '');
+    if (!given || !crypto.timingSafeEqual(Buffer.from(sha256(`${user.id}:${given}`)), Buffer.from(row.code_hash))) throw new HttpError(400, 'code_invalid');
+    db.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').run(user.id);
+    db.prepare('DELETE FROM email_codes WHERE user_id = ?').run(user.id);
+    send(res, 200, mePayload({ ...user, email_verified: 1 }));
+  },
+
+  // Renvoyer un code : une minute d'attente entre deux envois, 5 envois au plus par code en cours.
+  'POST /api/verify/resend': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    await readJson(req);
+    if (user.email_verified) { send(res, 200, mePayload(user)); return; }
+    const row = db.prepare('SELECT sent_at, sends FROM email_codes WHERE user_id = ?').get(user.id);
+    if (row && Date.now() - row.sent_at < 60_000) throw new HttpError(429, 'code_wait');
+    if (row && row.sends >= 5) throw new HttpError(429, 'code_sends');
+    if (!mailer.configured()) throw new HttpError(503, 'mail_unavailable');
+    await sendCode(user.id, user.email, user.lang);
+    send(res, 200, mePayload(user));
   },
 
   'POST /api/login': async (req, res) => {
@@ -794,6 +861,7 @@ const routes = {
   'POST /api/character': async (req, res) => {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
+    if (user.email_verified === 0) throw new HttpError(403, 'email_unverified');
     if (q.character.get(user.id)) throw new HttpError(409, 'character_exists');
     const { pseudo, birthday, class: klass, avatar, faction } = await readJson(req);
     if (typeof pseudo !== 'string' || !PSEUDO_RE.test(pseudo)) throw new HttpError(400, 'invalid_pseudo');
@@ -883,6 +951,27 @@ const routes = {
     await readJson(req);
     q.clearNotifs.run(user.id);
     send(res, 200, mePayload(user));
+  },
+
+  // Signaler un bug : 500 caractères au plus, 3 signalements par heure et par joueur.
+  'POST /api/bug': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    const { message } = await readJson(req);
+    const text = typeof message === 'string' ? message.trim() : '';
+    if (!text || text.length > 500) throw new HttpError(400, 'bug_invalid');
+    const since = new Date(Date.now() - 3_600_000).toISOString();
+    if (db.prepare('SELECT count(*) AS n FROM bug_reports WHERE user_id = ? AND created_at >= ?').get(user.id, since).n >= 3) throw new HttpError(429, 'bug_limit');
+    const ch = q.character.get(user.id);
+    const id = Number(db.prepare('INSERT INTO bug_reports (user_id, pseudo, message, created_at) VALUES (?, ?, ?, ?)').run(user.id, ch?.pseudo || null, text, now()).lastInsertRowid);
+    const to = process.env.BUG_REPORT_TO;
+    if (to && mailer.configured()) {
+      const body = `Signalement de bug n° ${id}\nJoueur : ${ch?.pseudo || '(sans personnage)'}${ch ? ` (${ch.faction})` : ''}\nDate : ${now()}\nVersion : ${LATEST_PATCH || '?'}\n\n${text}`;
+      mailer.send({ to, subject: `[Three Crowns] Bug signalé par ${ch?.pseudo || 'un joueur'}`, text: body })
+        .then(() => db.prepare('UPDATE bug_reports SET emailed = 1 WHERE id = ?').run(id))
+        .catch((e) => console.error('mail', e.message));
+    }
+    send(res, 200, { ok: true });
   },
 
   // Tutoriel : récupérer la récompense une fois toutes les étapes faites, ou le masquer.

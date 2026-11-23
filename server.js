@@ -565,8 +565,9 @@ function grant(userId, gold, xp, source = 'other') {
   const ch = q.character.get(userId);
   if (!ch) return;
   const mods = rewardMods(userId, source);
-  gold = Math.round(gold * mods.gold);
-  xp = Math.round(xp * mods.xp);
+  const earned = gold > 0 || xp > 0;
+  gold = Math.round(gold * mods.gold) + (earned ? mods.plusGold || 0 : 0); // Overdrive+ : bonus fixe à chaque gain d'action
+  xp = Math.round(xp * mods.xp) + (earned ? mods.plusXp || 0 : 0);
   if (gold > 0) { metric('gold_in', gold); metric(`gold_in:${source}`, gold); }
   if (xp > 0) { metric('xp_in', xp); metric(`xp_in:${source}`, xp); }
   const before = renown(ch.xp).level;
@@ -671,7 +672,7 @@ function adminMetrics(req) {
 }
 // Moteur de campagne : actions, déplacements, batailles, mini-boss, fin de campagne (voir campaign.js).
 // Missions du jour et série de jours consécutifs (voir daily.js).
-const daily = require('./daily')({ db, config, grant, HttpError, fallenState: (userId) => campaign.fallenState(userId), giveActions: (userId, n) => campaign.giveActions(userId, n) });
+const daily = require('./daily')({ db, config, grant, HttpError, fallenState: (userId) => campaign.fallenState(userId), giveActions: (userId, n) => campaign.rewardActions(userId, n) });
 // Débloque un avatar verrouillé (distinction, mission…) et prévient le joueur.
 const unlockAvatar = (userId, file, source) => {
   if (LOCKED_AVATARS.has(file) && q.unlockAvatar.run(userId, file, source, now()).changes === 1) notify(userId, 'avatar_unlocked', { avatar: file });

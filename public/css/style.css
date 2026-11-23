@@ -695,3 +695,20 @@ h3 { font-family: "Alegreya Sans", system-ui, sans-serif; font-weight: 700; }
 .rel-values span { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 2px 0; border-radius: 8px; border: 1px solid var(--line); font-size: .78rem; font-variant-numeric: tabular-nums; }
 .rel-values span small { font-family: 'Cinzel', serif; font-size: .62rem; color: var(--muted); }
 .rel-values span.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 22%, transparent); }
+
+/* Bonus et malus actifs (profils) */
+.pf-mods { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; background: var(--panel-2); }
+.pf-mods summary { cursor: pointer; font-weight: 600; }
+.mods { list-style: none; margin: 8px 0 2px; padding: 0; display: grid; gap: 6px; }
+.mods li { display: flex; gap: 8px; align-items: flex-start; font-size: .82rem; line-height: 1.3; padding-left: 6px; border-left: 3px solid #4caf7a; }
+.mods li.debuff { border-left-color: var(--danger); }
+.mods li .class-icon, .mods li .mod-face { width: 22px; height: 22px; flex: none; border-radius: 50%; object-fit: cover; object-position: top; }
+.mods li .mod-ico { width: 22px; text-align: center; flex: none; }
+/* Overdrive */
+.strip.overdrive { --c: #ff8a3d; border-left-color: var(--c); background: linear-gradient(90deg, rgba(255, 138, 61, .25), var(--panel-2) 75%); box-shadow: 0 0 14px rgba(255, 138, 61, .35); }
+.strip.overdrive.plus { --c: #ff4d6d; background: linear-gradient(90deg, rgba(255, 77, 109, .28), var(--panel-2) 75%); box-shadow: 0 0 16px rgba(255, 77, 109, .45); }
+.strip.overdrive strong { font-family: 'Cinzel', serif; letter-spacing: .04em; color: var(--c); }
+.strip.overdrive small { display: block; }
+.od-bolt { font-size: 1.4rem; animation: od-pulse 1.2s ease-in-out infinite; }
+@keyframes od-pulse { 50% { transform: scale(1.18); filter: drop-shadow(0 0 6px var(--c)); } }
+@media (prefers-reduced-motion: reduce) { .od-bolt { animation: none; } }

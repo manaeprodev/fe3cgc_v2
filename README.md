@@ -139,6 +139,14 @@ Après une bataille perdue ou un territoire perdu, les joueurs présents ont `re
 
 Au-delà de `decisive` (0,8, soit 4 contre 1) du rapport attaque / (attaque + défense), l'issue est certaine : pas de tirage (`battle.decisive` = `win` ou `lose`). Les chances de l'attaque reçoivent aussi l'aide des alliés (`battles.help`).
 
+### Overdrive, exil, profils (patch 1.7)
+
+- **Overdrive** (`campaign.overdrive`) : les `hours` (24) dernières heures avant la clôture, chaque joueur en jeu non exilé reçoit `base` (attaque, actions max, attaque contre Garreg-Mach, points de faction) ; une faction minoritaire (moins de territoires que la moyenne des factions en jeu) reçoit `plus` (avec `gold` et `xp` fixes à chaque gain d'action : récolte, conquête, défense, général). Notification `overdrive` / `overdrive_plus` au début (meta `overdrive:<campagne>`), push de type `overdrive` reporté à la fin des heures calmes (table `push_pending`). `OVERDRIVE_HOURS` le règle pour les tests (0 dans `tests/run.js`).
+- **Exil** : le malus `exile.rewardMultiplier` passe par `rewardMods` et s'applique à toutes les sources de gains (sauf la prime d'exil), et aux actions offertes par les missions.
+- **Profils** : `/api/profile` renvoie `mods`, la liste des bonus et malus actifs (classes, soutiens, avantages de faction, capacité du seigneur, capitale perdue, exil, gains réduits, repli, Overdrive).
+- **Relations** : `compliment` (1 action, +1) et `present` (gratuit, +10, sur le territoire du général, une fois par heure : table `gift_cooldowns`).
+- **Généraux indépendants** : ils défendent leur territoire quel qu'en soit le maître et tombent avec lui.
+
 ### Relations avec les généraux (patch 1.6)
 
 - Table `relations (user_id, gid, points)` : permanente, jamais effacée entre les campagnes.

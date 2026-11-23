@@ -850,6 +850,11 @@ async function renderMap() {
         <div><strong>\u271D\uFE0F ${esc(t('church.crusade'))}</strong>
         <p class="small muted">${flag(ch.crusade)}${esc(t('church.crusadeTarget', { faction: loc(faction(ch.crusade)?.name) }))}</p></div>
         ${churchFac?.logo ? `<img class="banner" src="${esc(churchFac.logo)}" alt="">` : ''}</div>` : '';
+    const od = state.map?.overdrive;
+    const odHtml = od ? `<div class="strip overdrive ${od.level === 'plus' ? 'plus' : ''}"><span class="od-bolt" aria-hidden="true">\u26A1</span>
+        <div><strong>${esc(t(od.level === 'plus' ? 'overdrive.stripPlus' : 'overdrive.strip'))}</strong>
+        <small>${esc(modText({ type: 'overdrive', ...od }).replace(/^Overdrive\+?\s?!\s?/, ''))}</small>
+        ${od.until ? `<small class="live">${withTimer('overdrive.left', {}, od.until)}</small>` : ''}</div></div>` : '';
     const phaseHtml = phase === 'closing' ? `<p class="banner">${esc(t('camp.closing'))}</p>`
       : phase === 'break' ? `<p class="banner">${withTimer('camp.break', {}, state.map.campaign.resetAt)}</p>` : '';
     const pingHtml = (state.map?.pings || []).length ? `<div class="chips pings">${state.map.pings.map((x) => `<button type="button" class="chip ping-chip" data-goto="${esc(x.territory)}">${PING_ICON[x.kind] || ''} ${esc(x.pseudo)} · ${esc(loc(shape(x.territory)?.name))}</button>`).join('')}</div>` : '';
@@ -875,7 +880,7 @@ async function renderMap() {
           <p class="small">${withTimer('camp.verdictHint', {}, vd.until)}</p>
           <div class="row"><button type="button" class="btn compact" data-verdict="${esc(vd.id)}" data-spare="1">${esc(t('camp.spare'))}</button>
             <button type="button" class="btn compact ghost" data-verdict="${esc(vd.id)}" data-spare="0">${esc(t('camp.execute'))}</button></div></div></div>`).join('');
-    box.innerHTML = `${banner}${phaseHtml}<div class="strips">${churchHtml}${lordHtml}${objHtml}</div>${pingHtml}${verdicts ? `<section class="verdicts"><h3>${esc(t('camp.verdictTitle'))}</h3>${verdicts}</section>` : ''}
+    box.innerHTML = `${banner}${phaseHtml}<div class="strips">${odHtml}${churchHtml}${lordHtml}${objHtml}</div>${pingHtml}${verdicts ? `<section class="verdicts"><h3>${esc(t('camp.verdictTitle'))}</h3>${verdicts}</section>` : ''}
       <div class="terr-head"><h3>${esc(loc(tr.name))}</h3>${here ? `<span class="pill">${esc(t('camp.you'))}</span>` : ''}</div>
       <p class="muted small">${owner
     ? `${esc(t('map.owned'))} ${flag(owner.id)}<span style="color:${esc(owner.color)}">${esc(loc(owner.name))}</span>`
@@ -1515,6 +1520,7 @@ function relBonusHtml(g, idx) {
 // Fenêtre de soutien avec un général : niveau, progression vers le suivant, et les offrandes (fleur, lettre).
 function showRelation(gid, redraw) {
   const R = state.relations;
+  if (!R) { api('/relations').then((rel) => { state.relations = rel; showRelation(gid, redraw); }).catch(() => {}); return; }
   const g = R && R.generals.find((x) => x.id === gid);
   if (!g) return;
   document.getElementById('rel-overlay')?.remove();
@@ -1531,7 +1537,17 @@ function showRelation(gid, redraw) {
   const giftBtn = (kind, icon) => {
     const c = R.gifts[kind];
     const off = g.state !== 'allied' || capped || (pl.actions || 0) < c.actions || gold < c.gold;
+    if (kind === 'compliment') return `<button type="button" class="btn ghost" data-gift="${kind}" ${off ? 'disabled' : ''}>${icon} ${esc(t('rel.compliment', { points: c.points }))}</button>`;
     return `<button type="button" class="btn ${kind === 'letter' ? '' : 'ghost'}" data-gift="${kind}" ${off ? 'disabled' : ''}>${icon} ${esc(t(`rel.${kind}`, { gold: fmtNum(c.gold), points: c.points }))}</button>`;
+  };
+  // Cadeau : gratuit, sur le territoire du général, une fois par heure.
+  const presentBtn = () => {
+    const c = R.gifts.present;
+    if (!c) return '';
+    const wait = (R.readyAt?.present || 0) > serverNow();
+    const off = g.state !== 'allied' || capped || !R.here || R.here !== g.territory || wait;
+    return `<button type="button" class="btn ghost" data-gift="present" ${off ? 'disabled' : ''}>\u{1F381} ${esc(t('rel.present', { points: c.points }))}</button>
+      <p class="muted small">${wait ? withTimer('rel.presentWait', {}, R.readyAt.present) : esc(t('rel.presentHint'))}</p>`;
   };
   const overlay = document.createElement('div');
   overlay.id = 'rel-overlay';
@@ -1546,7 +1562,7 @@ function showRelation(gid, redraw) {
     <div class="progress"><span class="xpbar"><i style="width:${pct}%"></i></span>
       <small class="muted">${next ? esc(t('rel.progress', { points: fmtNum(g.points), next: fmtNum(next.points), level: next.id })) : esc(t('rel.maxed', { points: fmtNum(g.points) }))}</small></div>
     ${sTaken ? `<p class="small muted">${esc(t('rel.sTaken', { name: R.generals.find((x) => x.id === R.sWith)?.name || '' }))}</p>` : ''}
-    ${g.state === 'allied' ? `<div class="rel-gifts">${giftBtn('flower', '\u{1F33C}')}${giftBtn('letter', '\u{2709}\uFE0F')}</div>
+    ${g.state === 'allied' ? `<div class="rel-gifts">${giftBtn('compliment', '\u{1F4AC}')}${giftBtn('flower', '\u{1F33C}')}${giftBtn('letter', '\u{2709}\uFE0F')}${presentBtn()}</div>
       <p class="muted small">${esc(t('rel.costs', { actions: pl.actions || 0, gold: fmtNum(gold) }))}</p>` : `<p class="muted small">${esc(t('rel.unavailable'))}</p>`}
     ${relBonusHtml(g, idx)}
     <p class="error" role="alert" hidden></p>
@@ -1589,6 +1605,24 @@ function confirmBox({ title, body, ok, cancel }) {
   });
 }
 
+// Bonus et malus actifs : icône et phrase de chaque entrée renvoyée par le serveur.
+function modIcon(m) {
+  if (m.type === 'class') return classIcon(klass(m.class));
+  if (m.type === 'support') return `<img class="mod-face" src="${esc((state.config.generals?.roster || []).find((x) => x.id === m.general)?.avatar || '')}" alt="">`;
+  const icons = { overdrive: '\u26A1', perk: '\u{1F43A}', lord: '\u{1F451}', lordGen: '\u{1F451}', capitalLost: '\u{1F3DA}\uFE0F', exile: '\u{1F3F3}\uFE0F', rewardDebuff: '\u{1FA79}', retreating: '\u{1F3C3}', wounded: '\u{1F915}' };
+  return `<span class="mod-ico" aria-hidden="true">${icons[m.type] || '\u2728'}</span>`;
+}
+function modText(m) {
+  const terrName = (id) => loc(state.config.map.territories.find((x) => x.id === id)?.name) || id;
+  switch (m.type) {
+    case 'class': return `${className(m.class)} : ${effectText(klass(m.class))}`;
+    case 'support': return `${generalName(m.general)} (${m.level}) : ${t(`relb.${m.kind}`, { v: m.value, name: generalName(m.general), partner: m.partner ? generalName(m.partner) : '', level: m.partnerLevel || '', territory: m.territory ? terrName(m.territory) : '' })}`;
+    case 'perk': return t(`perk.${m.perk}`, { n: m.n, max: m.max, place: m.place ? terrName(m.place) : '' });
+    case 'lord': { const ab = state.config.campaign?.lords?.[m.faction]?.ability; return t('mods.lordActive', { title: loc(ab?.title), effect: loc(ab?.description) }); }
+    case 'overdrive': return t(m.level === 'plus' ? 'mods.overdrivePlus' : 'mods.overdrive', m);
+    default: return t(`mods.${m.type}`, m);
+  }
+}
 // Profil d'un joueur ou d'un général : fenêtre aux couleurs de sa faction d'origine (drapeau, nation, seigneur, icônes de classe).
 async function showProfile(target) {
   let d;
@@ -1628,10 +1662,24 @@ async function showProfile(target) {
       ${d.type === 'general' && (d.spare || []).length && !d.spared ? row(t('profile.spare'), d.spare.map((f) => flag(f)).join(' ')) : ''}
       <h3>${esc(t('profile.path'))}</h3><div class="pf-path">${pathHtml}</div>
       ${dists ? `<h3>${esc(t('menu.distinctions'))}</h3><div class="pf-dists">${dists}</div>` : ''}
+      <details class="pf-mods"><summary>${esc(t('mods.button', { n: (d.mods || []).length }))}</summary>
+        ${(d.mods || []).length ? `<ul class="mods">${d.mods.map((m) => `<li class="${m.tone === 'debuff' ? 'debuff' : 'buff'}">${modIcon(m)} <span>${esc(modText(m))}</span></li>`).join('')}</ul>` : `<p class="muted small">${esc(t('mods.none'))}</p>`}
+      </details>
     </div>
+    ${d.type === 'general' ? `<button type="button" class="btn ghost" data-relopen hidden>${esc(t('rel.open'))}</button>` : ''}
     <button type="button" class="btn" data-close>${esc(t('common.close'))}</button></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('[data-close]').addEventListener('click', () => overlay.remove());
+  // Soutien : seulement pour un général de mon camp (vivant allié, ou de ma faction et grisé).
+  const relBtn = overlay.querySelector('[data-relopen]');
+  if (relBtn) {
+    (async () => {
+      try { state.relations = await api('/relations'); } catch { return; }
+      if (!state.relations.generals.some((x) => x.id === d.id) || !relBtn.isConnected) return;
+      relBtn.hidden = false;
+      relBtn.addEventListener('click', () => { overlay.remove(); showRelation(d.id); });
+    })();
+  }
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 document.addEventListener('click', (e) => {

@@ -22,9 +22,11 @@ module.exports = function createPush(ctx) {
       results: { pref: 'results', cooldownMinutes: 60 },
       verdict: { pref: 'verdict', cooldownMinutes: 30 },
       endsoon: { pref: 'results', cooldownMinutes: 600 },
+      // defer : la nuit, le message attend la fin des heures calmes au lieu d'être perdu.
+      overdrive: { pref: 'results', cooldownMinutes: 600, defer: true },
     },
     // Notifications du jeu qui deviennent des notifications push.
-    map: { territory_attacked: 'attacked', must_retreat: 'retreat', rally: 'rally', campaign_end: 'results', campaign_end_draw: 'results', general_verdict: 'verdict', campaign_ending: 'endsoon' },
+    map: { territory_attacked: 'attacked', must_retreat: 'retreat', rally: 'rally', campaign_end: 'results', campaign_end_draw: 'results', general_verdict: 'verdict', campaign_ending: 'endsoon', overdrive: 'overdrive', overdrive_plus: 'overdrive' },
     dailyMax: 6,
     quiet: { from: 23, to: 8, timezone: 'Europe/Paris' },
     ...(config.push || {}),
@@ -44,6 +46,7 @@ module.exports = function createPush(ctx) {
     );
     CREATE TABLE IF NOT EXISTS push_log (user_id INTEGER NOT NULL, type TEXT NOT NULL, at INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS push_log_user ON push_log (user_id, at);
+    CREATE TABLE IF NOT EXISTS push_pending (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, type TEXT NOT NULL, key TEXT NOT NULL, params TEXT, created_at INTEGER NOT NULL);
   `);
   const q = {
     subsOf: db.prepare('SELECT id, endpoint, p256dh, auth FROM push_subs WHERE user_id = ?'),
@@ -59,6 +62,9 @@ module.exports = function createPush(ctx) {
     lastOf: db.prepare('SELECT max(at) AS at FROM push_log WHERE user_id = ? AND type = ?'),
     countSince: db.prepare('SELECT count(*) AS n FROM push_log WHERE user_id = ? AND at >= ?'),
     purge: db.prepare('DELETE FROM push_log WHERE at < ?'),
+    addPending: db.prepare('INSERT INTO push_pending (user_id, type, key, params, created_at) VALUES (?, ?, ?, ?, ?)'),
+    pending: db.prepare('SELECT * FROM push_pending ORDER BY id'),
+    dropPending: db.prepare('DELETE FROM push_pending WHERE id = ?'),
     lang: db.prepare('SELECT lang FROM users WHERE id = ?'),
   };
 
@@ -149,7 +155,10 @@ module.exports = function createPush(ctx) {
     const prefs = q.prefs.get(userId);
     if (prefs && !prefs[def.pref]) return { sent: 0, why: 'disabled' };
     const now = Date.now();
-    if (process.env.PUSH_IGNORE_QUIET !== '1' && isQuiet(now)) return { sent: 0, why: 'quiet' };
+    if (process.env.PUSH_IGNORE_QUIET !== '1' && isQuiet(now)) {
+      if (def.defer) q.addPending.run(userId, type, key, JSON.stringify(params), now);
+      return { sent: 0, why: def.defer ? 'deferred' : 'quiet' };
+    }
     const last = q.lastOf.get(userId, type)?.at || 0;
     if (now - last < def.cooldownMinutes * 60_000) return { sent: 0, why: 'cooldown' };
     if (q.countSince.get(userId, now - 86_400_000).n >= P.dailyMax) return { sent: 0, why: 'daily_cap' };
@@ -166,6 +175,14 @@ module.exports = function createPush(ctx) {
     const pushType = P.map[type];
     if (pushType) sendTo(userId, pushType, `notif.${type}`, params).catch(() => {});
   }
+  // Messages reportés pendant la nuit : envoyés dès la fin des heures calmes (abandonnés après 18 h).
+  function flushPending() {
+    if (process.env.PUSH_IGNORE_QUIET !== '1' && isQuiet()) return;
+    for (const r of q.pending.all()) {
+      q.dropPending.run(r.id);
+      if (Date.now() - r.created_at < 18 * 3_600_000) sendTo(r.user_id, r.type, r.key, JSON.parse(r.params || '{}')).catch(() => {});
+    }
+  }
   // Réserve d'actions pleine : un message à chaque passage de « pas pleine » à « pleine ».
   const wasFull = new Map();
   function checkStamina() {
@@ -180,6 +197,7 @@ module.exports = function createPush(ctx) {
       wasFull.set(uid, full);
     }
     q.purge.run(Date.now() - 3 * 86_400_000);
+    flushPending();
   }
   if (process.env.PUSH_STAMINA_MS !== '0') setInterval(() => { try { checkStamina(); } catch (e) { console.error(e); } }, Number(process.env.PUSH_STAMINA_MS) || 60_000).unref();
 

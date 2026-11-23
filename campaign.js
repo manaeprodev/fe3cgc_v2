@@ -82,6 +82,17 @@ module.exports = function createCampaign(ctx) {
     awakening: { waves: 3, waveGapHours: 4, power: 3, raidChance: 0.15, maxRaids: 1, pointsBonus: 0.1 },
     ...(G.church || {}),
   };
+  // Overdrive : les dernières heures de la campagne (avant la clôture), les joueurs encore en jeu (pas les exilés) frappent plus fort ;
+  // ceux des factions minoritaires reçoivent Overdrive+.
+  const OD = {
+    hours: 24,
+    base: { attackPct: 10, maxActions: 2, garregPct: 20, factionPointsPct: 50 },
+    plus: { attackPct: 15, maxActions: 3, garregPct: 25, factionPointsPct: 50, gold: 20, xp: 2 },
+    ...(C.overdrive || {}),
+  };
+  const OD_FLAT_SOURCES = new Set(['gather', 'conquest', 'defense', 'general']);
+  if (process.env.OVERDRIVE_HOURS !== undefined) OD.hours = Number(process.env.OVERDRIVE_HOURS); // tests
+  const odCfg = (level) => (level ? OD[level] : null);
   // Siège d'un seigneur : la capitale de sa faction, ou Garreg-Mach pour l'Église.
   const seatOf = (f) => C.capitals[f] || (f === CH.faction ? CH.seat : null);
   const raidRoll = () => (process.env.TEST_RAID_ROLL !== undefined ? Number(process.env.TEST_RAID_ROLL) : Math.random());
@@ -190,6 +201,13 @@ module.exports = function createCampaign(ctx) {
       points     INTEGER NOT NULL DEFAULT 0,
       updated_at INTEGER,
       PRIMARY KEY (user_id, gid)
+    );
+    -- Délais entre deux offrandes d'un même type (cadeau sur place : une fois par heure).
+    CREATE TABLE IF NOT EXISTS gift_cooldowns (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind    TEXT NOT NULL,
+      at      INTEGER NOT NULL,
+      PRIMARY KEY (user_id, kind)
     );
     CREATE TABLE IF NOT EXISTS generals (
       gid        TEXT PRIMARY KEY,
@@ -381,7 +399,7 @@ module.exports = function createCampaign(ctx) {
                            ON CONFLICT (faction) DO UPDATE SET points = points + excluded.points`),
     meta: db.prepare('SELECT value FROM campaign_meta WHERE key = ?'),
     setMeta: db.prepare('INSERT INTO campaign_meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value'),
-    clearFactionMeta: db.prepare("DELETE FROM campaign_meta WHERE key LIKE 'held:%' OR key LIKE 'out:%' OR key LIKE 'epi:%' OR key LIKE 'finished:%' OR key LIKE 'gauge:%' OR key LIKE 'buff:%' OR key LIKE 'retake:%' OR key LIKE 'warned:%' OR key LIKE 'immac:%' OR key IN ('conquest', 'serpents_gone', 'reset_at', 'summary', 'crusade', 'immaculate')"),
+    clearFactionMeta: db.prepare("DELETE FROM campaign_meta WHERE key LIKE 'held:%' OR key LIKE 'out:%' OR key LIKE 'epi:%' OR key LIKE 'finished:%' OR key LIKE 'gauge:%' OR key LIKE 'buff:%' OR key LIKE 'retake:%' OR key LIKE 'warned:%' OR key LIKE 'immac:%' OR key LIKE 'overdrive:%' OR key IN ('conquest', 'serpents_gone', 'reset_at', 'summary', 'crusade', 'immaculate')"),
     addEvent: db.prepare('INSERT INTO world_events (campaign_id, type, params, created_at) VALUES (?, ?, ?, ?)'),
     events: db.prepare('SELECT id, type, params, created_at FROM world_events ORDER BY id DESC LIMIT 40'),
     purgeEvents: db.prepare('DELETE FROM world_events WHERE id <= (SELECT max(id) FROM world_events) - 300'),
@@ -453,6 +471,8 @@ module.exports = function createCampaign(ctx) {
     // Généraux.
     generals: db.prepare('SELECT * FROM generals'),
     general: db.prepare('SELECT * FROM generals WHERE gid = ?'),
+    giftCooldown: db.prepare('SELECT at FROM gift_cooldowns WHERE user_id = ? AND kind = ?'),
+    setGiftCooldown: db.prepare('INSERT INTO gift_cooldowns (user_id, kind, at) VALUES (?, ?, ?) ON CONFLICT (user_id, kind) DO UPDATE SET at = excluded.at'),
     insertGeneral: db.prepare("INSERT OR IGNORE INTO generals (gid, faction, territory, status, actions, actions_at) VALUES (?, ?, ?, 'alive', ?, ?)"),
     clearGenerals: db.prepare('DELETE FROM generals'),
     setGeneralActions: db.prepare('UPDATE generals SET actions = ?, actions_at = ? WHERE gid = ?'),
@@ -544,7 +564,8 @@ module.exports = function createCampaign(ctx) {
     if (!n) return;
     const exiled = !!q.state.get(userId)?.exile_faction;
     n = Math.round(n * (1 + relSum(relBonuses(userId), 'scoreBonus') / 100)); // Rhea
-    q.addScore.run(currentCampaign().id, userId, n, exiled ? 0 : n);
+    const od = odCfg(overdriveOf(userId)); // Overdrive : points de faction gagnés en plus
+    q.addScore.run(currentCampaign().id, userId, n, exiled ? 0 : Math.round(n * (1 + (od?.factionPointsPct || 0) / 100)));
   };
 
   // ------------------------------------------------------------ Factions et joueurs
@@ -663,7 +684,7 @@ module.exports = function createCampaign(ctx) {
     if (!m) throw new HttpError(404, 'mission_unknown');
     if (m.status !== 'done' || q.cmClaim.run(currentCampaign().id, userId, id).changes !== 1) throw new HttpError(409, 'reward_unavailable');
     grant(userId, m.rewards.gold, m.rewards.xp, 'mission');
-    if (m.rewards.actions) giveActions(userId, m.rewards.actions);
+    if (m.rewards.actions) rewardActions(userId, m.rewards.actions);
     return missionState(userId);
   }
 
@@ -750,7 +771,7 @@ module.exports = function createCampaign(ctx) {
   // Réserve d'actions et vitesse de recharge d'un joueur (Chevalier wyverne et Lord wyverne en ont plus).
   const limitsOf = (userId) => {
     const l = fx.actionLimits(effectsOfUser(userId), C.maxActions, TURN_MS, C.turnMinutes);
-    return { ...l, max: l.max + relSum(relBonuses(userId), 'maxActions') }; // Manuela : plus d'actions en réserve
+    return { ...l, max: l.max + relSum(relBonuses(userId), 'maxActions') + (odCfg(overdriveOf(userId))?.maxActions || 0) }; // Manuela, Overdrive
   };
   // Tirage des déplacements gratuits (TEST_MOVE_ROLL le fixe pour les tests).
   const moveRoll = () => (process.env.TEST_MOVE_ROLL !== undefined ? Number(process.env.TEST_MOVE_ROLL) : Math.random());
@@ -764,13 +785,18 @@ module.exports = function createCampaign(ctx) {
     const rb = relBonuses(userId);
     xp += (relSum(rb, 'xpAll') + (source === 'gather' ? relSum(rb, 'gatherXp') : 0)) / 100;
     if (source === 'daily') { const d = relSum(rb, 'dailyBonus') / 100; gold += d; xp += d; }
+    // Exil : toutes les ressources gagnées sont réduites (missions comprises), sauf la prime d'exil de fin de campagne.
+    if (source !== 'exile' && q.state.get(userId)?.exile_faction) { const m = C.exile.rewardMultiplier ?? 1; gold *= m; xp *= m; }
+    // Overdrive+ : or et renommée en plus à chaque gain tiré d'une action.
+    const od = odCfg(overdriveOf(userId));
+    const flat = od && OD_FLAT_SOURCES.has(source) ? { plusGold: od.gold || 0, plusXp: od.xp || 0 } : {};
     // Après une téléportation, les récompenses des actions suivantes sont réduites.
     if ((q.state.get(userId)?.reward_debuff || 0) > 0) {
       const f = effects.find((e) => e.kind === 'teleport')?.rewardFactor ?? 0.5;
       gold *= f;
       xp *= f;
     }
-    return { gold, xp };
+    return { gold, xp, ...flat };
   }
   // Un exilé ne profite d'aucun avantage de la faction qu'il sert (capacité du seigneur, avantages des Loups de cendre…).
   const fortifyCost = (userId) => Math.round(C.hire.gold * productOf(effectsOfUser(userId), 'fortifyCost', 'factor') * (isExile(userId) ? 1 : hireFactor(effFaction(userId))));
@@ -812,6 +838,12 @@ module.exports = function createCampaign(ctx) {
     q.setActions.run(s.actions, s.at, userId);
     grant(userId, gold * gained, 0, 'relation');
     return gold * gained;
+  }
+  function rewardActions(userId, n) {
+    if (!n) return;
+    const m = q.state.get(userId)?.exile_faction ? C.exile.rewardMultiplier ?? 1 : 1;
+    const x = n * m;
+    giveActions(userId, Math.floor(x) + (Math.random() < x - Math.floor(x) ? 1 : 0));
   }
   function giveActions(userId, n) {
     collectRegen(userId);
@@ -1005,7 +1037,7 @@ module.exports = function createCampaign(ctx) {
       const homeOwner = owners.get(home) ?? null;
       const hb = q.openBattle.get(home);
       // Son territoire d'origine est attaqué : il y va (s'il lui reste assez d'actions) et le défend.
-      if (hb && hb.attacker !== row.faction && (homeOwner === row.faction || guarding(row.faction, homeOwner, hb))) {
+      if (hb && hb.attacker !== row.faction && (homeOwner === row.faction || guarding(row.faction, homeOwner, hb) || row.faction === null)) {
         if (row.territory !== home) {
           const path = pathTo(row.territory, home, row.faction, owners);
           if (!path || cur.actions < path.length + 1) continue;
@@ -1212,7 +1244,7 @@ module.exports = function createCampaign(ctx) {
     for (const { user_id: uid } of q.sideActors.all(b.id, 'defense')) {
       const m = exileMult(uid);
       const paid = { gold: Math.round(gain.gold * m), xp: Math.round(gain.xp * m) };
-      grant(uid, paid.gold, paid.xp, 'general');
+      grant(uid, gain.gold, gain.xp, 'general');
       cm(uid, 'general');
       notify(uid, 'general_defeated', { general: CH.immaculate, ...paid });
     }
@@ -1256,7 +1288,7 @@ module.exports = function createCampaign(ctx) {
     for (const uid of foes) {
       const m = exileMult(uid);
       const paid = { gold: Math.round(gain.gold * m), xp: Math.round(gain.xp * m) };
-      grant(uid, paid.gold, paid.xp, 'general');
+      grant(uid, gain.gold, gain.xp, 'general');
       cm(uid, 'general');
       notify(uid, 'general_defeated', { general: row.gid, ...paid });
     }
@@ -1287,7 +1319,7 @@ module.exports = function createCampaign(ctx) {
       // Territoire conquis : tout général du camp vaincu qui s'y trouve, ou dont c'est la maison, est vaincu avec lui
       // (il meurt, ou attend le verdict s'il est épargnable). Jamais de fantôme ni de général sans maison.
       const camps = defenseCamps(b.defender);
-      const mine = (row) => camps.includes(row.faction) || (row.faction === null && !b.defender);
+      const mine = (row) => camps.includes(row.faction) || row.faction === null; // un indépendant tombe avec son territoire
       const attackers = q.sideActors.all(b.id, 'attack').map((r) => r.user_id);
       for (const row of q.generals.all()) {
         if (row.status !== 'alive' || !GEN.has(row.gid) || !mine(row) || handled.has(row.gid)) continue;
@@ -1386,6 +1418,8 @@ module.exports = function createCampaign(ctx) {
     const exiles = new Set(q.exilesAll.all().map((r) => r.user_id));
     const relCache = new Map();
     const relMemo = (uid) => { if (!relCache.has(uid)) relCache.set(uid, relBonuses(uid)); return relCache.get(uid); };
+    const odCache = new Map();
+    const odMemo = (uid) => { if (!odCache.has(uid)) odCache.set(uid, overdriveOf(uid)); return odCache.get(uid); };
     // Contre-attaque : évaluée à l'ouverture de la bataille.
     const counter = b.boss_power === 0 && counterOn(b.attacker, T, owners0, b.started_at);
     const sums = { attack: 0, defense: 0 };
@@ -1463,6 +1497,9 @@ module.exports = function createCampaign(ctx) {
       }
       const exiled = exiles.has(r.user_id);
       power *= capMult(r.faction, owners0) * (exiled ? 1 : lordMult(r.faction, r.side));
+      // Overdrive : puissance d'attaque totale, et plus encore contre Garreg-Mach.
+      const od = r.side === 'attack' && typeof r.user_id === 'number' ? odCfg(odMemo(r.user_id)) : null;
+      if (od) power *= (1 + (od.attackPct || 0) / 100) * (T === CH.seat ? 1 + (od.garregPct || 0) / 100 : 1);
       if (counter && r.side === 'attack') power *= 1 + (exiled ? C.counter.attackBonus : counterBonus(b.attacker)) / 100;
       sums[r.side] += power;
       perUser.set(r.user_id, (perUser.get(r.user_id) || 0) + power);
@@ -1532,9 +1569,9 @@ module.exports = function createCampaign(ctx) {
       if (conquest) gold *= 1 + fx.sumOf(eff, 'conquestGold') / 100;
       const hk = eff.find((e) => e.kind === 'holyKnight');
       if (hk && vsBoss) { gold += hk.gold || 0; xp += hk.xp || 0; }
-      const m = exileMult(uid);
-      return { gold: Math.round(gold * m), xp: Math.round(xp * m) };
+      return { gold: Math.round(gold), xp: Math.round(xp) }; // le malus d'exil est appliqué par grant
     };
+    const shown = (uid, pd) => ({ gold: Math.round(pd.gold * exileMult(uid)), xp: Math.round(pd.xp * exileMult(uid)) });
     if (success) {
       q.setOwner.run(b.attacker, iso(), b.territory);
       q.setMeta.run('conquest', '1'); // les généraux ne partent en campagne qu'après une première conquête
@@ -1555,7 +1592,7 @@ module.exports = function createCampaign(ctx) {
         grant(uid, paid.gold, paid.xp, 'conquest');
         score(uid, C.ranking.victory);
         onEvent(uid, 'battle_won');
-        notify(uid, 'territory_conquered', { territory: b.territory, ...paid });
+        notify(uid, 'territory_conquered', { territory: b.territory, ...shown(uid, paid) });
       }
       stealGold(b, attackers);
       // Séries et exploits en solo (missions spéciales) : seules les actions d'attaque ou de défense comptent, pas les renforts payés.
@@ -1622,7 +1659,7 @@ module.exports = function createCampaign(ctx) {
         grant(uid, paid.gold + relSum(rbd, 'defenseGold'), paid.xp, 'defense'); // Alois
         score(uid, C.ranking.victory);
         onEvent(uid, 'battle_won');
-        notify(uid, 'territory_defended', { territory: b.territory, ...paid });
+        notify(uid, 'territory_defended', { territory: b.territory, ...shown(uid, paid) });
         // Attaque d'une faction non jouable (Serpents des Ténèbres) repoussée : compté pour le joueur, sans limite de campagne.
         if (!PLAYABLE.has(b.attacker) && ctx.countStat) ctx.countStat(uid, `${b.attacker}_repelled`);
       }
@@ -1923,6 +1960,7 @@ module.exports = function createCampaign(ctx) {
       }
       spawnBosses(t);
       churchTick(t);
+      overdriveTick(t);
       // Quelques heures avant la clôture : tout le monde est prévenu que tout se joue maintenant (notification et push).
       const nc = phase(t) === 'open' ? nextClose(t) : null;
       const cidW = currentCampaign().id;
@@ -2003,6 +2041,8 @@ module.exports = function createCampaign(ctx) {
       homeBases: C.homeBases,
       capitals: C.capitals,
       // Église : croisade en cours (faction visée) et éveil de l'Immaculée (assauts repoussés, prochain assaut).
+      // Overdrive en cours pour ce joueur (base ou plus) et sa fin (la clôture).
+      overdrive: (() => { const lvl = overdriveOf(userId, t); return lvl ? { level: lvl, until: nextClose(t), ...odCfg(lvl) } : null; })(),
       church: (() => { const aw = awakening(); return { crusade: crusadeOf(), awakening: aw ? { holder: aw.holder, waves: aw.waves, total: CH.awakening.waves, next: aw.next } : null }; })(),
       journalLatest: q.latestEvent.get()?.id || 0,
       lord: lordPayload(side),
@@ -2110,12 +2150,45 @@ module.exports = function createCampaign(ctx) {
     return spot;
   }
 
+  // ------------------------------------------------------------ Overdrive
+  function overdriveOn(t = Date.now()) {
+    if (phase(t) !== 'open') return false;
+    const nc = nextClose(t);
+    return !!nc && nc - t <= OD.hours * 3_600_000;
+  }
+  // Faction minoritaire : moins de territoires que la moyenne des factions jouables encore en jeu.
+  function minorityFaction(f, owners = ownersMap()) {
+    const alive = [...PLAYABLE].filter((x) => !isOut(x));
+    if (!alive.includes(f)) return false;
+    const held = (x) => TERR.filter((tr) => !ANNEX.has(tr.id) && owners.get(tr.id) === x).length;
+    const avg = alive.reduce((a, x) => a + held(x), 0) / alive.length;
+    return held(f) < avg;
+  }
+  function overdriveOf(userId, t = Date.now()) {
+    if (typeof userId !== 'number' || !overdriveOn(t)) return null;
+    const ps = q.state.get(userId);
+    const ch = q.char.get(userId);
+    if (!ps || !ch || ps.exile_faction || isOut(ch.faction)) return null;
+    return minorityFaction(ch.faction) ? 'plus' : 'base';
+  }
+  // Début de l'Overdrive : notification à chaque joueur concerné (et push, reportée à la fin des heures calmes).
+  function overdriveTick(t) {
+    const cid = currentCampaign().id;
+    if (!overdriveOn(t) || q.meta.get(`overdrive:${cid}`)) return;
+    q.setMeta.run(`overdrive:${cid}`, '1');
+    journal('overdrive', { hours: OD.hours }, t);
+    for (const c of q.chars.all()) {
+      const lvl = overdriveOf(c.user_id, t);
+      if (lvl) notify(c.user_id, lvl === 'plus' ? 'overdrive_plus' : 'overdrive', { hours: OD.hours, ...odCfg(lvl) });
+    }
+  }
+
   // ------------------------------------------------------------ Relations avec les généraux
   // Niveaux de soutien (C à S) gagnés en offrant des fleurs ou en envoyant des lettres aux généraux alliés à son camp.
   // Le niveau S n'est possible qu'avec un seul général : les autres plafonnent juste en dessous.
   const R = {
     levels: [{ id: 'C', points: 250 }, { id: 'C+', points: 400 }, { id: 'B', points: 600 }, { id: 'B+', points: 850 }, { id: 'A', points: 1050 }, { id: 'A+', points: 1400 }, { id: 'S', points: 2000 }],
-    gifts: { flower: { actions: 1, gold: 50, points: 5 }, letter: { actions: 1, gold: 200, points: 25 } },
+    gifts: { compliment: { actions: 1, gold: 0, points: 1 }, flower: { actions: 1, gold: 50, points: 5 }, letter: { actions: 1, gold: 200, points: 25 }, present: { actions: 0, gold: 0, points: 10, sameTerritory: true, cooldownMinutes: 60 } },
     exclude: ['immaculate'],
     ...(config.relations || {}),
   };
@@ -2133,13 +2206,15 @@ module.exports = function createCampaign(ctx) {
     const item = (g, state) => {
       const cfg = GEN.get(g.gid);
       const n = pts.get(g.gid) || 0;
-      return { id: g.gid, name: cfg.name, avatar: cfg.avatar, faction: g.faction || null, origin: cfg.faction || null, state, lord: isLord(g.gid), class: genClass(g.gid), points: n, level: relLevel(n) };
+      return { id: g.gid, name: cfg.name, avatar: cfg.avatar, faction: g.faction || null, origin: cfg.faction || null, state, lord: isLord(g.gid), class: genClass(g.gid), territory: g.territory || null, points: n, level: relLevel(n) };
     };
     const allied = rows.filter((g) => side && g.status === 'alive' && g.faction === side).map((g) => item(g, 'allied'));
     const gone = rows.filter((g) => side && GEN.get(g.gid).faction === side && !(g.status === 'alive' && g.faction === side))
       .map((g) => item(g, g.status === 'dead' ? 'dead' : g.status === 'captive' ? 'captive' : g.status === 'dormant' ? 'dormant' : 'joined'));
     const byName = (a, b) => (b.lord - a.lord) || (b.points - a.points) || a.name.localeCompare(b.name);
-    return { side, levels: R.levels, gifts: R.gifts, sWith, generals: [...allied.sort(byName), ...gone.sort(byName)] };
+    const ps = q.state.get(userId);
+    const readyAt = Object.fromEntries(Object.entries(R.gifts).filter(([, gf]) => gf.cooldownMinutes).map(([k, gf]) => [k, (q.giftCooldown.get(userId, k)?.at || 0) + gf.cooldownMinutes * 60_000]));
+    return { side, levels: R.levels, gifts: R.gifts, sWith, here: ps && ps.status === 'alive' ? ps.territory : null, readyAt, generals: [...allied.sort(byName), ...gone.sort(byName)] };
   }
   // Bonus de soutien : un joueur profite du bonus de chaque général vivant allié à son camp, selon son niveau de soutien avec lui
   // (relations.bonuses : kind, values pour C … S, et des précisions selon le bonus : territory, partner, partnerLevel, allies).
@@ -2212,6 +2287,44 @@ module.exports = function createCampaign(ctx) {
     return add;
   }
 
+  // Liste de tous les bonus et malus actifs d'un joueur : classes, soutiens, faction, seigneur, capitale, exil, blessure, Overdrive.
+  function modsOf(userId) {
+    const ch = q.char.get(userId);
+    const ps = q.state.get(userId);
+    if (!ch) return [];
+    const out = [];
+    const side = effFaction(userId);
+    const exiled = !!ps?.exile_faction;
+    for (const id of fx.pathOf(ch)) if (config.classes.find((c) => c.id === id)?.effectText) out.push({ type: 'class', class: id, tone: 'buff' });
+    const pts = relPoints(userId);
+    for (const b of relBonuses(userId)) out.push({ type: 'support', general: b.gid, kind: b.kind, value: b.value, territory: b.territory || null, partner: b.partner || null, partnerLevel: b.partnerLevel || null, level: relLevel(pts.get(b.gid) || 0), tone: 'buff' });
+    const od = overdriveOf(userId);
+    if (od) out.push({ type: 'overdrive', level: od, ...odCfg(od), tone: 'buff' });
+    if (side && !exiled) {
+      const pk = perks(side);
+      if (pk.outnumberedMax) out.push({ type: 'perk', perk: 'outnumbered', n: Math.round(powerBonus(side) * 10) / 10, max: pk.outnumberedMax, tone: 'buff' });
+      for (const k of ['neverOut', 'autoRetreat', 'freeRevive', 'efficiency']) if (pk[k]) out.push({ type: 'perk', perk: k, tone: 'buff' });
+      if (pk.rewardMultiplier > 1) out.push({ type: 'perk', perk: 'rewards', n: pk.rewardMultiplier, tone: 'buff' });
+      if (pk.pointsMultiplier > 1) out.push({ type: 'perk', perk: 'points', n: pk.pointsMultiplier, tone: 'buff' });
+      if (pk.hiddenAtBase) out.push({ type: 'perk', perk: 'hidden', place: C.homeBases[side], tone: 'buff' });
+      if (activeBuff(side)) out.push({ type: 'lord', faction: side, until: buffUntil(side), tone: 'buff' });
+    }
+    if (side && capitalLost(side, ownersMap())) out.push({ type: 'capitalLost', pct: C.capital.lossPct || 0, tone: 'debuff' });
+    if (exiled) out.push({ type: 'exile', pct: Math.round((1 - (C.exile.rewardMultiplier ?? 1)) * 100), tone: 'debuff' });
+    if ((ps?.reward_debuff || 0) > 0) out.push({ type: 'rewardDebuff', n: ps.reward_debuff, tone: 'debuff' });
+    if (ps?.status === 'retreating') out.push({ type: 'retreating', until: ps.retreat_until, tone: 'debuff' });
+    if (ps?.status === 'dead') out.push({ type: 'wounded', tone: 'debuff' });
+    return out;
+  }
+  function genModsOf(row) {
+    const out = [];
+    for (const id of genPath(row.gid)) if (config.classes.find((c) => c.id === id)?.effectText) out.push({ type: 'class', class: id, tone: 'buff' });
+    if (isLord(row.gid)) out.push({ type: 'lordGen', tone: 'buff' });
+    if (row.faction && PLAYABLE.has(row.faction) && activeBuff(row.faction)) out.push({ type: 'lord', faction: row.faction, until: buffUntil(row.faction), tone: 'buff' });
+    if (row.faction && PLAYABLE.has(row.faction) && capitalLost(row.faction, ownersMap())) out.push({ type: 'capitalLost', pct: C.capital.lossPct || 0, tone: 'debuff' });
+    return out;
+  }
+
   // Offrir une fleur ou envoyer une lettre : 1 action et de l'or, à un général vivant allié à son camp.
   function giveGift(userId, ps, gid, kind, t) {
     const gift = R.gifts[kind];
@@ -2223,12 +2336,16 @@ module.exports = function createCampaign(ctx) {
     const sElsewhere = [...pts].some(([id, n]) => id !== gid && n >= S_POINTS);
     const cap = sElsewhere ? S_POINTS - 1 : S_POINTS;
     if (cur >= cap) throw new HttpError(409, sElsewhere && cur < S_POINTS ? 'support_s_taken' : 'support_max');
+    // Cadeau sur place : il faut être vivant sur le territoire du général, et une fois par heure.
+    if (gift.sameTerritory && (ps.status !== 'alive' || ps.territory !== g.territory)) throw new HttpError(409, 'not_here');
+    if (gift.cooldownMinutes && t < (q.giftCooldown.get(userId, kind)?.at || 0) + gift.cooldownMinutes * 60_000) throw new HttpError(429, 'gift_cooldown');
     if (settle(ps, t).actions < (gift.actions || 0)) throw new HttpError(409, 'no_actions');
     if (!pay(userId, gift.gold || 0, 'gift')) throw new HttpError(409, 'not_enough_gold');
     for (let i = 0; i < (gift.actions || 0); i += 1) spend(q.state.get(userId), t);
     const next = Math.min(cap, cur + gift.points);
     db.prepare(`INSERT INTO relations (user_id, gid, points, updated_at) VALUES (?, ?, ?, ?)
                 ON CONFLICT (user_id, gid) DO UPDATE SET points = excluded.points, updated_at = excluded.updated_at`).run(userId, gid, next, t);
+    if (gift.cooldownMinutes) q.setGiftCooldown.run(userId, kind, t);
     metric(`gift:${kind}`, 1);
     return { general: gid, kind, gained: next - cur, points: next, level: relLevel(next), up: relLevel(next) !== relLevel(cur) };
   }
@@ -2335,7 +2452,7 @@ module.exports = function createCampaign(ctx) {
         if (owner !== ch.faction) throw new HttpError(409, 'invalid_action');
         if (battle) throw new HttpError(409, 'battle_here');
         bonus = spend(ps, t);
-        const m = exileMult(user.id) * (1 + relSum(rb, 'territoryBoost', (x) => x.territory === here) / 100); // Petra
+        const m = 1 + relSum(rb, 'territoryBoost', (x) => x.territory === here) / 100; // Petra (le malus d'exil passe par grant)
         grant(user.id, Math.round(C.gather.gold * m * (1 + buildEffect(here, 'goldPct') / 100)), Math.round(C.gather.xp * m * (1 + buildEffect(here, 'xpPct') / 100)), 'gather');
         homeXp(); // Monica
         score(user.id, C.ranking.gather);
@@ -2518,7 +2635,7 @@ module.exports = function createCampaign(ctx) {
         send(res, 200, {
           type: 'general', id: gid, name: cfg.name, avatar: cfg.avatar, faction: g.faction || null, origin: cfg.faction || null, home: cfg.home || null,
           territory: g.territory || null, path: cfg.path, class: genClass(gid), level: genLevel(g), status: g.status, spared: !!g.spared,
-          spare: cfg.spare || [], coef: cfg.coef, lord: isLord(gid),
+          spare: cfg.spare || [], coef: cfg.coef, lord: isLord(gid), mods: genModsOf(g),
         });
         return;
       }
@@ -2530,7 +2647,7 @@ module.exports = function createCampaign(ctx) {
       send(res, 200, {
         type: 'player', pseudo: ch.pseudo, avatar: ch.avatar, faction: ch.faction, exile: ps?.exile_faction || null, class: ch.class, path: fx.pathOf(ch),
         level: renown(ch.xp).level, birthday: ch.birthday, score: sc, rank: sc > 0 ? q.betterScores.get(cid, sc).n + 1 : null,
-        distinctions: distinctionsOf(ch.user_id), status: ps?.status || null, me: ch.user_id === user.id,
+        distinctions: distinctionsOf(ch.user_id), status: ps?.status || null, me: ch.user_id === user.id, mods: modsOf(ch.user_id),
       });
     },
 
@@ -2653,5 +2770,5 @@ module.exports = function createCampaign(ctx) {
     try { return JSON.parse(r.data); } catch { return null; }
   }
 
-  return { routes, tick, giveActions, phaseNow: () => phase(Date.now()), missionState, missionsClaimable, claimMission, playerPayload, mapPayload, ensurePlayer, TURN_MS, fallenState, distinctionsOf, rewardMods, resultFor };
+  return { routes, tick, giveActions, rewardActions, phaseNow: () => phase(Date.now()), missionState, missionsClaimable, claimMission, playerPayload, mapPayload, ensurePlayer, TURN_MS, fallenState, distinctionsOf, rewardMods, resultFor };
 };

@@ -2316,6 +2316,87 @@ module.exports = function createCampaign(ctx) {
     if (ps?.status === 'dead') out.push({ type: 'wounded', tone: 'debuff' });
     return out;
   }
+  // Autres sources : ce que les autres apportent à une unité là où elle se trouve (auras des alliés proches, malus des ennemis
+  // présents, constructions, capitale, appel à l'aide, insaisissable, contre-attaque). Même calcul que dans les batailles.
+  function otherSources(me, faction, T, t = Date.now()) {
+    if (!T || !faction) return null;
+    const owners = ownersMap();
+    const people = [];
+    for (const r of q.alivePlayers.all()) if (r.territory) people.push({ ...person(r), name: q.char.get(r.user_id)?.pseudo || '' });
+    for (const g of q.generals.all()) if (g.status === 'alive' && g.territory && GEN.has(g.gid)) people.push({ ...genPerson(g), name: GEN.get(g.gid).name });
+    const others = people.filter((x) => x.id !== me.id);
+    const around = new Set([T, ...neighbors(T)]);
+    const around2 = new Set(around);
+    for (const n of around) for (const m of neighbors(n)) around2.add(m);
+    const dist = (id) => (id === T ? 0 : around.has(id) ? 1 : around2.has(id) ? 2 : 9);
+    const allies = others.filter((x) => x.faction === faction && around2.has(x.territory));
+    const alliesHere = people.filter((x) => x.faction === faction && x.territory === T);
+    const enemiesHere = others.filter((x) => x.faction && x.faction !== faction && x.territory === T);
+    const items = [];
+    // Auras des alliés (portée, classes visées, Gremory), plafonnées comme en bataille.
+    let aura = 0;
+    const auraFrom = new Set();
+    for (const a of allies) {
+      const reach = Math.max(0, ...a.effects.filter((e) => e.kind === 'reach').map((e) => e.distance || 0));
+      const d = dist(a.territory);
+      for (const e of a.effects) {
+        if (e.kind !== 'aura' || d > Math.max(e.range === 'territory' ? 0 : 1, reach)) continue;
+        if (e.targets && !me.path.some((c) => e.targets.includes(c))) continue;
+        if (e.except && me.path.includes(e.except)) continue;
+        aura += e.pct;
+        auraFrom.add(a.name);
+      }
+      if (d === 0) {
+        const boost = a.effects.find((e) => e.kind === 'auraBoost');
+        if (boost) { aura += (boost.pct / 100) * Math.max(0, ...alliesHere.map((x) => fx.sumOf(x.effects, 'aura'))); auraFrom.add(a.name); }
+      }
+    }
+    aura = Math.round(Math.min(AURA_CAP, aura) * 10) / 10;
+    if (aura > 0) items.push({ type: 'auras', pct: aura, from: [...auraFrom], tone: 'buff' });
+    // Malus des ennemis présents : un même effet ne compte qu'une fois.
+    const cut = { attack: 0, defense: 0 };
+    const cutFrom = { attack: new Set(), defense: new Set() };
+    for (const side of ['attack', 'defense']) {
+      const seen = new Set();
+      for (const en of enemiesHere) {
+        for (const d of en.effects) {
+          const key = d.id || `${d.kind}:${d.target}:${d.pct}:${JSON.stringify(d.filter || {})}`;
+          if (d.kind !== 'debuff' || seen.has(key) || (d.target !== 'both' && d.target !== side) || !matchesFilter(d.filter, me)) continue;
+          seen.add(key);
+          cut[side] += d.pct;
+          cutFrom[side].add(en.name);
+        }
+      }
+    }
+    for (const side of ['attack', 'defense']) if (cut[side]) items.push({ type: 'enemyDebuff', side, pct: cut[side], from: [...cutFrom[side]], tone: 'debuff' });
+    // Territoire : constructions, capitale, bataille en cours, insaisissable.
+    const mineHere = owners.get(T) === faction;
+    const bld = buildOf(T);
+    if (bld && mineHere) {
+      const spec = C.build.specs[bld.spec] || {};
+      items.push({ type: 'building', spec: bld.spec, level: bld.level, pct: (spec.defensePct || spec.goldPct || spec.xpPct || 0) * bld.level, tone: 'buff' });
+    }
+    const guard = Math.round((capitalGuard(T, owners) - 1) * 100);
+    if (guard > 0 && mineHere) items.push({ type: 'capitalGuard', pct: guard, tone: 'buff' });
+    const b = q.openBattle.get(T);
+    if (b && b.help) {
+      const mySide = b.attacker === faction ? 1 : -1;
+      items.push({ type: 'rallyHelp', pct: b.help * mySide, tone: b.help * mySide > 0 ? 'buff' : 'debuff' });
+    }
+    const shield = shieldUntil(T, owners, t);
+    if (shield && mineHere) items.push({ type: 'shield', until: shield, tone: 'buff' });
+    if (PLAYABLE.has(faction)) {
+      const targets = TERR.filter((x) => counterOn(faction, x.id, owners, t)).length;
+      if (targets) items.push({ type: 'counter', pct: counterBonus(faction), n: targets, tone: 'buff' });
+    }
+    return { attackPct: Math.round((aura - cut.attack) * 10) / 10, defensePct: Math.round((aura - cut.defense) * 10) / 10, items };
+  }
+  function playerOthers(userId) {
+    const ps = q.state.get(userId);
+    const ch = q.char.get(userId);
+    if (!ps || !ch || ps.status === 'dead' || !ps.territory) return null;
+    return otherSources(person({ ...ch, user_id: userId, territory: ps.territory, faction: effFaction(userId) }), effFaction(userId), ps.territory);
+  }
   function genModsOf(row) {
     const out = [];
     for (const id of genPath(row.gid)) if (config.classes.find((c) => c.id === id)?.effectText) out.push({ type: 'class', class: id, tone: 'buff' });
@@ -2636,6 +2717,7 @@ module.exports = function createCampaign(ctx) {
           type: 'general', id: gid, name: cfg.name, avatar: cfg.avatar, faction: g.faction || null, origin: cfg.faction || null, home: cfg.home || null,
           territory: g.territory || null, path: cfg.path, class: genClass(gid), level: genLevel(g), status: g.status, spared: !!g.spared,
           spare: cfg.spare || [], coef: cfg.coef, lord: isLord(gid), mods: genModsOf(g),
+          others: g.status === 'alive' && g.territory ? otherSources(genPerson(g), g.faction, g.territory) : null,
         });
         return;
       }
@@ -2645,9 +2727,9 @@ module.exports = function createCampaign(ctx) {
       const cid = currentCampaign().id;
       const sc = q.myScore.get(cid, ch.user_id)?.score || 0;
       send(res, 200, {
-        type: 'player', pseudo: ch.pseudo, avatar: ch.avatar, faction: ch.faction, exile: ps?.exile_faction || null, class: ch.class, path: fx.pathOf(ch),
+        type: 'player', pseudo: ch.pseudo, avatar: ch.avatar, faction: ch.faction, exile: ps?.exile_faction || null, territory: ps?.territory || null, class: ch.class, path: fx.pathOf(ch),
         level: renown(ch.xp).level, birthday: ch.birthday, score: sc, rank: sc > 0 ? q.betterScores.get(cid, sc).n + 1 : null,
-        distinctions: distinctionsOf(ch.user_id), status: ps?.status || null, me: ch.user_id === user.id, mods: modsOf(ch.user_id),
+        distinctions: distinctionsOf(ch.user_id), status: ps?.status || null, me: ch.user_id === user.id, mods: modsOf(ch.user_id), others: playerOthers(ch.user_id),
       });
     },
 

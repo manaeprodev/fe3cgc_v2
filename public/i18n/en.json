@@ -683,5 +683,18 @@
   "notif.overdrive_plus.body": "Only {hours} h of campaign left and your faction is behind: +{attackPct}% attack, +{maxActions} max actions, +{garregPct}% against Garreg-Mach, and +{gold} gold and +{xp} renown on every gain. Time to turn the map around!",
   "journal.overdrive": "Overdrive! Only {hours} h of campaign left: players still in play strike harder. Everything can turn.",
   "error.not_here": "You must be on the same territory as this general.",
-  "error.gift_cooldown": "You already gave a present less than an hour ago."
+  "error.gift_cooldown": "You already gave a present less than an hour ago.",
+  "others.title": "Other sources (here, in {territory})",
+  "others.total": "Power from others: attack {atk}%, defence {def}%",
+  "others.none": "No effect from others right now.",
+  "others.auras": "Nearby allies' auras: +{pct}% power ({from})",
+  "others.enemyDebuff.attack": "Present enemies' malus: -{pct}% attack power ({from})",
+  "others.enemyDebuff.defense": "Present enemies' malus: -{pct}% defence power ({from})",
+  "others.building.fortress": "Fortress level {level}: +{pct}% territory defence",
+  "others.building.market": "Market level {level}: +{pct}% gold gathered here",
+  "others.building.academy": "Academy level {level}: +{pct}% renown gathered here",
+  "others.capitalGuard": "Capital held: +{pct}% territory defence",
+  "others.rallyHelp": "Help received in the ongoing battle: {pct} chance point(s)",
+  "others.shield": "Untouchable territory for {time}",
+  "others.counter": "Faction counter-attack: +{pct}% attack on {n} neighbouring enemy territory(ies)"
 }

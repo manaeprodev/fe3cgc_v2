@@ -90,6 +90,20 @@ function battle(territory, attacker, defender, contribs, endsIn = 600000) {
     pr = await C.Bleu1('/profile?pseudo=Rouge1');
     check('… et les bonus de soutien actifs', pr.d.mods.some((x) => x.type === 'support' && x.general === 'manuela' && x.level === 'C'), JSON.stringify(pr.d.mods.filter((x) => x.type === 'support')));
 
+    // Autres sources : aura de Ferdinand (Paladin, pour les Soldats) à Aegir, malus d'un Sorcier ennemi présent.
+    set('Bleu1', "UPDATE player_state SET territory = 'aegir', status = 'alive' WHERE user_id = ?");
+    withDb((d) => d.exec("UPDATE characters SET class = 'warlock', class_path = '[\"monk\",\"mage\",\"warlock\"]' WHERE pseudo = 'Bleu1'"));
+    pr = await C.Bleu1('/profile?pseudo=Rouge1');
+    const o = pr.d.others || {};
+    const au = (o.items || []).find((x) => x.type === 'auras');
+    check('autres sources : aura de Ferdinand', au && au.from.includes('Ferdinand') && au.pct >= 3, JSON.stringify(o));
+    const dbf = (o.items || []).filter((x) => x.type === 'enemyDebuff');
+    check('… et malus du Sorcier ennemi en attaque et en défense', dbf.length === 2 && dbf.every((x) => x.pct === 10 && x.from.includes('Bleu1')), JSON.stringify(dbf));
+    check('… résumés en totaux d\'attaque et de défense', o.attackPct === au.pct - 10 && o.defensePct === au.pct - 10, JSON.stringify([o.attackPct, o.defensePct]));
+    pr = await C.Rouge1('/profile?general=ferdinand');
+    check('un général a aussi ses autres sources', pr.d.others && Array.isArray(pr.d.others.items), JSON.stringify(pr.d.others));
+    withDb((d) => d.exec("UPDATE characters SET class = 'soldier', class_path = '[\"soldier\"]' WHERE pseudo = 'Bleu1'"));
+
     console.log('# Exil : toutes les ressources réduites');
     set('Bleu1', "UPDATE player_state SET exile_faction = 'rouge', territory = 'aegir', actions = 8, actions_at = ?, reward_debuff = 0 WHERE user_id = ?", Date.now());
     set('Bleu1', 'UPDATE characters SET gold = 0, xp = 0 WHERE user_id = ?');

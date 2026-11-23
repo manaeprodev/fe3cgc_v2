@@ -688,5 +688,18 @@
   "notif.overdrive_plus.body": "Plus que {hours} h de campagne et ta faction est en retard : +{attackPct} % d'attaque, +{maxActions} actions max, +{garregPct} % contre Garreg-Mach, et +{gold} or et +{xp} renommée à chaque gain. C'est le moment de renverser la carte !",
   "journal.overdrive": "Overdrive ! Plus que {hours} h de campagne : les joueurs encore en jeu frappent plus fort. Tout peut basculer.",
   "error.not_here": "Il faut être sur le même territoire que ce général.",
-  "error.gift_cooldown": "Tu as déjà offert un cadeau il y a moins d'une heure."
+  "error.gift_cooldown": "Tu as déjà offert un cadeau il y a moins d'une heure.",
+  "others.title": "Autres sources (ici, à {territory})",
+  "others.total": "Puissance venue des autres : attaque {atk} %, défense {def} %",
+  "others.none": "Aucun effet venu des autres pour le moment.",
+  "others.auras": "Auras des alliés proches : +{pct} % de puissance ({from})",
+  "others.enemyDebuff.attack": "Malus des ennemis présents : -{pct} % de puissance d'attaque ({from})",
+  "others.enemyDebuff.defense": "Malus des ennemis présents : -{pct} % de puissance de défense ({from})",
+  "others.building.fortress": "Forteresse niveau {level} : +{pct} % de défense du territoire",
+  "others.building.market": "Marché niveau {level} : +{pct} % d'or récolté ici",
+  "others.building.academy": "Académie niveau {level} : +{pct} % de renommée récoltée ici",
+  "others.capitalGuard": "Capitale tenue : +{pct} % de défense du territoire",
+  "others.rallyHelp": "Aide reçue dans la bataille en cours : {pct} point(s) de chances",
+  "others.shield": "Territoire insaisissable encore {time}",
+  "others.counter": "Contre-attaque de la faction : +{pct} % d'attaque sur {n} territoire(s) ennemi(s) voisin(s)"
 }

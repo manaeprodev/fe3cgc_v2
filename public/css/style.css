@@ -712,3 +712,7 @@ h3 { font-family: "Alegreya Sans", system-ui, sans-serif; font-weight: 700; }
 .od-bolt { font-size: 1.4rem; animation: od-pulse 1.2s ease-in-out infinite; }
 @keyframes od-pulse { 50% { transform: scale(1.18); filter: drop-shadow(0 0 6px var(--c)); } }
 @media (prefers-reduced-motion: reduce) { .od-bolt { animation: none; } }
+.others { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.others h4 { margin: 0 0 4px; font-size: .85rem; }
+.others-total { margin: 0 0 4px; font-size: .85rem; }
+.others-total b.neg { color: var(--danger); }

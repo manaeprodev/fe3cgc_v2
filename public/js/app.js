@@ -1623,6 +1623,23 @@ function modText(m) {
     default: return t(`mods.${m.type}`, m);
   }
 }
+// Autres sources : résumé des puissances d'attaque et de défense apportées par les autres, puis chaque effet.
+function othersHtml(d) {
+  const o = d.others;
+  if (!o) return '';
+  const terrName = (id) => loc(state.config.map.territories.find((x) => x.id === id)?.name) || id;
+  const signed = (n) => (n > 0 ? `+${fmtNum(n)}` : fmtNum(n));
+  const icons = { auras: '\u{1F31F}', enemyDebuff: '\u{1F480}', building: '\u{1F3F0}', capitalGuard: '\u{1F451}', rallyHelp: '\u{1F91D}', shield: '\u{1F6E1}\uFE0F', counter: '\u2694\uFE0F' };
+  const line = (x) => {
+    const p = { ...x, from: (x.from || []).join(', '), pct: x.type === 'rallyHelp' ? signed(x.pct) : fmtNum(x.pct) };
+    const key = x.type === 'enemyDebuff' ? `others.enemyDebuff.${x.side}` : x.type === 'building' ? `others.building.${x.spec}` : `others.${x.type}`;
+    const txt = x.type === 'shield' ? withTimer('others.shield', {}, x.until) : esc(t(key, p));
+    return `<li class="${x.tone === 'debuff' ? 'debuff' : 'buff'}"><span class="mod-ico" aria-hidden="true">${icons[x.type] || '\u2728'}</span> <span>${txt}</span></li>`;
+  };
+  return `<div class="others"><h4>${esc(t('others.title', { territory: terrName(d.territory) }))}</h4>
+    <p class="others-total"><b class="${o.attackPct < 0 ? 'neg' : ''}">${esc(t('others.total', { atk: signed(o.attackPct), def: signed(o.defensePct) }))}</b></p>
+    ${o.items.length ? `<ul class="mods">${o.items.map(line).join('')}</ul>` : `<p class="muted small">${esc(t('others.none'))}</p>`}</div>`;
+}
 // Profil d'un joueur ou d'un général : fenêtre aux couleurs de sa faction d'origine (drapeau, nation, seigneur, icônes de classe).
 async function showProfile(target) {
   let d;
@@ -1664,6 +1681,7 @@ async function showProfile(target) {
       ${dists ? `<h3>${esc(t('menu.distinctions'))}</h3><div class="pf-dists">${dists}</div>` : ''}
       <details class="pf-mods"><summary>${esc(t('mods.button', { n: (d.mods || []).length }))}</summary>
         ${(d.mods || []).length ? `<ul class="mods">${d.mods.map((m) => `<li class="${m.tone === 'debuff' ? 'debuff' : 'buff'}">${modIcon(m)} <span>${esc(modText(m))}</span></li>`).join('')}</ul>` : `<p class="muted small">${esc(t('mods.none'))}</p>`}
+        ${othersHtml(d)}
       </details>
     </div>
     ${d.type === 'general' ? `<button type="button" class="btn ghost" data-relopen hidden>${esc(t('rel.open'))}</button>` : ''}

@@ -280,6 +280,7 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     const costs = (await clients.Rouge1('/map')).d.costs;
     check('Prêtre : Fortifier à moitié prix (150 or)', costs.fortify === 150 && costs.hire === 300, JSON.stringify(costs));
     check('un Soldat paie le plein tarif (300 or)', (await clients.Rouge3('/map')).d.costs.fortify === 300);
+    check('Prêtre : bâtiments à moitié prix aussi', costs.build[0] === 400 && (await clients.Rouge3('/map')).d.costs.build[0] === 800, JSON.stringify(costs.build));
     await clients.Rouge1('/act', { action: 'hire' });
     await clients.Rouge2('/act', { action: 'hire' });
     await clients.Rouge3('/act', { action: 'hire' });
@@ -403,7 +404,7 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     // ---------- 8c. Notes de mise à jour : pastille tant que la dernière n'est pas lue
     console.log('# Mises à jour');
     const patches = require(path.join(process.cwd(), 'public', 'config', 'game.json')).patches;
-    const latest = patches[0].id;
+    const latest = patches[0].rev ? `${patches[0].id}#${patches[0].rev}` : patches[0].id; // « rev » : note complétée, à relire
     check('le patch le plus récent est annoncé au joueur', (await me('Rouge1')).patch.latest === latest);
     check('un nouveau compte n\'a pas de pastille', (await me('Rouge1')).patch.seen === latest);
     withDb((d) => d.exec('UPDATE users SET patch_seen = NULL'));

@@ -392,6 +392,8 @@ module.exports = function createCampaign(ctx) {
     setVials: db.prepare('UPDATE player_state SET vial_day = ?, vial_n = ? WHERE user_id = ?'),
     hpPlayers: db.prepare(`SELECT p.user_id, p.territory, p.hp, COALESCE(p.exile_faction, c.faction) AS faction, c.class
                            FROM player_state p JOIN characters c ON c.user_id = p.user_id WHERE p.status != 'dead' AND p.hp < 1`),
+    healers: db.prepare(`SELECT c.*, p.territory, COALESCE(p.exile_faction, c.faction) AS faction FROM player_state p
+                         JOIN characters c ON c.user_id = p.user_id WHERE p.status = 'alive' AND p.territory IS NOT NULL`),
     hpHere: db.prepare(`SELECT p.user_id, p.hp, c.class, c.pseudo FROM player_state p JOIN characters c ON c.user_id = p.user_id
                         WHERE p.status != 'dead' AND p.territory = ? AND COALESCE(p.exile_faction, c.faction) = ?`),
     setBonusTurn: db.prepare('UPDATE player_state SET bonus_turn = ? WHERE user_id = ?'),
@@ -581,8 +583,13 @@ module.exports = function createCampaign(ctx) {
     q.setActions.run(0, t, uid);
     const woundActions = Math.max(0, C.wound.actions - relSum(relBonuses(uid), 'woundRelief')); // Linhardt
     q.setRewardDebuff.run(woundActions, uid);
-    if (hpOn()) q.setHp.run(Math.max(hpFrac(q.state.get(uid)?.hp), HP.koReturnPct / 100), uid);
-    notify(uid, byHp ? 'fallen_hp' : 'fallen', { wounded: true, gold: fine, actions: woundActions, territory: spot });
+    let healed = 0;
+    if (hpOn()) {
+      q.setHp.run(Math.max(hpFrac(q.state.get(uid)?.hp), HP.koReturnPct / 100), uid);
+      const mar = relSum(relBonuses(uid), 'woundHeal'); // Marianne : soin immédiat après une blessure
+      if (mar > 0) healed = healPlayer(uid, mar);
+    }
+    notify(uid, byHp ? 'fallen_hp' : 'fallen', { wounded: true, gold: fine, actions: woundActions, territory: spot, ...(healed ? { healed } : {}) });
   }
   // Fait reculer des joueurs après une bataille perdue ou un territoire perdu : ils ont quelques tours pour se replier, sinon ils tombent.
   // mult : coût de retour en jeu s'ils tombent (x2 pour un attaquant dont l'attaque a échoué). foes : effets des vainqueurs (Archer).
@@ -859,7 +866,7 @@ module.exports = function createCampaign(ctx) {
     return { gold, xp, ...flat };
   }
   // Un exilé ne profite d'aucun avantage de la faction qu'il sert (capacité du seigneur, avantages des Loups de cendre…).
-  const fortifyCost = (userId) => Math.round(C.hire.gold * productOf(effectsOfUser(userId), 'fortifyCost', 'factor') * (isExile(userId) ? 1 : hireFactor(effFaction(userId))));
+  const fortifyCost = (userId) => Math.round(C.hire.gold * productOf(effectsOfUser(userId), 'fortifyCost', 'factor') * productOf(effectsOfUser(userId), 'buildCost', 'factor') * (isExile(userId) ? 1 : hireFactor(effFaction(userId))));
   const fortifyPower = (userId) => C.hire.power * productOf(effectsOfUser(userId), 'fortifyPower', 'factor') * (1 + relSum(relBonuses(userId), 'fortifyBoost') / 100); // Gilbert
 
   // Crée l'état du joueur s'il n'existe pas encore (nouveau personnage ou nouvelle campagne).
@@ -952,6 +959,8 @@ module.exports = function createCampaign(ctx) {
     if ((HP.frail.classes || []).includes(classId)) m += HP.frail.bonus || 0;
     return Math.max(1, m);
   }
+  // PV max d'un joueur : ceux de sa classe, plus le bonus de soutien de Mercedes (relations.bonuses, kind hpMax).
+  const hpMaxPlayer = (uid, classId) => hpMaxOf(classId) + relSum(relBonuses(uid), 'hpMax');
   const hpPoints = (frac, max) => (frac <= 0 ? 0 : Math.max(1, Math.round(frac * max)));
   // Malus de puissance selon les PV restants (le seuil le plus bas atteint l'emporte).
   function hpMalus(frac) {
@@ -972,7 +981,7 @@ module.exports = function createCampaign(ctx) {
     const ps = q.state.get(userId);
     const ch = q.char.get(userId);
     if (!ps || !ch) return null;
-    const max = hpMaxOf(ch.class);
+    const max = hpMaxPlayer(userId, ch.class);
     const frac = hpFrac(ps.hp);
     return { frac, max, hp: hpPoints(frac, max), pct: Math.round(frac * 100), malus: hpMalus(frac) };
   }
@@ -981,7 +990,7 @@ module.exports = function createCampaign(ctx) {
     const ps = q.state.get(uid);
     const ch = q.char.get(uid);
     if (!ps || !ch || ps.status === 'dead' || !(pts > 0)) return false;
-    const f = hpFrac(ps.hp) - pts / hpMaxOf(ch.class);
+    const f = hpFrac(ps.hp) - pts / hpMaxPlayer(uid, ch.class);
     if (f > 1e-9) { q.setHp.run(f, uid); return false; }
     q.setHp.run(0, uid);
     woundPlayer(uid, 1, 0, t, true);
@@ -991,7 +1000,7 @@ module.exports = function createCampaign(ctx) {
     const ps = q.state.get(uid);
     const ch = q.char.get(uid);
     if (!ps || !ch) return 0;
-    const max = hpMaxOf(ch.class);
+    const max = hpMaxPlayer(uid, ch.class);
     const before = hpFrac(ps.hp);
     const after = Math.min(1, before + pts / max);
     q.setHp.run(after, uid);
@@ -1061,6 +1070,29 @@ module.exports = function createCampaign(ctx) {
     }
   }
   // Régénération, une fois par minute au plus : plus rapide sur un territoire allié sans bataille, plus encore avec une Infirmerie.
+  // Soin passif (effet « healAura » de l'Évêque, hérité par ses classes suivantes) : PV par heure pour les alliés
+  // de son territoire et des territoires voisins, jusqu'à deux cases avec l'effet « reach » (Gremory).
+  // Plusieurs soigneurs ne se cumulent pas : le meilleur soin compte. Clé « faction|territoire » → PV par heure.
+  function passiveHeals() {
+    const out = new Map();
+    const spread = (faction, from, eff) => {
+      const pts = Math.max(0, ...eff.filter((e) => e.kind === 'healAura').map((e) => Number(e.pts) || 0));
+      if (!pts || !from || !faction) return;
+      const base = Math.max(0, ...eff.filter((e) => e.kind === 'healAura').map((e) => (e.range === 'territory' ? 0 : 1)));
+      const reach = Math.max(base, ...eff.filter((e) => e.kind === 'reach').map((e) => Number(e.distance) || 0));
+      let ring = [from];
+      const seen = new Set(ring);
+      for (let d = 0; d < reach; d += 1) {
+        const next = [];
+        for (const id of ring) for (const n of neighbors(id)) if (!seen.has(n)) { seen.add(n); next.push(n); }
+        ring = next;
+      }
+      for (const id of seen) out.set(`${faction}|${id}`, Math.max(out.get(`${faction}|${id}`) || 0, pts));
+    };
+    for (const p of q.healers.all()) spread(p.faction, p.territory, effectsOfRow(p));
+    for (const g of q.generals.all()) if (g.status === 'alive' && g.territory && GEN.has(g.gid)) spread(g.faction, g.territory, fx.effectsOfPath(genPath(g.gid)));
+    return out;
+  }
   function hpTick(t) {
     if (!hpOn()) return;
     const last = Number(q.meta.get('hp_tick')?.value || 0);
@@ -1071,12 +1103,18 @@ module.exports = function createCampaign(ctx) {
     const owners = ownersMap();
     const fighting = new Set(q.openBattles.all().map((b) => b.territory));
     const od = overdriveOn(t) ? HP.regen.overdriveFactor || 1 : 1;
+    const passive = passiveHeals();
     const rate = (f, at) => {
       const o = owners.get(at) ?? null;
       const allied = !!at && !!f && !fighting.has(at) && (o === f || guardians[f] === o);
-      return (allied ? (HP.regen.alliedPerHour || 0) + buildEffect(at, 'hpRegen') : HP.regen.perHour || 0) * od;
+      return ((allied ? (HP.regen.alliedPerHour || 0) + buildEffect(at, 'hpRegen') : HP.regen.perHour || 0) + (passive.get(`${f}|${at}`) || 0)) * od;
     };
-    for (const p of q.hpPlayers.all()) q.setHp.run(Math.min(1, hpFrac(p.hp) + (rate(p.faction, p.territory) * h) / hpMaxOf(p.class)), p.user_id);
+    const perHourOfTurn = 60 / (C.turnMinutes || 10);
+    for (const p of q.hpPlayers.all()) {
+      const rb = relBonuses(p.user_id);
+      const flayn = relSum(rb, 'hpRegenTurn') * perHourOfTurn * od; // Flayn : PV en plus par tour
+      q.setHp.run(Math.min(1, hpFrac(p.hp) + ((rate(p.faction, p.territory) + flayn) * h) / (hpMaxOf(p.class) + relSum(rb, 'hpMax'))), p.user_id);
+    }
     for (const g of q.generals.all()) {
       if (g.status !== 'alive' || !g.territory || !GEN.has(g.gid) || hpFrac(g.hp) >= 1) continue;
       q.setGenHp.run(Math.min(1, hpFrac(g.hp) + (rate(g.faction, g.territory) * h) / hpMaxOf(genClass(g.gid))), g.gid);
@@ -2412,10 +2450,10 @@ module.exports = function createCampaign(ctx) {
       // Signalements de ma faction (les plus récents d'abord).
       pings: side ? q.pingsOf.all(campaign.id, side, t - C.pings.minutes * 60000, C.pings.max).map((x) => ({ id: x.id, territory: x.territory, kind: x.kind, pseudo: x.pseudo, at: x.created_at, mine: x.user_id === userId })) : [],
       guardians,
-      // hire : bataillon en attaque ; fortify : fortification en défense (moitié prix pour un Prêtre) ; teleport : Évêque noir.
+      // hire : bataillon en attaque ; fortify : fortification en défense ; build : bâtiments (moitié prix pour un Prêtre) ; teleport : Évêque noir.
       costs: {
         hire: Math.round(C.hire.gold * (isExile(userId) ? 1 : hireFactor(side)) * hireDiscount(userId, here)), fortify: ch ? Math.round(fortifyCost(userId) * hireDiscount(userId, here)) : C.hire.gold, hireMax: C.hire.perBattle,
-        build: C.build.costs, buildMax: C.build.maxLevel,
+        build: ch ? C.build.costs.map((c) => Math.round(c * buildFactor(userId, here))) : C.build.costs, buildMax: C.build.maxLevel,
         revive: side ? Math.round(reviveCost(side) * (q.state.get(userId)?.fall_mult || 1) * reviveFactor(userId)) : C.revive.gold,
         teleport: ch ? (effectsOfUser(userId).find((e) => e.kind === 'teleport')?.gold ?? null) : null,
       },
@@ -2592,9 +2630,12 @@ module.exports = function createCampaign(ctx) {
       if (!def || g.status !== 'alive' || g.faction !== side) continue;
       const i = levelIdx(pts.get(g.gid) || 0);
       if (i < 0) continue;
-      // Lien croisé (Annette et Mercedes) : il faut aussi ce niveau de soutien avec le partenaire.
-      if (def.partner && levelIdx(pts.get(def.partner) || 0) < R.levels.findIndex((l) => l.id === (def.partnerLevel || 'C'))) continue;
-      out.push({ ...def, gid: g.gid, value: def.values[i] });
+      // Lien croisé (Annette et Mercedes) : avec ce niveau de soutien avec le partenaire, partnerValues s'ajoute au bonus
+      // (sans partnerValues, le bonus entier dépend du partenaire).
+      const partnerOk = !def.partner || levelIdx(pts.get(def.partner) || 0) >= R.levels.findIndex((l) => l.id === (def.partnerLevel || 'C'));
+      if (!partnerOk && !def.partnerValues) continue;
+      const extra = def.partnerValues && partnerOk ? def.partnerValues[i] || 0 : 0;
+      out.push({ ...def, gid: g.gid, value: def.values[i] + extra, base: def.values[i], extra, partnerOk, ...(def.hp ? { hpValue: def.hp[i] || 0 } : {}) });
     }
     return out;
   }
@@ -2605,7 +2646,12 @@ module.exports = function createCampaign(ctx) {
     const rb = relBonuses(userId);
     return Math.max(0, 1 - relSum(rb, 'hireDiscount') / 100) * Math.max(0, 1 - relSum(rb, 'territoryBoost', (b) => b.territory === here) / 100);
   };
-  // Dorothea : avec au moins `allies` alliés sur place (joueurs ou généraux), une chance de ne pas consommer l'action.
+  // Prix des bâtiments : Prêtre (et ses classes suivantes) moitié prix, Petra sur son territoire, Lorenz partout.
+  const buildFactor = (userId, here) => {
+    const rb = relBonuses(userId);
+    return productOf(effectsOfUser(userId), 'buildCost', 'factor') * Math.max(0, 1 - relSum(rb, 'territoryBoost', (x) => x.territory === here) / 100) * Math.max(0, 1 - relSum(rb, 'buildDiscount') / 100);
+  };
+  // Dorothea : avec au moins `allies` alliés sur place (joueurs ou généraux), une chance de ne pas consommer l'action et de rendre des PV.
   function saveAction(userId, here, side) {
     const rb = relBonuses(userId);
     const def = rb.find((b) => b.kind === 'saveAction');
@@ -2615,6 +2661,7 @@ module.exports = function createCampaign(ctx) {
     const gens = q.generals.all().filter((g) => g.status === 'alive' && g.territory === here && g.faction === side).length;
     if (players + gens < (def.allies || 2) || relRoll() * 100 >= relSum(rb, 'saveAction')) return false;
     giveActions(userId, 1);
+    if (hpOn() && def.hpValue) healPlayer(userId, def.hpValue); // et quelques PV rendus
     return true;
   }
   // Bonus de puissance d'une action de combat (en %), selon la bataille : x = { b, side, T, owners, rows, here, aura, row }.
@@ -2633,6 +2680,7 @@ module.exports = function createCampaign(ctx) {
         || (k === 'annexAttack' && atk && ANNEX.has(T))
         || (k === 'partnerAttack' && atk)
         || (k === 'partnerDefense' && !atk)
+        || k === 'allPower'
         || ((k === 'territoryBoost' || k === 'territoryPower') && r.territory === T)
         || (k === 'zoneDefense' && !atk && (T === r.territory || neighbors(r.territory).includes(T)))
         || (k === 'homeDefense' && !atk && startFaction(terr(T)) === mine)
@@ -2659,7 +2707,7 @@ module.exports = function createCampaign(ctx) {
     const exiled = !!ps?.exile_faction;
     for (const id of fx.pathOf(ch)) if (config.classes.find((c) => c.id === id)?.effectText) out.push({ type: 'class', class: id, tone: 'buff' });
     const pts = relPoints(userId);
-    for (const b of relBonuses(userId)) out.push({ type: 'support', general: b.gid, kind: b.kind, value: b.value, territory: b.territory || null, partner: b.partner || null, partnerLevel: b.partnerLevel || null, level: relLevel(pts.get(b.gid) || 0), tone: 'buff' });
+    for (const b of relBonuses(userId)) out.push({ type: 'support', general: b.gid, kind: b.kind, value: b.value, base: b.base, extra: b.extra || 0, hp: b.hpValue || 0, territory: b.territory || null, partner: b.partner || null, partnerLevel: b.partnerLevel || null, level: relLevel(pts.get(b.gid) || 0), tone: 'buff' });
     const links = side ? playerRelList(userId).filter((x) => x.level && x.faction === side) : [];
     if (links.length) out.push({ type: 'playerSupport', n: links.length, names: links.slice(0, 3).map((x) => x.pseudo).join(', '), cap: RP.bonus.capPct, tone: 'buff' });
     const od = overdriveOf(userId);
@@ -3060,7 +3108,7 @@ module.exports = function createCampaign(ctx) {
         const level = cur ? cur.level : 0;
         if (level >= C.build.maxLevel) throw new HttpError(409, 'build_max');
         if (settle(ps, t).actions < 1) throw new HttpError(409, 'no_actions');
-        const price = Math.round(C.build.costs[level] * Math.max(0, 1 - relSum(rb, 'territoryBoost', (x) => x.territory === here) / 100) * Math.max(0, 1 - relSum(rb, 'buildDiscount') / 100)); // Petra, Lorenz
+        const price = Math.round(C.build.costs[level] * buildFactor(user.id, here)); // Prêtre, Petra, Lorenz
         if (!pay(user.id, price, 'build')) throw new HttpError(409, 'not_enough_gold');
         bonus = spend(ps, t);
         q.buildSet.run(here, use, level + 1);

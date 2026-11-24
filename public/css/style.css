@@ -746,20 +746,91 @@ h3 { font-family: "Alegreya Sans", system-ui, sans-serif; font-weight: 700; }
 
 /* Illustration d'une grosse mise à jour : pleine largeur de la carte, 30 % de l'écran au plus, fondue vers le bas et sur les côtés. */
 .patch.has-hero { padding-top: 0; overflow: hidden; flex: none; }
-.patch-hero { position: relative; margin: 0 -14px -28px; height: min(30vh, 300px); overflow: hidden; }
-.patch-hero img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 38%;
-  -webkit-mask-image: linear-gradient(to bottom, #000 45%, rgba(0, 0, 0, .55) 75%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 45%, rgba(0, 0, 0, .55) 75%, transparent 100%); }
+.patch-hero { position: relative; margin: 0 -14px -20px; aspect-ratio: 16 / 9; height: auto; max-height: min(30vh, 300px); overflow: hidden; }
+.patch-hero img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, rgba(0, 0, 0, .6) 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 72%, rgba(0, 0, 0, .6) 88%, transparent 100%); }
 .patch-hero::after { content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to right, var(--panel) 0, transparent 9%, transparent 91%, var(--panel) 100%); }
+  background: linear-gradient(to right, var(--panel) 0, transparent 3%, transparent 97%, var(--panel) 100%); }
 .patch.has-hero > h2 { position: relative; z-index: 1; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
-.patch.archived .patch-hero { margin: 4px 0 -16px; height: min(22vh, 200px); border-radius: 8px; }
+.patch.archived .patch-hero { margin: 4px 0 -12px; max-height: min(22vh, 200px); border-radius: 8px; }
 
 /* Popup d'une mise à jour majeure : illustration fondue en tête, texte qui défile, bouton toujours visible. */
 .modal.patch-modal { padding: 0; gap: 0; overflow: hidden; display: flex; flex-direction: column; max-width: 460px; }
-.patch-modal .patch-hero { margin: 0 0 -34px; height: min(30vh, 260px); flex: none; }
+.patch-modal .patch-hero { margin: 0 0 -22px; max-height: min(30vh, 260px); flex: none; }
 .patch-modal-body { position: relative; padding: 0 18px 8px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: grid; gap: 6px; }
 .patch-modal-body h2 { margin: 0; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
 .patch-modal-body h3 { margin: 10px 0 2px; font-size: 1rem; }
 .patch-modal-foot { flex: none; padding: 10px 18px 16px; border-top: 1px solid var(--line); }
 .patch-modal-foot .btn { width: 100%; }
+
+/* ---------- Fin de campagne : Sothis remonte le temps ---------- */
+.modal.result-modal { --sothis: #6fd6b5; padding: 0; gap: 0; overflow: hidden; display: flex; flex-direction: column; max-width: 440px; position: relative; }
+.sothis { position: relative; margin: 0; height: min(30vh, 230px); flex: none; overflow: hidden;
+  background: radial-gradient(ellipse 70% 85% at 50% 38%, rgba(111, 214, 181, .32), rgba(111, 214, 181, .06) 60%, transparent 75%), linear-gradient(180deg, #0f1f24, var(--panel));
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent); mask-image: linear-gradient(180deg, #000 70%, transparent); }
+.sothis img { position: absolute; left: 50%; bottom: -18%; width: min(78%, 300px); transform: translateX(-50%); filter: drop-shadow(0 0 18px rgba(111, 214, 181, .35)); animation: sothis-rise .9s ease-out both; }
+.sothis-dial { position: absolute; left: 50%; top: 50%; width: min(92%, 340px); transform: translate(-50%, -50%); fill: none; stroke: var(--sothis); stroke-width: .8; opacity: .45;
+  animation: sothis-rewind 40s linear infinite; }
+.sothis-dial .inner { stroke-dasharray: 1.5 3; opacity: .7; }
+.sothis-dial line { stroke-width: 1.2; stroke-linecap: round; }
+.result-body { position: relative; margin-top: -26px; padding: 0 18px 18px; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 8px; }
+.sothis-quote { margin: 0 0 4px; padding: 10px 14px; text-align: center; border-radius: 12px; background: rgba(111, 214, 181, .08); border: 1px solid rgba(111, 214, 181, .28); }
+.sothis-quote p { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 1rem; line-height: 1.45; }
+.sothis-quote p { quotes: '\201C' '\201D'; }
+:lang(fr) .sothis-quote p { quotes: '\AB\A0' '\A0\BB'; }
+.sothis-quote p::before { content: open-quote; } .sothis-quote p::after { content: close-quote; }
+.sothis-quote cite { display: block; margin-top: 4px; font-style: normal; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--sothis); }
+.rewind-btn { margin-top: 4px; }
+@keyframes sothis-rewind { to { transform: translate(-50%, -50%) rotate(-360deg); } }
+@keyframes sothis-rise { from { opacity: 0; transform: translate(-50%, 12%); } }
+/* Fermeture : le cadran s'emballe à rebours, la fenêtre tourbillonne et s'efface dans une lueur. */
+.overlay.rewinding { animation: rewind-fade .9s ease-in forwards; }
+.overlay.rewinding .result-modal { animation: rewind-out .9s cubic-bezier(.55, 0, .75, .3) forwards; }
+.overlay.rewinding .sothis-dial { animation: sothis-rewind .5s linear infinite; opacity: .9; }
+@keyframes rewind-out { to { transform: rotate(-12deg) scale(.6); filter: blur(6px) brightness(1.8); opacity: 0; } }
+@keyframes rewind-fade { 60% { background: rgba(111, 214, 181, .18); } to { background: rgba(8, 10, 18, 0); } }
+@media (prefers-reduced-motion: reduce) { .sothis-dial, .sothis img { animation: none; } }
+
+/* ---------- Bâtiments : pastille sur la carte, dépliant dans le panneau ---------- */
+.build-mark text { paint-order: stroke; }
+.build-box { margin: 4px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+.build-box > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 7px 10px; font-size: .86rem; }
+.build-box > summary::-webkit-details-marker { display: none; }
+.build-box > summary::after { content: '\25BE'; margin-left: auto; color: var(--muted); transition: transform .15s; }
+.build-box[open] > summary::after { transform: rotate(180deg); }
+.build-box .b-ico { font-size: 1.1rem; line-height: 1; flex: none; }
+.build-box .b-main { min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; }
+.build-box .b-main small { color: var(--muted); }
+.build-box .b-fx { color: var(--accent); font-size: .8rem; white-space: nowrap; }
+.build-box .b-body { padding: 0 10px 8px; display: grid; gap: 6px; }
+.build-box .b-body p { margin: 0; }
+.b-levels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 4px; }
+.b-levels li { display: grid; gap: 1px; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--line); font-size: .76rem; opacity: .65; }
+.b-levels li small { color: var(--muted); }
+.b-levels li.done { opacity: .9; }
+.b-levels li.on { opacity: 1; border-color: var(--accent); color: var(--accent); }
+.b-opt { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
+.b-opt:first-child { border-top: 0; }
+.b-opt .b-main { flex: 1; display: grid; }
+.b-opt .b-main small { font-size: .74rem; }
+.b-opt .btn { flex: none; white-space: nowrap; }
+/* Panneau du territoire : défilement doux au doigt, sans entraîner la page ni la carte. */
+.map-info { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; scroll-padding-bottom: 12px; }
+/* Menu de construction */
+.build-open { flex: 1 1 100%; }
+.modal.build-menu { max-width: 420px; gap: 10px; }
+.bm-head { display: grid; gap: 2px; }
+.bm-head h2 { font-size: 1.15rem; }
+.bm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.bm-item { border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); padding: 8px 10px; display: grid; gap: 6px; }
+.bm-row { display: flex; align-items: center; gap: 8px; }
+.bm-row .b-ico { font-size: 1.4rem; line-height: 1; flex: none; }
+.bm-row .b-main { flex: 1; min-width: 0; display: grid; }
+.bm-row .b-main small { color: var(--accent); font-size: .78rem; }
+.bm-row .btn { flex: none; }
+.bm-help { flex: none; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--muted); font-weight: 700; padding: 0; line-height: 1; }
+.bm-help[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+.bm-more { display: grid; gap: 6px; }
+.bm-more p { margin: 0; }
+.bm-more[hidden] { display: none; }

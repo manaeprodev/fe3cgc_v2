@@ -119,13 +119,14 @@ const setPoints = (gid, n) => withDb((d) => d.prepare('INSERT INTO relations (us
     const g0 = r.d.character.gold;
     r = await a('/act', { action: 'defend' });
     check('action enchaînée : +3 or (Bernadetta, C)', r.d.relFx.some((x) => x.kind === 'streakGold' && x.gold === 3) && r.d.character.gold === g0 + 3, JSON.stringify([r.d.relFx, g0, r.d.character.gold]));
-    // Dorothea : avec 2 alliés ou plus sur place, l'action peut ne pas être consommée (tirage forcé à 0).
+    // Dorothea : avec au moins un allié sur place, l'action peut ne pas être consommée (tirage forcé à 0).
     setPoints('dorothea', 250); setActions(8);
     r = await a('/act', { action: 'defend' });
     check('Dorothea (C) : action non consommée à Hresvelg (des généraux alliés sont présents)', r.d.relFx.some((x) => x.kind === 'saveAction') && r.d.player.actions === 8, JSON.stringify([r.d.relFx, r.d.player.actions]));
     at('varley');
     r = await a('/act', { action: 'defend' });
-    check('… mais pas avec un seul allié sur place (Varley)', !r.d.relFx.some((x) => x.kind === 'saveAction') && r.d.player.actions === 7, JSON.stringify([r.d.relFx, r.d.player.actions]));
+    const varleyAllies = withDb((d) => d.prepare("SELECT COUNT(*) AS n FROM generals WHERE status = 'alive' AND territory = 'varley' AND faction = 'rouge'").get().n);
+    check('… et avec un seul allié sur place, ou sans allié pas de chance (Varley)', r.d.relFx.some((x) => x.kind === 'saveAction') === varleyAllies >= 1, JSON.stringify([r.d.relFx, r.d.player.actions, varleyAllies]));
     // Edelgard : contre l'Église.
     at('garreg-mach');
     battleAt('garreg-mach', 'rouge', 'eglise', 'attack');
@@ -147,10 +148,10 @@ const setPoints = (gid, n) => withDb((d) => d.prepare('INSERT INTO relations (us
     await a('/map');
     const st = row('SELECT status, reward_debuff FROM player_state WHERE user_id = ?', uid());
     check('Linhardt (C+) : 8 actions à gains réduits au lieu de 10', st.reward_debuff === 8, JSON.stringify(st));
-    // Généraux des Cerfs passés chez les Aigles pour le test : Marianne (retour en jeu), Ignatz (appel à l'aide), Lorenz (constructions).
+    // Généraux des Cerfs passés chez les Aigles pour le test : Marianne (soin après blessure), Ignatz (appel à l'aide), Lorenz (constructions).
     withDb((d) => d.exec("UPDATE generals SET faction = 'rouge' WHERE gid IN ('marianne', 'ignatz', 'lorenz')"));
     setPoints('marianne', 250);
-    check('Marianne (C) : retour en jeu à 90 or au lieu de 100', (await a('/map')).d.costs.revive === 90, String((await a('/map')).d.costs.revive));
+    check('Marianne (C) : plus de réduction du retour en jeu (100 or)', (await a('/map')).d.costs.revive === 100, String((await a('/map')).d.costs.revive));
     withDb((d) => d.prepare("UPDATE player_state SET status = 'alive', actions = 8, actions_at = ?, reward_debuff = 0 WHERE user_id = ?").run(Date.now(), uid()));
     at('rowe');
     battleAt('rowe', 'rouge', 'bleue', 'attack');
@@ -204,10 +205,10 @@ const setPoints = (gid, n) => withDb((d) => d.prepare('INSERT INTO relations (us
     const pa0 = await pwr();
     setPoints('annette', 250);
     const pa1 = await pwr();
-    check('Annette (C) sans lien C+ avec Mercedes : pas de bonus', Math.abs(pa1 - pa0) < 0.001, `${pa0} → ${pa1}`);
+    check('Annette (C) sans lien C+ avec Mercedes : +1 %', Math.abs(pa1 / pa0 - 1.01) < 0.002, `${pa0} → ${pa1}`);
     setPoints('mercedes', 400);
     const pa2 = await pwr();
-    check('avec Mercedes en C+ : +5 % d\'attaque (Annette)', Math.abs(pa2 / pa0 - 1.05) < 0.01, `${pa0} → ${pa2}`);
+    check('avec Mercedes en C+ : +1 +2 = 3 % (Annette)', Math.abs(pa2 / pa0 - 1.03) < 0.002, `${pa0} → ${pa2}`);
     check('le soutien acquis est gardé', withDb((d) => d.prepare("SELECT points FROM relations WHERE user_id = ? AND gid = 'edelgard'").get(uid()).points) === 2000);
   } catch (e) {
     failures += 1;

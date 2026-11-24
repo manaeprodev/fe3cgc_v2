@@ -172,6 +172,77 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     check('autres sources : Infirmerie', pr.d.others.items.some((x) => x.type === 'building' && x.spec === 'infirmary' && x.pct === 2), JSON.stringify(pr.d.others.items));
     run('DELETE FROM territory_builds');
 
+    console.log('# Soin passif (Évêque, Gremory)');
+    // Linhardt (Évêque) est écarté pour ne mesurer que le soin passif des joueurs.
+    const linHome = row("SELECT territory FROM generals WHERE gid = 'linhardt'").territory;
+    run("UPDATE generals SET status = 'dead' WHERE gid = 'linhardt'");
+    const path2 = (p) => set('Rouge2', 'UPDATE characters SET class = ?, class_path = ? WHERE user_id = ?', p.at(-1), JSON.stringify(p));
+    const tickHour = async () => { run("UPDATE campaign_meta SET value = ? WHERE key = 'hp_tick'", String(Date.now() - 3_600_000)); await C.Rouge1('/map'); };
+    resetMap();
+    path2(['monk', 'priest', 'bishop']);
+    set('Rouge2', "UPDATE player_state SET territory = 'varley', status = 'alive', hp = 0.5 WHERE user_id = ?");
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
+    set('Bleu1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
+    await tickHour();
+    check('Évêque voisin : +5 PV/h aux alliés (6 + 5)', near(hpOf('Rouge1'), 0.5 + 11 / 30, 0.003), String(hpOf('Rouge1') * 30));
+    check('Évêque : pas de soin pour les ennemis', near(hpOf('Bleu1'), 0.5 + 3 / 30, 0.003), String(hpOf('Bleu1') * 30));
+    check('Évêque : il se soigne aussi', near(hpOf('Rouge2'), 0.5 + 11 / maxOf('bishop'), 0.003), String(hpOf('Rouge2') * maxOf('bishop')));
+    // Hevring est à deux cases de Hresvelg : hors de portée d'un Évêque, à portée d'une Gremory qui a été évêque.
+    set('Rouge2', "UPDATE player_state SET territory = 'hevring' WHERE user_id = ?");
+    set('Rouge1', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    await tickHour();
+    check('Évêque à deux cases : hors de portée', near(hpOf('Rouge1'), 0.5 + 6 / 30, 0.003), String(hpOf('Rouge1') * 30));
+    path2(['monk', 'priest', 'bishop', 'gremory']);
+    set('Rouge1', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    await tickHour();
+    check('Gremory ex-Évêque : soin passif à deux cases', near(hpOf('Rouge1'), 0.5 + 11 / 30, 0.003), String(hpOf('Rouge1') * 30));
+    path2(['mage', 'dark-mage', 'gremory']);
+    set('Rouge1', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    await tickHour();
+    check('Gremory sans passé d\'Évêque : pas de soin passif', near(hpOf('Rouge1'), 0.5 + 6 / 30, 0.003), String(hpOf('Rouge1') * 30));
+    // Deux soigneurs ne se cumulent pas : Rouge2 (Évêque) et Linhardt (Évêque) sur le même territoire.
+    path2(['monk', 'priest', 'bishop']);
+    set('Rouge2', "UPDATE player_state SET territory = 'hresvelg' WHERE user_id = ?");
+    run("UPDATE generals SET status = 'alive', territory = 'hresvelg', move_turn = 1e12 WHERE gid = 'linhardt'");
+    set('Rouge1', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    await tickHour();
+    check('deux soins passifs : le meilleur compte, sans cumul', near(hpOf('Rouge1'), 0.5 + 11 / 30, 0.003), String(hpOf('Rouge1') * 30));
+    run("UPDATE generals SET territory = ?, move_turn = -1 WHERE gid = 'linhardt'", linHome);
+    path2(['monk']);
+    set('Rouge2', "UPDATE player_state SET hp = 1 WHERE user_id = ?");
+
+    console.log('# Soutiens des soigneurs (Flayn, Marianne, Mercedes)');
+    // Généraux passés chez les Aigles pour le test, soutien C avec Rouge1 (Mercedes en C, Annette en C+ pour le lien).
+    const helpers = ['flayn', 'marianne', 'mercedes', 'annette'];
+    const homes = Object.fromEntries(helpers.map((gid) => [gid, row('SELECT faction, territory FROM generals WHERE gid = ?', gid)]));
+    const support = (gid, points) => run('INSERT INTO relations (user_id, gid, points) VALUES (?, ?, ?) ON CONFLICT (user_id, gid) DO UPDATE SET points = excluded.points', uid('Rouge1'), gid, points);
+    run(`UPDATE generals SET faction = 'rouge', status = 'alive', territory = 'ochs', move_turn = 1e12 WHERE gid IN (${helpers.map((x) => `'${x}'`).join(',')})`);
+    resetMap();
+    support('mercedes', 250);
+    m = (await C.Rouge1('/map')).d;
+    check('Mercedes (C) : +1 PV max', m.player.hp.max === 31, JSON.stringify(m.player.hp));
+    support('annette', 400);
+    m = (await C.Rouge1('/map')).d;
+    check('Mercedes + Annette en C+ : +1 +1 PV max', m.player.hp.max === 32, JSON.stringify(m.player.hp));
+    run("DELETE FROM relations WHERE gid IN ('mercedes', 'annette')");
+    support('flayn', 250);
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
+    await tickHour();
+    const perHour = 0.2 * 60 / GAME.campaign.turnMinutes;
+    check('Flayn (C) : +0,2 PV par tour en plus', near(hpOf('Rouge1'), 0.5 + (6 + perHour) / 30, 0.003), String(hpOf('Rouge1') * 30));
+    run("DELETE FROM relations WHERE gid = 'flayn'");
+    support('marianne', 250);
+    resetMap();
+    set('Rouge1', "UPDATE player_state SET territory = 'rowe', status = 'alive', hp = ?, actions = 5 WHERE user_id = ?", 4 / 30);
+    battle('rowe', 'rouge', 'bleue', [['Rouge1', 'attack', 'rouge']], -1000);
+    await C.Rouge1('/map');
+    check('Marianne (C) : 50 % + 2 PV après la mise hors de combat', near(hpOf('Rouge1'), 0.5 + 2 / 30), String(hpOf('Rouge1') * 30));
+    const mn = row("SELECT params FROM notifications WHERE user_id = ? AND type = 'fallen_hp' ORDER BY id DESC", uid('Rouge1'));
+    check('Marianne : PV rendus dans la notification', JSON.parse(mn.params).healed === 2, mn.params);
+    run('DELETE FROM relations WHERE user_id = ?', uid('Rouge1'));
+    for (const [gid, h] of Object.entries(homes)) run('UPDATE generals SET faction = ?, territory = ?, move_turn = -1 WHERE gid = ?', h.faction, h.territory, gid);
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5, actions = 8 WHERE user_id = ?");
+
     console.log('# Soigner');
     set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
     set('Rouge2', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 1, actions = 8, actions_at = ? WHERE user_id = ?", Date.now());

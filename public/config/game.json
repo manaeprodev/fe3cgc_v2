@@ -84,8 +84,8 @@
         "en": "Hit points"
       },
       "text": {
-        "fr": "À partir de la prochaine saison, chaque joueur et chaque général a des points de vie (PV). Les PV max dépendent de la classe : 30 (base), 34 (intermédiaire), 38 (avancée), 42 (maître), +10 pour les classes lourdes (chevalier en armure, chevalier forteresse, grand chevalier), -4 pour les classes fragiles (mages, moines, voleurs, danseur). Changer de classe garde le même pourcentage de PV.\n\nÀ la fin de chaque bataille où tu as attaqué ou défendu, tu perds des PV : attaque gagnée -5, défense gagnée -3, victoire écrasante -2, attaque perdue -12, défense perdue -10. Sous 50 % de PV, ta puissance baisse de 10 % ; sous 25 %, de 20 %. À 0 PV, tu es mis hors de combat (comme un repli manqué) et tu reviens avec la moitié de tes PV.\n\nLes PV remontent seuls : +3 par heure, +6 sur un territoire allié sans bataille, +2 de plus par niveau d'Infirmerie (nouveau bâtiment), et deux fois plus vite pendant l'Overdrive.\n\nSoigner (1 action) : les classes de soin soignent un allié présent sur leur territoire (joueur ou général), ou elles-mêmes à moitié : moine 6 PV, prêtre 9, saint mortel, chevalier sacré, gremory, évêque noir et danseur 11, évêque 13. Soigner un allié rapporte de la renommée. Fiole : 150 or pour +8 PV, sans action, 3 par jour.\n\nLes généraux perdent aussi des PV en combattant, ne partent pas en sortie sous 50 % et se soignent entre eux. À 0 PV, un général meurt d'épuisement ; les seigneurs restent debout à 1 PV.",
-        "en": "From next season, every player and every general has hit points (HP). Max HP depend on the class: 30 (base), 34 (intermediate), 38 (advanced), 42 (master), +10 for heavy classes (armored knight, fortress knight, great knight), -4 for frail classes (mages, monks, thieves, dancer). Changing class keeps the same HP percentage.\n\nAt the end of each battle where you attacked or defended, you lose HP: attack won -5, defence won -3, crushing victory -2, attack lost -12, defence lost -10. Below 50% HP your power drops by 10%; below 25%, by 20%. At 0 HP you are knocked out (like a missed retreat) and come back with half your HP.\n\nHP come back on their own: +3 per hour, +6 on an allied territory without a battle, +2 more per Infirmary level (new building), and twice as fast during Overdrive.\n\nHeal (1 action): healing classes heal an ally present on their territory (player or general), or themselves for half: monk 6 HP, priest 9, mortal savant, holy knight, gremory, dark bishop and dancer 11, bishop 13. Healing an ally earns renown. Vulnerary: 150 gold for +8 HP, no action, 3 per day.\n\nGenerals also lose HP when fighting, do not go on sorties below 50% and heal each other. At 0 HP a general dies of exhaustion; lords stay standing at 1 HP."
+        "fr": "À partir de la prochaine saison, chaque joueur et chaque général a des points de vie (PV). Les PV max dépendent de la classe : 30 (base), 34 (intermédiaire), 38 (avancée), 42 (maître), +10 pour les classes lourdes (chevalier en armure, chevalier forteresse, grand chevalier), -4 pour les classes fragiles (mages, moines, voleurs, danseur). Changer de classe garde le même pourcentage de PV.\n\nÀ la fin de chaque bataille où tu as attaqué ou défendu, tu perds des PV : attaque gagnée -5, défense gagnée -3, victoire écrasante -2, attaque perdue -12, défense perdue -10. Sous 50 % de PV, ta puissance baisse de 10 % ; sous 25 %, de 20 %. À 0 PV, tu es mis hors de combat (comme un repli manqué) et tu reviens avec la moitié de tes PV.\n\nLes PV remontent seuls : +3 par heure, +6 sur un territoire allié sans bataille, +2 de plus par niveau d'Infirmerie (nouveau bâtiment), et deux fois plus vite pendant l'Overdrive.\n\nSoigner (1 action) : les classes de soin soignent un allié présent sur leur territoire (joueur ou général), ou elles-mêmes à moitié : moine 6 PV, prêtre 9, saint mortel, chevalier sacré, gremory, évêque noir et danseur 11, évêque 13. Soigner un allié rapporte de la renommée. Soin passif : l'évêque (et les classes qui en viennent) rend 5 PV par heure aux alliés de son territoire et des territoires voisins, deux cases pour une gremory ; plusieurs soins passifs ne se cumulent pas. Fiole : 150 or pour +8 PV, sans action, 3 par jour.\n\nLes généraux perdent aussi des PV en combattant, ne partent pas en sortie sous 50 % et se soignent entre eux. À 0 PV, un général meurt d'épuisement ; les seigneurs restent debout à 1 PV.",
+        "en": "From next season, every player and every general has hit points (HP). Max HP depend on the class: 30 (base), 34 (intermediate), 38 (advanced), 42 (master), +10 for heavy classes (armored knight, fortress knight, great knight), -4 for frail classes (mages, monks, thieves, dancer). Changing class keeps the same HP percentage.\n\nAt the end of each battle where you attacked or defended, you lose HP: attack won -5, defence won -3, crushing victory -2, attack lost -12, defence lost -10. Below 50% HP your power drops by 10%; below 25%, by 20%. At 0 HP you are knocked out (like a missed retreat) and come back with half your HP.\n\nHP come back on their own: +3 per hour, +6 on an allied territory without a battle, +2 more per Infirmary level (new building), and twice as fast during Overdrive.\n\nHeal (1 action): healing classes heal an ally present on their territory (player or general), or themselves for half: monk 6 HP, priest 9, mortal savant, holy knight, gremory, dark bishop and dancer 11, bishop 13. Healing an ally earns renown. Passive heal: the bishop (and the classes that come from it) restores 5 HP per hour to allies on its territory and neighbouring ones, two steps for a gremory; passive heals do not stack. Vulnerary: 150 gold for +8 HP, no action, 3 per day.\n\nGenerals also lose HP when fighting, do not go on sorties below 50% and heal each other. At 0 HP a general dies of exhaustion; lords stay standing at 1 HP."
       }
     },
     {
@@ -597,13 +597,13 @@
       "icon": "assets/classes/priest.webp",
       "effects": [
         {
-          "kind": "fortifyCost",
+          "kind": "buildCost",
           "factor": 0.5
         }
       ],
       "effectText": {
-        "fr": "L'action Fortifier coûte moitié prix.",
-        "en": "The Fortify action costs half price."
+        "fr": "Toutes les constructions coûtent moitié prix : Fortifier et les bâtiments (Forteresse, Marché, Académie, Infirmerie).",
+        "en": "All constructions cost half price: Fortify and buildings (Fortress, Market, Academy, Infirmary)."
       }
     },
     {
@@ -909,11 +909,16 @@
         {
           "kind": "fortifyPower",
           "factor": 1.5
+        },
+        {
+          "kind": "healAura",
+          "range": "adjacent",
+          "pts": 5
         }
       ],
       "effectText": {
-        "fr": "L'action Fortifier est 50 % plus efficace.",
-        "en": "The Fortify action is 50% more effective."
+        "fr": "L'action Fortifier est 50 % plus efficace. Soin passif : rend 5 PV par heure à tous les alliés présents sur son territoire et sur les territoires voisins (lui compris ; plusieurs soins passifs ne se cumulent pas).",
+        "en": "The Fortify action is 50% more effective. Passive heal: restores 5 HP per hour to every ally on its territory and on neighbouring territories (itself included; passive heals do not stack)."
       }
     },
     {
@@ -1282,8 +1287,8 @@
         }
       ],
       "effectText": {
-        "fr": "Ses auras de classe portent jusqu'à deux territoires de distance. Sur son territoire, elles sont renforcées de 50 % de l'aura de l'allié le plus fort présent (elle comprise).",
-        "en": "Its class auras reach up to two territories away. On its own territory they are boosted by 50% of the strongest aura among the allies present (itself included)."
+        "fr": "Ses auras de classe, et le soin passif de l'{c:bishop} si elle l'a été, portent jusqu'à deux territoires de distance. Sur son territoire, elles sont renforcées de 50 % de l'aura de l'allié le plus fort présent (elle comprise).",
+        "en": "Its class auras, and the {c:bishop} passive heal if it was one, reach up to two territories away. On its own territory they are boosted by 50% of the strongest aura among the allies present (itself included)."
       }
     },
     {
@@ -2889,8 +2894,8 @@
         "en": "Patch 2.0"
       },
       "intro": {
-        "fr": "La plus grosse mise à jour à ce jour : soutiens entre joueurs, ordres aux généraux, primes de renommée, et les points de vie à la prochaine saison.",
-        "en": "The biggest update yet: support between players, orders for generals, renown bonuses, and hit points next season."
+        "fr": "La plus grosse mise à jour à ce jour : soutiens entre joueurs, ordres aux généraux, primes de renommée, et les points de vie à la prochaine saison. Note complétée : soin passif de l'Évêque, nouveaux soutiens des soigneurs, Prêtre bâtisseur, constructions sur la carte et bilan de campagne avec Sothis.",
+        "en": "The biggest update yet: support between players, orders for generals, renown bonuses, and hit points next season. Updated notes: Bishop passive heal, new healer supports, builder Priest, buildings on the map and a campaign summary with Sothis."
       },
       "sections": [
         {
@@ -2994,6 +2999,86 @@
             {
               "fr": "Avec les points de vie : Bretteur (esquive, 35 % de chances de ne rien perdre), Paladin (ses alliés perdent 2 PV de moins), Baladin (vol de vie, jusqu'à 9 PV après une victoire), Guerrier (+5 PV après chaque victoire), Archer d'élite (les ennemis vaincus perdent 3 PV de plus).",
               "en": "With hit points: Swordsmaster (dodge, 35% chance to lose nothing), Paladin (allies lose 2 fewer HP), Trickster (life steal, up to 9 HP after a victory), Warrior (+5 HP after each victory), Sniper (defeated enemies lose 3 more HP)."
+            },
+            {
+              "fr": "Évêque : nouveau soin passif, +5 PV par heure à tous les alliés de son territoire et des territoires voisins (il compte aussi pour la Sainte, le Chevalier sacré et la Gremory qui ont été évêques). Plusieurs soins passifs ne se cumulent pas.",
+              "en": "Bishop: new passive heal, +5 HP per hour to every ally on its territory and neighbouring ones (it also counts for the Saint, Holy Knight and Gremory who were bishops). Passive heals do not stack."
+            },
+            {
+              "fr": "Gremory : comme ses auras, le soin passif porte jusqu'à deux territoires si elle a été évêque.",
+              "en": "Gremory: like its auras, the passive heal reaches two territories away if it was a bishop."
+            },
+            {
+              "fr": "Prêtre : toutes les constructions coûtent moitié prix (Fortifier et les bâtiments), plus seulement Fortifier. Ses classes suivantes en profitent aussi.",
+              "en": "Priest: all constructions cost half price (Fortify and buildings), not only Fortify. Its later classes benefit too."
+            },
+            {
+              "fr": "Les descriptions de classe montrent maintenant le soin (actif et passif) et les PV max en plus ou en moins (robuste, fragile).",
+              "en": "Class descriptions now show healing (active and passive) and extra or fewer max HP (sturdy, frail)."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Soutiens des soigneurs",
+            "en": "Healer supports"
+          },
+          "items": [
+            {
+              "fr": "Flayn : tes PV se régénèrent de 0,2 à 1 PV de plus par tour (de C à S).",
+              "en": "Flayn: your HP regenerate 0.2 to 1 more HP per turn (C to S)."
+            },
+            {
+              "fr": "Marianne : blessé ou grièvement blessé, tu récupères aussitôt 2 à 15 PV.",
+              "en": "Marianne: when wounded or badly wounded, you recover 2 to 15 HP at once."
+            },
+            {
+              "fr": "Mercedes : +1 à +10 PV max, et +1 à +5 de plus avec un soutien C+ avec Annette.",
+              "en": "Mercedes: +1 to +10 max HP, and +1 to +5 more with a C+ support with Annette."
+            },
+            {
+              "fr": "Annette : +1 à +10 % d'attaque et de défense, et +2 à +12 % de plus avec un soutien C+ avec Mercedes.",
+              "en": "Annette: +1 to +10% attack and defence, and +2 to +12% more with a C+ support with Mercedes."
+            },
+            {
+              "fr": "Dorothea : il suffit d'un allié sur place ; 8 à 50 % de chances de ne pas consommer l'action (au lieu de 3 à 30 %), et 1 à 6 PV rendus.",
+              "en": "Dorothea: one ally on site is enough; 8 to 50% chance not to spend the action (instead of 3 to 30%), and 1 to 6 HP restored."
+            },
+            {
+              "fr": "Les bonus liés aux PV ne servent qu'une fois les points de vie actifs (prochaine saison).",
+              "en": "HP-related bonuses only apply once hit points are active (next season)."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Fin de campagne",
+            "en": "End of campaign"
+          },
+          "items": [
+            {
+              "fr": "Le bilan de fin de campagne est présenté par Sothis, qui remonte le temps pour lancer la campagne suivante.",
+              "en": "The end-of-campaign summary is presented by Sothis, who turns back time to start the next campaign."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Constructions",
+            "en": "Constructions"
+          },
+          "items": [
+            {
+              "fr": "Une petite icône sur la carte montre les bâtiments (forteresse, marché, académie, infirmerie), avec un point par niveau.",
+              "en": "A small icon on the map shows buildings (fortress, market, academy, infirmary), with one dot per level."
+            },
+            {
+              "fr": "Le détail du territoire indique le bâtiment, son niveau et son bonus, avec un dépliant pour voir chaque niveau et l'améliorer.",
+              "en": "The territory details show the building, its level and its bonus, with a fold-out to see each level and upgrade it."
+            },
+            {
+              "fr": "Nouveau bouton Construire : un menu avec chaque bâtiment, son icône, ses bonus (bouton ?) et un retour pour annuler.",
+              "en": "New Build button: a menu with each building, its icon, its bonuses (? button) and a back button to cancel."
             }
           ]
         }
@@ -3002,7 +3087,8 @@
         "fr": "assets/update_assets/2_0.fr.webp",
         "en": "assets/update_assets/2_0.en.webp"
       },
-      "major": true
+      "major": true,
+      "rev": 2
     },
     {
       "id": "1.7",
@@ -4775,15 +4861,24 @@
       },
       "dorothea": {
         "kind": "saveAction",
-        "allies": 2,
+        "allies": 1,
         "values": [
-          3,
-          5,
-          7,
-          10,
-          13,
+          8,
+          12,
           16,
-          30
+          20,
+          25,
+          30,
+          50
+        ],
+        "hp": [
+          1,
+          2,
+          2,
+          3,
+          3,
+          4,
+          6
         ]
       },
       "edelgard": {
@@ -4885,17 +4980,26 @@
         ]
       },
       "annette": {
-        "kind": "partnerAttack",
+        "kind": "allPower",
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          10
+        ],
         "partner": "mercedes",
         "partnerLevel": "C+",
-        "values": [
+        "partnerValues": [
+          2,
+          3,
+          4,
           5,
+          6,
           7,
-          9,
-          11,
-          13,
-          15,
-          25
+          12
         ]
       },
       "ashe": {
@@ -4959,17 +5063,26 @@
         ]
       },
       "mercedes": {
-        "kind": "partnerDefense",
+        "kind": "hpMax",
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          10
+        ],
         "partner": "annette",
         "partnerLevel": "C+",
-        "values": [
-          5,
-          7,
-          9,
-          11,
-          13,
-          15,
-          25
+        "partnerValues": [
+          1,
+          1,
+          2,
+          2,
+          3,
+          3,
+          5
         ]
       },
       "hilda": {
@@ -5131,15 +5244,15 @@
         ]
       },
       "marianne": {
-        "kind": "reviveDiscount",
+        "kind": "woundHeal",
         "values": [
-          10,
-          15,
-          20,
-          25,
-          30,
-          40,
-          75
+          2,
+          3,
+          4,
+          5,
+          6,
+          8,
+          15
         ]
       },
       "lysithea": {
@@ -5287,15 +5400,15 @@
         ]
       },
       "flayn": {
-        "kind": "retreatDelay",
+        "kind": "hpRegenTurn",
         "values": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          12
+          0.2,
+          0.3,
+          0.4,
+          0.5,
+          0.6,
+          0.7,
+          1
         ]
       }
     },

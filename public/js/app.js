@@ -100,7 +100,19 @@ const tierOf = (c) => (state.config.classTiers || []).find((tr) => tr.id === c.t
 const baseTierId = () => state.config.classTiers?.[0]?.id;
 const requiresText = (c) => (c.requires || []).map(className).join(t('classes.or'));
 // Effet d'une classe, dans la langue du joueur ({c:id} devient le nom de la classe correspondante).
-const effectText = (c) => (c?.effectText ? loc(c.effectText).replace(/\{c:([a-z-]+)\}/g, (_, id) => className(id)) : '');
+// Les soigneurs (config campaign.hp.heal) ont en plus leur soin, ajouté ici pour rester en phase avec la config.
+const healText = (c) => {
+  const hp = state.config.campaign?.hp;
+  const n = Number(hp?.heal?.[c?.id]) || 0;
+  return n ? t('hp.healEffect', { hp: n, self: Math.round(n * (hp.selfFactor ?? 0.5)) }) : '';
+};
+// Classes robustes / fragiles (config campaign.hp.sturdy / frail) : PV max en plus ou en moins.
+const hpMaxText = (c) => {
+  const hp = state.config.campaign?.hp;
+  const n = ['sturdy', 'frail'].reduce((s, k) => s + ((hp?.[k]?.classes || []).includes(c?.id) ? Number(hp[k].bonus) || 0 : 0), 0);
+  return n ? t(n > 0 ? 'hp.sturdyEffect' : 'hp.frailEffect', { n: Math.abs(n) }) : '';
+};
+const effectText = (c) => [c?.effectText ? loc(c.effectText).replace(/\{c:([a-z-]+)\}/g, (_, id) => className(id)) : '', healText(c), hpMaxText(c)].filter(Boolean).join(' ');
 // Effets cumulés du joueur : ceux de toutes les classes de sa lignée.
 const myEffects = () => (state.me?.character?.path || []).flatMap((id) => klass(id)?.effects || []);
 // Condition supplémentaire d'une classe (exploit compté par le serveur), avec la progression du joueur.
@@ -638,6 +650,7 @@ async function renderMap() {
   const canEnter = (id) => isHome(id) || neighborsOf(id).some(isHome);
   let actionError = '';
   let actionNote = '';
+  let buildOpen = null; // territoire dont le dépliant « Construction » est ouvert (gardé entre deux rafraîchissements)
 
   // Repères dessinés par-dessus la carte : ma position et les batailles en cours.
   const markers = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -670,8 +683,16 @@ async function renderMap() {
       if (capOf) {
         parts.push(`<g class="capital-mark" transform="translate(${s.x} ${s.y - 34 * u}) scale(${u * 0.9})"><path d="M-9 4L-11 -6L-5 -1L0 -9L5 -1L11 -6L9 4Z" fill="${esc(faction(capOf)?.color || '#f6c945')}" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></g>`);
       }
+      // Bâtiment : petite pastille à gauche du centre, avec un point par niveau dessous.
+      if (st.build && BUILD_ICON[st.build.spec]) {
+        const bx = s.x - 24 * u, by = s.y + 2 * u;
+        const lv = st.build.level || 1;
+        const dots = Array.from({ length: lv }, (_, i) => `<circle cx="${bx + (i - (lv - 1) / 2) * 4.2 * u}" cy="${by + 10.5 * u}" r="${1.5 * u}" fill="#f6c945" stroke="#12141c" stroke-width="${0.6 * u}"/>`).join('');
+        parts.push(`<g class="build-mark"><circle cx="${bx}" cy="${by}" r="${7.5 * u}" fill="#12141cd9" stroke="#c9a25a" stroke-width="${1.1 * u}"/>
+          <text x="${bx}" y="${by + 3.3 * u}" font-size="${9 * u}" text-anchor="middle">${BUILD_ICON[st.build.spec]}</text>${dots}</g>`);
+      }
       // Signalements de ma faction.
-      const pingsHere = (state.map?.pings || []).filter((x) => x.territory === st.id);
+      const pingsHere =(state.map?.pings || []).filter((x) => x.territory === st.id);
       pingsHere.slice(0, 2).forEach((x, i) => parts.push(`<text class="ping-mark" x="${s.x + (24 + i * 17) * u}" y="${s.y + 4 * u}" font-size="${15 * u}" text-anchor="middle">${PING_ICON[x.kind] || '📍'}</text>`));
       const shielded = st.untouchableUntil && st.untouchableUntil > now;
       if (shielded) {
@@ -789,8 +810,7 @@ async function renderMap() {
     const counterBonus = state.config.campaign?.counter?.attackBonus || 0;
     const capFaction = Object.entries(state.map?.capitals || {}).find(([, id]) => id === tr.id)?.[0];
     const bsp0 = state.config.campaign?.build?.specs || {};
-    const tags = [capFaction ? `\u{1F451} ${loc(state.config.campaign?.capitalNames?.[capFaction]) || t('camp.capital', { faction: loc(faction(capFaction)?.name) })}` : '', st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : '',
-      st.build ? t('build.current', { name: loc(bsp0[st.build.spec]?.name), level: st.build.level }) : ''].filter(Boolean);
+    const tags = [capFaction ? `\u{1F451} ${loc(state.config.campaign?.capitalNames?.[capFaction]) || t('camp.capital', { faction: loc(faction(capFaction)?.name) })}` : '', st.importance > 1 ? t('camp.importance', { n: st.importance }) : '', st.annex ? t('camp.annex') : ''].filter(Boolean);
     const present = Object.entries(st.players || {}).map(([f, n]) => `<span class="who-here" title="${esc(loc(faction(f)?.name))}">
       ${flag(f) || `<span class="dot" style="--c:${esc(faction(f)?.color || '#888')}"></span>`}${n}</span>`).join('');
 
@@ -812,13 +832,6 @@ async function renderMap() {
           const hired = b ? b.hired : st.garrisonHired;
           const price = home ? costs.fortify : costs.hire; // le Prêtre fortifie à moitié prix
           actions += btn('hire', t(home ? 'camp.hireDefense' : 'camp.hireAttack', { gold: fmtNum(price) }), hired >= costs.hireMax || mine.gold < price);
-        }
-        // Construire sur son territoire (spécialité par territoire, jusqu'au niveau 3), hors bataille.
-        const bsp = Object.fromEntries(Object.entries(state.config.campaign?.build?.specs || {}).filter(([, sp]) => !sp.hpRegen || p.hp)); // Infirmerie : seulement avec les PV
-        if (st.faction === myFaction() && !b && costs.build) {
-          const lvl = st.build?.level || 0;
-          if (!st.build) actions += Object.entries(bsp).map(([id, sp]) => btn(`build:${id}`, t('build.build', { name: loc(sp.name), gold: fmtNum(costs.build[0]) }), noAct || mine.gold < costs.build[0])).join('');
-          else if (lvl < costs.buildMax) actions += btn(`build:${st.build.spec}`, t('build.upgrade', { name: loc(bsp[st.build.spec]?.name), level: lvl + 1, gold: fmtNum(costs.build[lvl]) }), noAct || mine.gold < costs.build[lvl]);
         }
         // … et appeler sa faction à l'aide, une fois par bataille.
         if (b && (b.attacker === myFaction() || b.defender === myFaction())) actions += btn('rally', t(b.rallied ? 'camp.rallied' : 'camp.rally'), b.rallied);
@@ -884,6 +897,60 @@ async function renderMap() {
         <div class="odds ${tone}"><span class="odds-bar"><i style="width:${pct}%"></i></span><b>${esc(label)} · ${pct} %</b></div>
         <p class="muted">${esc(t('camp.oddsLine', { attack: bt.power.attack, defense: bt.power.defense }))}</p></div>`;
     };
+    // Construction : un dépliant compact. Fermé, il montre le bâtiment, son niveau et son bonus ; ouvert, le bonus de chaque
+    // niveau et l'amélioration. Sur son territoire sans bâtiment, il propose les spécialités (hors bataille, jusqu'au niveau 3).
+    const canBuild = here && p.status === 'alive' && st.faction === myFaction() && !b && !!costs.build;
+    const buildHtml = (() => {
+      const specs = Object.fromEntries(Object.entries(bsp0).filter(([, sp]) => !sp.hpRegen || p.hp || st.build?.spec)); // Infirmerie : seulement avec les PV
+      const max = costs.buildMax || state.config.campaign?.build?.maxLevel || 3;
+      if (st.build) {
+        const sp = specs[st.build.spec] || bsp0[st.build.spec];
+        if (!sp) return '';
+        const lvl = st.build.level || 1;
+        const levels = Array.from({ length: max }, (_, i) => `<li class="${i + 1 === lvl ? 'on' : i + 1 < lvl ? 'done' : ''}"><small>${esc(t('build.lvl', { level: i + 1 }))}</small>${esc(buildBonus(sp, i + 1))}</li>`).join('');
+        const up = canBuild && lvl < max ? btn(`build:${st.build.spec}`, t('build.upgrade', { name: loc(sp.name), level: lvl + 1, gold: fmtNum(costs.build[lvl]) }), noAct || mine.gold < costs.build[lvl]) : '';
+        return `<details class="build-box" ${buildOpen === tr.id ? 'open' : ''}><summary><span class="b-ico" aria-hidden="true">${BUILD_ICON[st.build.spec] || ''}</span>
+          <span class="b-main"><b>${esc(loc(sp.name))}</b> <small>${esc(t('build.levelOf', { level: lvl, max }))}</small></span><span class="b-fx">${esc(buildBonus(sp, lvl))}</span></summary>
+          <div class="b-body"><p class="small muted">${esc(loc(sp.description))}</p><ol class="b-levels">${levels}</ol>
+          ${up ? `<div class="row act-row">${up}</div>` : lvl >= max ? `<p class="small muted">${esc(t('build.maxed'))}</p>` : ''}</div></details>`;
+      }
+      // Sans bâtiment : un seul bouton « Construire », qui ouvre le menu des spécialités (showBuildMenu).
+      if (!canBuild) return '';
+      return `<div class="row act-row"><button type="button" class="btn compact ghost build-open" data-build-menu>\u{1F3D7}️ ${esc(t('build.open', { gold: fmtNum(costs.build[0]) }))}</button></div>`;
+    })();
+    // Menu de construction : une ligne par spécialité (icône, nom, bonus au niveau 1, prix), un « ? » qui déplie le bonus
+    // de chaque niveau, et un bouton Retour pour annuler.
+    const showBuildMenu = () => {
+      document.getElementById('build-overlay')?.remove();
+      const specs = Object.entries(bsp0).filter(([, sp]) => !sp.hpRegen || p.hp);
+      const max = costs.buildMax || 3;
+      const price = costs.build[0];
+      const off = noAct || mine.gold < price;
+      const overlay = document.createElement('div');
+      overlay.id = 'build-overlay';
+      overlay.className = 'overlay';
+      overlay.innerHTML = `<div class="modal build-menu" role="dialog" aria-modal="true" aria-label="${esc(t('build.title'))}">
+        <div class="bm-head"><h2>\u{1F3D7}️ ${esc(t('build.title'))}</h2><small class="muted">${esc(loc(tr.name))} · ${esc(t('build.hint', { gold: fmtNum(price) }))}</small></div>
+        <ul class="bm-list">${specs.map(([id, sp]) => `<li class="bm-item">
+          <div class="bm-row"><span class="b-ico" aria-hidden="true">${BUILD_ICON[id] || ''}</span>
+            <span class="b-main"><b>${esc(loc(sp.name))}</b><small>${esc(buildBonus(sp, 1))}</small></span>
+            <button type="button" class="bm-help" data-help="${esc(id)}" aria-expanded="false" aria-label="${esc(t('build.help', { name: loc(sp.name) }))}">?</button>
+            <button type="button" class="btn compact" data-build="${esc(id)}" ${off ? 'disabled' : ''}>${esc(t('build.do'))}</button></div>
+          <div class="bm-more" hidden><p class="small muted">${esc(loc(sp.description))}</p>
+            <ol class="b-levels">${Array.from({ length: max }, (_, i) => `<li class="${i === 0 ? 'on' : ''}"><small>${esc(t('build.lvl', { level: i + 1 }))} · ${esc(fmtNum(costs.build[i]))} ${esc(t('build.gold'))}</small>${esc(buildBonus(sp, i + 1))}</li>`).join('')}</ol></div></li>`).join('')}</ul>
+        ${off ? `<p class="small note">${esc(t(noAct ? 'build.noAction' : 'build.noGold'))}</p>` : ''}
+        <button type="button" class="btn ghost" data-back>← ${esc(t('build.back'))}</button></div>`;
+      document.body.appendChild(overlay);
+      const close = () => overlay.remove();
+      overlay.querySelector('[data-back]').addEventListener('click', close);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+      overlay.querySelectorAll('[data-help]').forEach((h) => h.addEventListener('click', () => {
+        const more = h.closest('.bm-item').querySelector('.bm-more');
+        more.hidden = !more.hidden;
+        h.setAttribute('aria-expanded', String(!more.hidden));
+      }));
+      overlay.querySelectorAll('[data-build]').forEach((x) => x.addEventListener('click', () => { close(); doAct(`build:${x.dataset.build}`); }));
+    };
     // Soigneur sur son territoire : un bouton par allié blessé présent (les plus blessés d'abord).
     const healHtml = here && p.status === 'alive' && p.hp?.heal ? (() => {
       const hurt = (st.occupants || []).filter((o) => !o.me && o.hp != null && o.hp < 100 && o.faction === myFaction()).sort((x, y) => x.hp - y.hp).slice(0, 6);
@@ -913,12 +980,15 @@ async function renderMap() {
       ${p.rewardDebuff > 0 ? `<p class="small note">${esc(t('camp.rewardDebuff', { n: p.rewardDebuff }))}</p>` : ''}
       ${actions ? `<div class="row act-row">${actions}</div>` : ''}
       ${healHtml}
+      ${buildHtml}
       ${pingBox}
       ${near.length ? `<div class="chips">${near.map((id) => {
     const o = ownerOf(id) ? faction(ownerOf(id)) : null;
     return `<button type="button" class="chip" data-goto="${esc(id)}">${o ? flag(ownerOf(id)) : `<span class="dot" style="--c:#6b7287"></span>`}${esc(loc(shape(id).name))}</button>`;
   }).join('')}</div>` : `<p class="muted small">${esc(t('map.noNeighbors'))}</p>`}`;
     box.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => select(el.dataset.goto, true)));
+    box.querySelector('.build-box')?.addEventListener('toggle', (e) => { buildOpen = e.currentTarget.open ? tr.id : null; });
+    box.querySelector('[data-build-menu]')?.addEventListener('click', showBuildMenu);
     box.querySelectorAll('[data-verdict]').forEach((el) => el.addEventListener('click', async () => {
       box.querySelectorAll('[data-verdict]').forEach((x) => { x.disabled = true; });
       actionError = '';
@@ -1216,7 +1286,9 @@ function notifText(n) {
   for (const k of ['territory', 'home']) if (p[k]) p[k] = loc(state.config.map.territories.find((x) => x.id === p[k])?.name) || p[k];
   for (const k of ['gold', 'xp', 'points', 'rank']) if (typeof p[k] === 'number') p[k] = fmtNum(p[k]);
   if (n.type === 'general_order') return { title: t('notif.general_order.title', p), body: t(`notif.general_order.${n.params.outcome}`, p) };
-  return { title: t(`notif.${n.type}.title`, p), body: t(numKey(`notif.${n.type}.body`, n.params.faction), p) };
+  const body = t(numKey(`notif.${n.type}.body`, n.params.faction), p);
+  // Marianne : PV rendus aussitôt après une blessure.
+  return { title: t(`notif.${n.type}.title`, p), body: n.params.healed ? `${body} ${t('notif.woundHealed', { hp: n.params.healed })}` : body };
 }
 
 async function renderNotifs() {
@@ -1363,6 +1435,10 @@ async function renderMissions() {
 
 // Journal du monde : derniers événements de la carte, et alliés tombés qui demandent de l'aide.
 let journalView = null;
+// Bâtiments : icône sur la carte et dans le panneau, et bonus total au niveau donné (config campaign.build.specs).
+const BUILD_ICON = { fortress: '\u{1F3F0}', market: '\u{1F4B0}', academy: '\u{1F4DA}', infirmary: '\u{1FA79}' };
+const BUILD_FX = ['defensePct', 'goldPct', 'xpPct', 'hpRegen'];
+const buildBonus = (sp, level) => BUILD_FX.filter((k) => sp?.[k]).map((k) => t(`build.fx.${k}`, { n: fmtNum(sp[k] * level) })).join(' · ');
 const PING_ICON = { attack: '\u2694\uFE0F', defend: '\u{1F6E1}\uFE0F', danger: '\u26A0\uFE0F', onmyway: '\u{1F6B6}', regroup: '\u{1F6A9}' };
 const REACT_ICON = { cheer: '\u{1F44F}', support: '\u{1F4AA}', help: '\u{1F91D}' }; // applaudir, soutenir, serrer la main
 async function renderJournal() {
@@ -1685,11 +1761,12 @@ function relBonusHtml(g, idx) {
   if (!bd) return `<p class="muted small">${esc(t('rel.bonusSoon'))}</p>`;
   const lv = state.relations.levels;
   const terrName = (id) => loc(state.config.map.territories.find((x) => x.id === id)?.name) || id;
-  const text = t(`relb.${bd.kind}`, { v: bd.values[Math.max(0, idx)], name: g.name, partner: bd.partner ? generalName(bd.partner) : '', level: bd.partnerLevel || '', territory: bd.territory ? terrName(bd.territory) : '' });
+  const i = Math.max(0, idx);
+  const text = t(`relb.${bd.kind}`, { v: fmtNum(bd.values[i]), w: fmtNum(bd.partnerValues?.[i] ?? 0), hp: fmtNum(bd.hp?.[i] ?? 0), name: g.name, partner: bd.partner ? generalName(bd.partner) : '', level: bd.partnerLevel || '', territory: bd.territory ? terrName(bd.territory) : '' });
   const status = g.state !== 'allied' ? t('rel.bonusInactive') : idx < 0 ? t('rel.bonusLocked') : t('rel.bonusActive');
   return `<div class="rel-bonus ${g.state === 'allied' && idx >= 0 ? 'on' : ''}"><strong>\u2728 ${esc(t('rel.bonus'))}</strong>
     <p class="small">${esc(text)}</p>
-    <div class="rel-values">${bd.values.map((v, i) => `<span class="${i === idx ? 'on' : ''}"><small>${esc(lv[i]?.id || '')}</small>${esc(String(v))}</span>`).join('')}</div>
+    <div class="rel-values">${bd.values.map((v, i) => `<span class="${i === idx ? 'on' : ''}"><small>${esc(lv[i]?.id || '')}</small>${esc(fmtNum(v))}${bd.partnerValues ? `<small>+${esc(fmtNum(bd.partnerValues[i]))}</small>` : ''}</span>`).join('')}</div>
     <p class="muted small">${esc(status)}</p></div>`;
 }
 // Fenêtre de soutien avec un général : niveau, progression vers le suivant, et les offrandes (fleur, lettre).
@@ -1791,7 +1868,7 @@ function modText(m) {
   const terrName = (id) => loc(state.config.map.territories.find((x) => x.id === id)?.name) || id;
   switch (m.type) {
     case 'class': return `${className(m.class)} : ${effectText(klass(m.class))}`;
-    case 'support': return `${generalName(m.general)} (${m.level}) : ${t(`relb.${m.kind}`, { v: m.value, name: generalName(m.general), partner: m.partner ? generalName(m.partner) : '', level: m.partnerLevel || '', territory: m.territory ? terrName(m.territory) : '' })}`;
+    case 'support': return `${generalName(m.general)} (${m.level}) : ${t(`relb.${m.kind}`, { v: fmtNum(m.base ?? m.value), w: fmtNum(m.extra || 0), hp: fmtNum(m.hp || 0), name: generalName(m.general), partner: m.partner ? generalName(m.partner) : '', level: m.partnerLevel || '', territory: m.territory ? terrName(m.territory) : '' })}`;
     case 'perk': return t(`perk.${m.perk}`, { n: m.n, max: m.max, place: m.place ? terrName(m.place) : '' });
     case 'lord': { const ab = state.config.campaign?.lords?.[m.faction]?.ability; return t('mods.lordActive', { title: loc(ab?.title), effect: loc(ab?.description) }); }
     case 'overdrive': return t(m.level === 'plus' ? 'mods.overdrivePlus' : 'mods.overdrive', m);
@@ -1960,10 +2037,20 @@ function showResult() {
     ...(r.mult > 1 ? [`<li><span>${esc(t('result.mult', { n: Math.round((r.mult - 1) * 100) }))}</span><b>×${r.mult}</b></li>`] : []),
     ...(r.win ? [part(t('result.part.win'), r.win)] : []),
   ].join('');
+  // Sothis remonte le temps : sa citation dépend de l'issue (victoire, défaite, égalité, exil).
+  const mood = r.exile ? 'exile' : !winner ? 'draw' : r.won ? 'won' : 'lost';
+  // Cadran de l'horloge (12 graduations) derrière Sothis, qui tourne à rebours.
+  const ticks = Array.from({ length: 12 }, (_, i) => `<line x1="50" y1="${i % 3 ? 6 : 3}" x2="50" y2="11" transform="rotate(${i * 30} 50 50)"/>`).join('');
   const overlay = document.createElement('div');
   overlay.id = 'result-overlay';
   overlay.className = 'overlay';
-  overlay.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${esc(t('result.title'))}">
+  overlay.innerHTML = `<div class="modal result-modal" role="dialog" aria-modal="true" aria-label="${esc(t('result.title'))}">
+    <figure class="sothis">
+      <svg class="sothis-dial" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="38" class="inner"/>${ticks}</svg>
+      <img src="${avatarUrl('avatar_40.webp')}" alt="">
+    </figure>
+    <div class="result-body">
+    <blockquote class="sothis-quote"><p>${esc(t(`result.sothis.${mood}`))}</p><cite>${esc(t('result.sothis.name'))}</cite></blockquote>
     <p class="steps">${esc(t('result.title'))} · ${esc(t(`result.reason.${r.reason}`))}</p>
     <h2 class="${r.won ? 'won' : ''}">${esc(verdict)}</h2>
     <p class="result-faction">${mine ? flag(mine.id) + esc(loc(mine.name)) : ''} <b>${esc(t('result.points', { n: fmtNum(r.factionPoints) }))}</b></p>
@@ -1971,9 +2058,13 @@ function showResult() {
     <h3>${esc(t('result.standings'))}</h3>
     <ol class="result-standings">${r.standings.map((x) => `<li>${flag(x.faction)}<span>${esc(loc(faction(x.faction)?.name))}</span><small class="muted">${esc(t('result.map', { pct: x.pct }))}</small><b>${fmtNum(x.points)}</b></li>`).join('')}</ol>
     <p class="small">${r.rank ? esc(t('result.rank', { rank: r.rank, score: fmtNum(r.score) })) : ''}${r.rankGold ? ' · ' + esc(t('result.rankGold', { gold: fmtNum(r.rankGold) })) : ''}${r.exileGold ? ' · ' + esc(t('result.exileGold', { gold: fmtNum(r.exileGold) })) : ''}</p>
-    <button type="button" class="btn" data-close>${esc(t('result.close'))}</button></div>`;
+    <button type="button" class="btn rewind-btn" data-close>⏳ ${esc(t('result.close'))}</button></div></div>`;
   document.body.appendChild(overlay);
-  overlay.querySelector('[data-close]').addEventListener('click', async () => {
+  overlay.querySelector('[data-close]').addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true;
+    // Le temps se rembobine : le cadran s'emballe et la fenêtre s'efface (sans animation si l'appareil les réduit).
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (!still) { overlay.classList.add('rewinding'); await new Promise((ok) => setTimeout(ok, 900)); }
     overlay.remove();
     try { setMe(await api('/campaign/seen', {})); } catch (err) { if (err.status === 401) sessionLost(); }
   });

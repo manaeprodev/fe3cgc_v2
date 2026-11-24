@@ -619,7 +619,8 @@ function missionState(userId) {
 const statOf = (userId, event) => q.events.all(userId).find((r) => r.event === event)?.count || 0;
 
 // Dernière mise à jour publiée (la première de la liste « patches » de game.json).
-const LATEST_PATCH = (config.patches || [])[0]?.id || null;
+// Dernière note de mise à jour ; « rev » la fait relire (et rouvre la popup des mises à jour majeures) quand on la complète.
+const LATEST_PATCH = (() => { const p = (config.patches || [])[0]; return p ? (p.rev ? `${p.id}#${p.rev}` : p.id) : null; })();
 
 // Tutoriel de la première heure : chaque étape est faite quand l'événement correspondant a été constaté au moins une fois.
 function tutorialState(userId) {

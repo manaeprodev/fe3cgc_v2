@@ -2088,9 +2088,11 @@ function renderPatches() {
       ${(pt.sections || []).map((sec) => `<h3>${esc(loc(sec.title))}</h3>
         <ul class="patch-list">${(sec.items || []).map((i) => `<li>${esc(loc(i))}</li>`).join('')}</ul>`).join('')}`;
   const head = (pt) => `${esc(loc(pt.title))}${pt.date ? ` <span class="muted small">· ${esc(fmt(pt.date))}</span>` : ''}`;
+  // Grosse mise à jour : une illustration (dans la langue du joueur) en tête, fondue dans la carte.
+  const hero = (pt) => (pt.image ? `<figure class="patch-hero"><img src="${esc(loc(pt.image))}" alt="${esc(loc(pt.title))}" loading="lazy"></figure>` : '');
   view.innerHTML = panelHead(`\u{1F4F0} ${t('patch.title')}`) + (patches.length ? patches.map((pt, i) => (i === 0
-    ? `<section class="card patch"><h2>${head(pt)}</h2>${body(pt)}</section>`
-    : `<details class="card patch archived"><summary><strong>${head(pt)}</strong></summary>${body(pt)}</details>`)).join('') : `<p class="muted">${esc(t('patch.empty'))}</p>`);
+    ? `<section class="card patch ${pt.image ? 'has-hero' : ''}">${hero(pt)}<h2>${head(pt)}</h2>${body(pt)}</section>`
+    : `<details class="card patch archived"><summary><strong>${head(pt)}</strong></summary>${hero(pt)}${body(pt)}</details>`)).join('') : `<p class="muted">${esc(t('patch.empty'))}</p>`);
   bindClose(view);
   if (patchUnread()) {
     state.me.patch = { ...state.me.patch, seen: state.me.patch.latest };

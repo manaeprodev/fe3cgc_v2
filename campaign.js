@@ -980,7 +980,7 @@ module.exports = function createCampaign(ctx) {
   function hurtPlayer(uid, pts, t) {
     const ps = q.state.get(uid);
     const ch = q.char.get(uid);
-    if (!ps || !ch || ps.status === 'dead' || !pts) return false;
+    if (!ps || !ch || ps.status === 'dead' || !(pts > 0)) return false;
     const f = hpFrac(ps.hp) - pts / hpMaxOf(ch.class);
     if (f > 1e-9) { q.setHp.run(f, uid); return false; }
     q.setHp.run(0, uid);
@@ -1005,13 +1005,41 @@ module.exports = function createCampaign(ctx) {
     row.hp = after;
     return hpPoints(after, max) - hpPoints(before, max);
   }
+  // Effets de classe sur les PV (combattants qui ont agi dans la bataille, joueurs et généraux) :
+  // hpDodge (chance de ne rien perdre), hpGuard (les alliés du même côté perdent moins, le plus fort compte),
+  // hpWound (les ennemis vaincus perdent plus, le plus fort compte), hpOnWin et hpDrain (PV regagnés après une victoire).
+  const hpRoll = () => (process.env.TEST_HP_ROLL !== undefined ? Number(process.env.TEST_HP_ROLL) : Math.random());
+  function wearParts(b) {
+    const parts = [];
+    for (const side of ['attack', 'defense']) for (const { user_id: uid } of q.sideActors.all(b.id, side)) parts.push({ id: uid, side, eff: effectsOfUser(uid) });
+    for (const c of q.generalContribs.all(b.id)) if (GEN.has(c.gid)) parts.push({ id: `g:${c.gid}`, side: c.side, eff: fx.effectsOfPath(genPath(c.gid)) });
+    return parts;
+  }
+  function wearOf(part, parts, success, decisive) {
+    const won = (part.side === 'attack') === success;
+    const best = (list, kind, field) => Math.max(0, ...list.flatMap((x) => x.eff.filter((e) => e.kind === kind).map((e) => Number(e[field]) || 0)));
+    const mates = parts.filter((x) => x.side === part.side);
+    const foes = parts.filter((x) => x.side !== part.side);
+    let loss = hpLoss(part.side, success, decisive) - best(mates, 'hpGuard', 'pts') + (won ? 0 : best(foes, 'hpWound', 'pts'));
+    const dodge = best([part], 'hpDodge', 'pct');
+    if (dodge && hpRoll() * 100 < dodge) loss = 0;
+    let gain = 0;
+    if (won) {
+      gain += part.eff.filter((e) => e.kind === 'hpOnWin').reduce((n, e) => n + (Number(e.pts) || 0), 0);
+      for (const e of part.eff.filter((x) => x.kind === 'hpDrain')) gain += Math.min(Number(e.max) || Infinity, (Number(e.perEnemy) || 0) * foes.length);
+    }
+    return { loss: Math.max(0, loss), gain };
+  }
   // Usure d'une bataille pour les joueurs qui y ont agi. Renvoie ceux qui sont tombés à 0 PV (déjà mis hors de combat).
   function battleWear(b, success, decisive, t) {
     const ko = new Set();
     if (!hpOn()) return ko;
-    for (const side of ['attack', 'defense']) {
-      const pts = hpLoss(side, success, decisive);
-      for (const { user_id: uid } of q.sideActors.all(b.id, side)) if (hurtPlayer(uid, pts, t)) ko.add(uid);
+    const parts = wearParts(b);
+    for (const part of parts) {
+      if (typeof part.id !== 'number') continue;
+      const w = wearOf(part, parts, success, decisive);
+      if (hurtPlayer(part.id, w.loss, t)) ko.add(part.id);
+      else if (w.gain) healPlayer(part.id, w.gain);
     }
     return ko;
   }
@@ -1019,12 +1047,14 @@ module.exports = function createCampaign(ctx) {
   // qui restent à 1 PV.
   function generalsWear(b, success, decisive, t) {
     if (!hpOn()) return;
+    const parts = wearParts(b);
     for (const c of q.generalContribs.all(b.id)) {
       const row = q.general.get(c.gid);
       if (!row || row.status !== 'alive' || !GEN.has(row.gid)) continue;
       const max = hpMaxOf(genClass(row.gid));
-      const f = hpFrac(row.hp) - hpLoss(c.side, success, decisive) / max;
-      if (f > 1e-9) { q.setGenHp.run(f, row.gid); continue; }
+      const w = wearOf(parts.find((x) => x.id === `g:${c.gid}`) || { id: `g:${c.gid}`, side: c.side, eff: [] }, parts, success, decisive);
+      const f = hpFrac(row.hp) - w.loss / max;
+      if (f > 1e-9) { q.setGenHp.run(Math.min(1, f + w.gain / max), row.gid); continue; }
       if (isLord(row.gid) || row.gid === CH.lord || row.gid === CH.immaculate) { q.setGenHp.run(1 / max, row.gid); continue; }
       q.setGenHp.run(0, row.gid);
       killGeneral(row, c.side === 'attack' ? b.defender : b.attacker, row.territory, t, true);

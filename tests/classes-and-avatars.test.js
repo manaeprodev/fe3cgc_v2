@@ -128,7 +128,7 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     await powerCase('Combattant : plafonné à +20 %', { Rouge1: P(['fighter'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1, 50]], 1.2, 2);
     await powerCase('Moine : +2 % aux alliés d\'un territoire voisin', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(['monk'], { at: 'duval' }) }, rouge, [['Rouge1', 'attack', 1]], 1.04, 2);
     await powerCase('Moine : rien s\'il est trop loin', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(['monk'], { at: 'hresvelg' }) }, rouge, [['Rouge1', 'attack', 1]], 1.0, 2);
-    await powerCase('Mage : +2 % aux Épéistes sur place (plus Moine et bonus propre)', { Rouge1: P(['myrmidon'], { at: 'rowe' }), Rouge2: P(['monk', 'mage'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.13, 2);
+    await powerCase('Mage : +5 % aux Épéistes sur place (plus Moine et bonus propre)', { Rouge1: P(['myrmidon'], { at: 'rowe' }), Rouge2: P(['monk', 'mage'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.16, 2);
     await powerCase('Mage : son aura ne passe pas la frontière du territoire (le Moine si)', { Rouge1: P(['myrmidon'], { at: 'rowe' }), Rouge2: P(['monk', 'mage'], { at: 'duval' }) }, rouge, [['Rouge1', 'attack', 1]], 1.11, 2);
     await powerCase('Bretteur : +3 % aux Épéistes sur place, lui compris', { Rouge1: P(['myrmidon'], { at: 'rowe' }), Rouge2: P(['myrmidon', 'mercenary', 'swordsmaster'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.1, 2);
     await powerCase('Paladin : +3 % aux Soldats en défense', { Bleu1: P(['soldier'], { at: 'rowe' }), Bleu2: P(['soldier', 'cavalier', 'paladin'], { at: 'rowe' }) }, rouge, [['Bleu1', 'defense', 1]], 0, 3.1);
@@ -144,12 +144,12 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     await powerCase('Filou en infériorité numérique : +10 %', { Rouge1: P(filou, { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }), Bleu2: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.29, 2);
     await powerCase('Filou à égalité : pas de bonus', { Rouge1: P(filou, { at: 'rowe' }), Rouge2: P(['soldier'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }), Bleu2: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.19, 2);
     const darkMage = ['monk', 'mage', 'dark-mage'];
-    await powerCase('Mage noir : ×2,5 sans Moine chez les alliés ni chez les ennemis', { Rouge1: P(darkMage, { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 2.6, 2);
-    await powerCase('Mage noir : ×2 si un ennemi a Moine', { Rouge1: P(darkMage, { at: 'rowe' }), Bleu1: P(['monk', 'priest'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 2.08, 2);
-    await powerCase('Mage noir : pas de bonus si un allié a Moine', { Rouge1: P(darkMage, { at: 'rowe' }), Rouge2: P(['monk'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.08, 2);
-    await powerCase('Mage noir : ×2 quand il n\'y a aucun ennemi', { Rouge1: P(darkMage, { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 2.08, 2);
+    await powerCase('Mage noir : ×2,5 sans Moine chez les alliés ni chez les ennemis', { Rouge1: P(darkMage, { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 2.85, 2);
+    await powerCase('Mage noir : ×2 si un ennemi a Moine', { Rouge1: P(darkMage, { at: 'rowe' }), Bleu1: P(['monk', 'priest'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 2.28, 2);
+    await powerCase('Mage noir : pas de bonus si un allié a Moine', { Rouge1: P(darkMage, { at: 'rowe' }), Rouge2: P(['monk'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.18, 2);
+    await powerCase('Mage noir : ×2 quand il n\'y a aucun ennemi', { Rouge1: P(darkMage, { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 2.28, 2);
     await powerCase('Enchanteur : -10 % de pouvoir aux ennemis Épéiste, Soldat ou Combattant',
-      { Rouge1: P(['monk', 'mage', 'warlock'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1], ['Bleu1', 'defense', 1]], 1.04, 2.97);
+      { Rouge1: P(['monk', 'mage', 'warlock'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1], ['Bleu1', 'defense', 1]], 1.14, 2.97);
     await powerCase('Archer : -30 % de défense aux ennemis volants',
       { Rouge1: P(['fighter', 'archer'], { at: 'rowe' }), Bleu1: P(['soldier', 'pegasus-knight'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1], ['Bleu1', 'defense', 1]], 1, 2.77);
     await powerCase('Cavalier archer : -30 % de plus (60 %) et +10 % par ennemi volant',
@@ -205,10 +205,10 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     const [r1, r2] = [[...ring1][0], [...ring2][0]];
     const gremory = ['monk', 'mage', 'warlock', 'gremory'];
     const dancer = ['myrmidon', 'mercenary', 'swordsmaster', 'dancer'];
-    await powerCase('Gremory sur place : ses auras (3 + 2) + 50 % de la sienne (2,5)', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(gremory, { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.09, 2);
-    await powerCase('Gremory : aura du plus fort allié le plus fort compte (Danseur 8 : +4)', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(gremory, { at: 'rowe' }), Rouge3: P(dancer, { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.15, 2);
-    await powerCase('Gremory voisine : portée de deux cases, pas de renfort', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(gremory, { at: r1 }) }, rouge, [['Rouge1', 'attack', 1]], 1.06, 2);
-    await powerCase('Gremory à deux territoires : ses auras portent encore', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(gremory, { at: r2 }) }, rouge, [['Rouge1', 'attack', 1]], 1.06, 2);
+    await powerCase('Gremory sur place : ses auras (3 + 2) + 50 % de la sienne (2,5)', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(gremory, { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.14, 2);
+    await powerCase('Gremory : aura du plus fort allié le plus fort compte (Danseur 8 : +4)', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(gremory, { at: 'rowe' }), Rouge3: P(dancer, { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.19, 2);
+    await powerCase('Gremory voisine : portée de deux cases, pas de renfort', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(gremory, { at: r1 }) }, rouge, [['Rouge1', 'attack', 1]], 1.09, 2);
+    await powerCase('Gremory à deux territoires : ses auras portent encore', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(gremory, { at: r2 }) }, rouge, [['Rouge1', 'attack', 1]], 1.09, 2);
     await powerCase('Gremory à trois territoires : trop loin', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(gremory, { at: ring3 }) }, rouge, [['Rouge1', 'attack', 1]], 1.0, 2);
     await powerCase('Un Moine seul ne porte pas à deux cases', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(['monk'], { at: r2 }) }, rouge, [['Rouge1', 'attack', 1]], 1.0, 2);
     const dk = ['soldier', 'cavalier', 'paladin', 'dark-knight'];

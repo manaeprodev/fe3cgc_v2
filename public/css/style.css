@@ -743,3 +743,14 @@ h3 { font-family: "Alegreya Sans", system-ui, sans-serif; font-weight: 700; }
 .pf-orders .order-target { width: 100%; margin: 4px 0 8px; padding: 8px; border-radius: 8px; background: #1b1e29; color: inherit; border: 1px solid rgba(255, 255, 255, .15); font: inherit; }
 .pf-orders .btn { width: 100%; }
 .pf-orders .order-kinds .btn { width: auto; flex: 1; }
+
+/* Illustration d'une grosse mise à jour : pleine largeur de la carte, 30 % de l'écran au plus, fondue vers le bas et sur les côtés. */
+.patch.has-hero { padding-top: 0; overflow: hidden; flex: none; }
+.patch-hero { position: relative; margin: 0 -14px -28px; height: min(30vh, 300px); overflow: hidden; }
+.patch-hero img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 38%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, rgba(0, 0, 0, .55) 75%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 45%, rgba(0, 0, 0, .55) 75%, transparent 100%); }
+.patch-hero::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to right, var(--panel) 0, transparent 9%, transparent 91%, var(--panel) 100%); }
+.patch.has-hero > h2 { position: relative; z-index: 1; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
+.patch.archived .patch-hero { margin: 4px 0 -16px; height: min(22vh, 200px); border-radius: 8px; }

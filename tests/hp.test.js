@@ -112,7 +112,7 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     await stop();
 
     console.log('# PV actifs');
-    await start({ HP_ON: '1' });
+    await start({ HP_ON: '1', TEST_HP_ROLL: '0.99' });
     // Dorothea (Danseuse) soigne à Hresvelg : on l'écarte pour mesurer les PV sans ses soins.
     run("UPDATE generals SET status = 'dead' WHERE gid = 'dorothea'");
     m = (await C.Rouge2('/map')).d;
@@ -219,7 +219,7 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     run("UPDATE generals SET hp = 1 WHERE gid = 'ferdinand'");
     battle('rowe', 'rouge', 'bleue', [], -1000, [['ferdinand', 'attack']]);
     await C.Rouge1('/map');
-    check('un général vainqueur perd aussi des PV', near(genHp('ferdinand').hp, 1 - 5 / fMax), JSON.stringify(genHp('ferdinand')));
+    check('un général vainqueur perd aussi des PV (Ferdinand, Paladin : 5 - 2)', near(genHp('ferdinand').hp, 1 - 3 / fMax), JSON.stringify(genHp('ferdinand')));
     resetMap();
     run("UPDATE generals SET hp = ?, territory = 'aegir', status = 'alive' WHERE gid = 'ferdinand'", 3 / fMax);
     battle('rowe', 'rouge', 'bleue', [], -1000, [['ferdinand', 'attack']]);
@@ -242,6 +242,41 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     run("UPDATE generals SET actions = 4, move_turn = -1 WHERE gid = 'linhardt'");
     await C.Rouge1('/map');
     check('un général soigneur soigne un allié blessé sur place', hpOf('Rouge1') >= 0.3 + HP.heal.bishop / 30 - 0.002, String(hpOf('Rouge1') * 30));
+
+    console.log('# Effets de classe sur les PV');
+    const setClass = (n, path) => set(n, 'UPDATE characters SET class = ?, class_path = ? WHERE user_id = ?', path.at(-1), JSON.stringify(path));
+    const fight = async (attackers, defenders) => {
+      resetMap();
+      for (const n of [...attackers, ...defenders]) set(n, "UPDATE player_state SET territory = 'rowe', status = 'alive', hp = 0.5 WHERE user_id = ?");
+      battle('rowe', 'rouge', 'bleue', [...attackers.map((n) => [n, 'attack', 'rouge']), ...defenders.map((n) => [n, 'defense', 'bleue'])], -1000);
+      await C.Rouge1('/map');
+    };
+    // Paladin : lui et ses alliés du même côté perdent 2 PV de moins.
+    setClass('Rouge1', ['soldier', 'cavalier', 'paladin']);
+    setClass('Rouge2', ['monk']);
+    await fight(['Rouge1', 'Rouge2'], []);
+    check('Paladin : il perd 5 - 2 = 3 PV', near(hpOf('Rouge1'), 0.5 - 3 / maxOf('paladin')), String(hpOf('Rouge1') * maxOf('paladin')));
+    check('Paladin : son allié aussi (3 PV)', near(hpOf('Rouge2'), 0.5 - 3 / maxOf('monk')), String(hpOf('Rouge2') * maxOf('monk')));
+    // Guerrier : +5 PV après une victoire (5 perdus, 5 regagnés).
+    setClass('Rouge1', ['fighter', 'warrior']);
+    await fight(['Rouge1'], []);
+    check('Guerrier : regagne 5 PV après la victoire', near(hpOf('Rouge1'), 0.5), String(hpOf('Rouge1') * maxOf('warrior')));
+    // Archer d'élite : les ennemis vaincus perdent 3 PV de plus.
+    setClass('Rouge1', ['soldier', 'archer', 'sniper']);
+    await fight(['Rouge1'], ['Bleu1']);
+    check('Archer d\'élite : le défenseur vaincu perd 10 + 3 PV', near(hpOf('Bleu1'), 0.5 - 13 / 30), String(hpOf('Bleu1') * 30));
+    // Baladin : vol de vie, 3 PV par ennemi (un défenseur ici).
+    setClass('Rouge1', ['myrmidon', 'thief', 'assassin', 'trickster']);
+    await fight(['Rouge1'], ['Bleu1']);
+    check('Baladin : perd 5, regagne 3', near(hpOf('Rouge1'), 0.5 - 2 / maxOf('trickster')), String(hpOf('Rouge1') * maxOf('trickster')));
+    // Bretteur : sans esquive (tirage défavorable), la perte normale.
+    setClass('Rouge1', ['myrmidon', 'mercenary', 'swordsmaster']);
+    await fight(['Rouge1'], []);
+    check('Bretteur sans esquive : perte normale', near(hpOf('Rouge1'), 0.5 - 5 / maxOf('swordsmaster')), String(hpOf('Rouge1') * maxOf('swordsmaster')));
+    await stop();
+    await start({ HP_ON: '1', TEST_HP_ROLL: '0' });
+    await fight(['Rouge1'], []);
+    check('Bretteur : esquive, aucun PV perdu', near(hpOf('Rouge1'), 0.5), String(hpOf('Rouge1') * maxOf('swordsmaster')));
   } catch (e) {
     failures += 1;
     console.error('ERREUR', e);

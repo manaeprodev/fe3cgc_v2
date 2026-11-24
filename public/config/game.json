@@ -623,9 +623,14 @@
       "icon": "assets/classes/mage.webp",
       "effects": [
         {
+          "kind": "power",
+          "side": "attack",
+          "pct": 10
+        },
+        {
           "kind": "aura",
           "range": "territory",
-          "pct": 2,
+          "pct": 5,
           "targets": [
             "myrmidon",
             "soldier",
@@ -634,8 +639,8 @@
         }
       ],
       "effectText": {
-        "fr": "Donne +2 % de pouvoir de défense et d'attaque aux alliés qui ont {c:myrmidon}, {c:soldier} ou {c:fighter} dans leur arbre de classes.",
-        "en": "Gives +2% defence and attack power to allies with {c:myrmidon}, {c:soldier} or {c:fighter} in their class tree."
+        "fr": "+10 % de pouvoir d'attaque, et donne +5 % de pouvoir de défense et d'attaque aux alliés présents sur son territoire qui ont {c:myrmidon}, {c:soldier} ou {c:fighter} dans leur arbre de classes.",
+        "en": "+10% attack power, and gives +5% defence and attack power to allies on its territory with {c:myrmidon}, {c:soldier} or {c:fighter} in their class tree."
       }
     },
     {
@@ -692,11 +697,15 @@
           "targets": [
             "myrmidon"
           ]
+        },
+        {
+          "kind": "hpDodge",
+          "pct": 35
         }
       ],
       "effectText": {
-        "fr": "Donne +3 % de pouvoir d'attaque ou de défense aux alliés qui ont ou ont eu {c:myrmidon} dans leur arbre de classes, lors d'une attaque ou d'une défense sur son territoire.",
-        "en": "Gives +3% attack or defence power to allies who have or had {c:myrmidon} in their class tree, in an attack or defence on its territory."
+        "fr": "Donne +3 % de pouvoir d'attaque ou de défense aux alliés qui ont ou ont eu {c:myrmidon} dans leur arbre de classes, lors d'une attaque ou d'une défense sur son territoire. Esquive : 35 % de chances de ne perdre aucun PV à la fin d'une bataille.",
+        "en": "Gives +3% attack or defence power to allies who have or had {c:myrmidon} in their class tree, in an attack or defence on its territory. Dodge: 35% chance to lose no HP at the end of a battle."
       }
     },
     {
@@ -723,11 +732,15 @@
           "targets": [
             "soldier"
           ]
+        },
+        {
+          "kind": "hpGuard",
+          "pts": 2
         }
       ],
       "effectText": {
-        "fr": "Donne +3 % de pouvoir d'attaque ou de défense aux alliés qui ont ou ont eu {c:soldier} dans leur arbre de classes, lors d'une attaque ou d'une défense sur son territoire.",
-        "en": "Gives +3% attack or defence power to allies who have or had {c:soldier} in their class tree, in an attack or defence on its territory."
+        "fr": "Donne +3 % de pouvoir d'attaque ou de défense aux alliés qui ont ou ont eu {c:soldier} dans leur arbre de classes, lors d'une attaque ou d'une défense sur son territoire. Rempart : ses alliés du même côté de la bataille (lui compris) perdent 2 PV de moins.",
+        "en": "Gives +3% attack or defence power to allies who have or had {c:soldier} in their class tree, in an attack or defence on its territory. Bulwark: allies on the same side of the battle (itself included) lose 2 fewer HP."
       }
     },
     {
@@ -804,11 +817,15 @@
         {
           "kind": "renownPerWin",
           "xp": 25
+        },
+        {
+          "kind": "hpOnWin",
+          "pts": 5
         }
       ],
       "effectText": {
-        "fr": "Gagne +25 de renommée supplémentaire à chaque bataille remportée.",
-        "en": "Earns +25 extra renown for each battle won."
+        "fr": "Gagne +25 de renommée supplémentaire à chaque bataille remportée. Second souffle : regagne 5 PV après chaque victoire.",
+        "en": "Earns +25 extra renown for each battle won. Second wind: regains 5 HP after each victory."
       }
     },
     {
@@ -830,11 +847,15 @@
         {
           "kind": "sniper",
           "gold": 150
+        },
+        {
+          "kind": "hpWound",
+          "pts": 3
         }
       ],
       "effectText": {
-        "fr": "Les ennemis qui ne se replient pas à temps perdent 150 or.",
-        "en": "Enemies who do not retreat in time lose 150 gold."
+        "fr": "Les ennemis qui ne se replient pas à temps perdent 150 or. Tir précis : les ennemis vaincus d'une bataille où il a combattu perdent 3 PV de plus.",
+        "en": "Enemies who do not retreat in time lose 150 gold. Precise shot: defeated enemies of a battle it fought in lose 3 more HP."
       }
     },
     {
@@ -979,11 +1000,16 @@
         {
           "kind": "outnumbered",
           "pct": 10
+        },
+        {
+          "kind": "hpDrain",
+          "perEnemy": 3,
+          "max": 9
         }
       ],
       "effectText": {
-        "fr": "En infériorité numérique lors d'une attaque ou d'une défense : +10 % de pouvoir d'attaque ou de défense.",
-        "en": "When outnumbered in an attack or defence: +10% attack or defence power."
+        "fr": "En infériorité numérique lors d'une attaque ou d'une défense : +10 % de pouvoir d'attaque ou de défense. Vol de vie : après une victoire, regagne 3 PV par combattant ennemi (9 au plus).",
+        "en": "When outnumbered in an attack or defence: +10% attack or defence power. Life steal: after a victory, regains 3 HP per enemy fighter (9 at most)."
       }
     },
     {
@@ -2954,8 +2980,28 @@
               "en": "Generals wear out too: they rest below 50% HP, heal each other, and die of exhaustion at 0 HP (except lords)."
             }
           ]
+        },
+        {
+          "title": {
+            "fr": "Classes",
+            "en": "Classes"
+          },
+          "items": [
+            {
+              "fr": "Mage renforcé : +10 % de pouvoir d'attaque, et son aura passe de +2 % à +5 %.",
+              "en": "Mage buffed: +10% attack power, and its aura goes from +2% to +5%."
+            },
+            {
+              "fr": "Avec les points de vie : Bretteur (esquive, 35 % de chances de ne rien perdre), Paladin (ses alliés perdent 2 PV de moins), Baladin (vol de vie, jusqu'à 9 PV après une victoire), Guerrier (+5 PV après chaque victoire), Archer d'élite (les ennemis vaincus perdent 3 PV de plus).",
+              "en": "With hit points: Swordsmaster (dodge, 35% chance to lose nothing), Paladin (allies lose 2 fewer HP), Trickster (life steal, up to 9 HP after a victory), Warrior (+5 HP after each victory), Sniper (defeated enemies lose 3 more HP)."
+            }
+          ]
         }
-      ]
+      ],
+      "image": {
+        "fr": "assets/update_assets/2_0.fr.webp",
+        "en": "assets/update_assets/2_0.en.webp"
+      }
     },
     {
       "id": "1.7",

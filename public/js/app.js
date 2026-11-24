@@ -172,6 +172,7 @@ async function signedIn(me) {
   else if (me.user.lang !== state.lang) api('/lang', { lang: state.lang }).catch(() => {});
   showResult();
   maybeGameOver();
+  showMajorPatch();
 }
 
 // Titre du jeu sur l'écran d'accueil : trois couronnes, puis le titre sur trois niveaux
@@ -530,6 +531,7 @@ function setMe(me) {
   syncClock(me.player);
   showResult();
   maybeGameOver();
+  showMajorPatch();
   // On ne redessine pas le bandeau pendant que le joueur manipule le sélecteur de langue.
   if (!document.activeElement || !document.activeElement.matches('#topbar [data-lang]')) drawTopbar();
 }
@@ -1975,6 +1977,35 @@ function showResult() {
     overlay.remove();
     try { setMe(await api('/campaign/seen', {})); } catch (err) { if (err.status === 401) sessionLost(); }
   });
+}
+
+// Mise à jour majeure (« major » dans game.json) pas encore lue : elle s'ouvre d'elle-même à la connexion, une seule fois.
+// Elle attend que le bilan de campagne et l'écran de chute soient fermés.
+function showMajorPatch() {
+  const pt = (state.config.patches || [])[0];
+  if (!pt || !pt.major || !state.me?.character || !patchUnread()) return;
+  if (document.querySelector('#result-overlay, #gameover-overlay, #patch-overlay, .overlay')) return;
+  const markSeen = () => {
+    state.me.patch = { ...state.me.patch, seen: state.me.patch.latest };
+    document.querySelector('.tabbar .new-dot')?.remove();
+    api('/patch/seen', {}).catch(() => {});
+  };
+  const overlay = document.createElement('div');
+  overlay.id = 'patch-overlay';
+  overlay.className = 'overlay';
+  overlay.innerHTML = `<div class="modal patch-modal" role="dialog" aria-modal="true" aria-label="${esc(loc(pt.title))}">
+    ${pt.image ? `<figure class="patch-hero"><img src="${esc(loc(pt.image))}" alt=""></figure>` : ''}
+    <div class="patch-modal-body">
+      <p class="steps">\u{1F4F0} ${esc(t('patch.major'))}</p>
+      <h2>${esc(loc(pt.title))}</h2>
+      ${pt.intro ? `<p>${esc(loc(pt.intro))}</p>` : ''}
+      ${(pt.sections || []).map((sec) => `<h3>${esc(loc(sec.title))}</h3>
+        <ul class="patch-list">${(sec.items || []).map((i) => `<li>${esc(loc(i))}</li>`).join('')}</ul>`).join('')}
+    </div>
+    <div class="patch-modal-foot"><button type="button" class="btn" data-close>${esc(t('patch.gotIt'))}</button></div></div>`;
+  document.body.appendChild(overlay);
+  markSeen();
+  overlay.querySelector('[data-close]').addEventListener('click', () => overlay.remove());
 }
 
 // Mon impact : ce que j'ai accompli dans la campagne en cours, et à vie.

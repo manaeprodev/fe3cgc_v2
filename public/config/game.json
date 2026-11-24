@@ -3001,7 +3001,8 @@
       "image": {
         "fr": "assets/update_assets/2_0.fr.webp",
         "en": "assets/update_assets/2_0.en.webp"
-      }
+      },
+      "major": true
     },
     {
       "id": "1.7",

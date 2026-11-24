@@ -775,5 +775,7 @@
   "error.general_busy": "Ce général suit déjà l'ordre d'un autre joueur.",
   "error.order_level": "Il faut au moins le soutien C avec ce général.",
   "error.order_target": "Ce général ne peut pas faire ça sur ce territoire.",
-  "prel.bonusActive": "Actif : vous êtes dans le même camp."
+  "prel.bonusActive": "Actif : vous êtes dans le même camp.",
+  "patch.major": "Grosse mise à jour",
+  "patch.gotIt": "C'est parti !"
 }

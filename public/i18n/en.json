@@ -770,5 +770,7 @@
   "error.general_busy": "This general is already following another player's order.",
   "error.order_level": "You need at least support C with this general.",
   "error.order_target": "This general cannot do that on this territory.",
-  "prel.bonusActive": "Active: you are on the same side."
+  "prel.bonusActive": "Active: you are on the same side.",
+  "patch.major": "Major update",
+  "patch.gotIt": "Let's go!"
 }

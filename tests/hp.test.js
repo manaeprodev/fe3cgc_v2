@@ -16,6 +16,7 @@ const start = (env = {}) => {
   const base = { ...process.env };
   delete base.HP_ON;
   delete base.LEVEL_UP_GOLD;
+  delete base.LEVEL_UP_REFILL;
   server = spawn(process.execPath, [serverFile], {
     env: { ...base, PORT: String(PORT), DATA_DIR: dataDir, TURN_SECONDS: '2', BOSS_CHANCE: '0', CADENCE_GOLD: '0', TEST_HOUR: '12', GEN_ATTACK_CHANCE: '0', TEST_RAID_ROLL: '1', TEST_ROLL: '0', TEST_MOVE_ROLL: '0.999', TEST_REL_ROLL: '0.999', ...env },
     stdio: ['ignore', 'ignore', 'inherit'],
@@ -47,8 +48,6 @@ const uid = (n) => withDb((d) => d.prepare('SELECT user_id FROM characters WHERE
 const row = (sql, ...a) => withDb((d) => d.prepare(sql).get(...a));
 const run = (sql, ...a) => withDb((d) => d.prepare(sql).run(...a));
 const set = (n, sql, ...a) => withDb((d) => d.prepare(sql).run(...a, uid(n)));
-const hpOf = (n) => row('SELECT hp FROM player_state WHERE user_id = ?', uid(n)).hp;
-const genHp = (g) => row('SELECT hp, status FROM generals WHERE gid = ?', g);
 const near = (a, b, eps = 0.002) => Math.abs(a - b) < eps;
 const MAP = require(path.join(process.cwd(), 'public', 'config', 'map.json'));
 const resetMap = () => withDb((d) => { const up = d.prepare('UPDATE territories SET faction = ? WHERE id = ?'); for (const t of MAP.territories) up.run(t.faction || null, t.id); d.exec('DELETE FROM battles; DELETE FROM contributions; DELETE FROM general_contribs; DELETE FROM general_verdicts'); });
@@ -65,6 +64,13 @@ function battle(territory, attacker, defender, contribs, endsIn = 600000, gens =
 const tierOf = (id) => GAME.classes.find((c) => c.id === id)?.tier;
 const maxOf = (id) => (HP.max[tierOf(id)] ?? HP.max.base) + (HP.sturdy.classes.includes(id) ? HP.sturdy.bonus : 0) + (HP.frail.classes.includes(id) ? HP.frail.bonus : 0);
 const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at(-1);
+// PV en points entiers (hp_pts ; vide = pleine santé). Les tests raisonnent en fraction du max de la classe.
+const classOf = (n) => row('SELECT class FROM characters WHERE user_id = ?', uid(n)).class;
+const hpPts = (n) => row('SELECT hp_pts FROM player_state WHERE user_id = ?', uid(n)).hp_pts;
+const hpOf = (n) => { const v = hpPts(n); return v == null ? 1 : v / maxOf(classOf(n)); };
+const setHp = (n, frac) => set(n, 'UPDATE player_state SET hp_pts = ? WHERE user_id = ?', frac >= 1 ? null : Math.round(frac * maxOf(classOf(n))));
+const genHp = (g) => { const r = row('SELECT hp_pts, status FROM generals WHERE gid = ?', g); return { hp: r.hp_pts == null ? 1 : r.hp_pts / maxOf(genClass(g)), pts: r.hp_pts, status: r.status }; };
+const setGenHp = (g, frac) => run('UPDATE generals SET hp_pts = ? WHERE gid = ?', frac >= 1 ? null : Math.round(frac * maxOf(genClass(g))), g);
 
 (async () => {
   try {
@@ -83,7 +89,9 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
 
     console.log('# Prime de renommée');
     set('Rouge1', "UPDATE characters SET gold = 0, xp = 95 WHERE user_id = ?");
+    set('Rouge1', "UPDATE player_state SET actions = 3, actions_at = ? WHERE user_id = ?", Date.now());
     r = await C.Rouge1('/act', { action: 'gather' });
+    check('niveau atteint : réserve d\'actions remplie au maximum', r.s === 200 && r.d.player.actions === r.d.player.maxActions, JSON.stringify([r.d.player?.actions, r.d.player?.maxActions]));
     check('niveau 1 atteint : 40 or de récolte + 100 or de prime', r.s === 200 && r.d.character.renown.level === 1 && r.d.character.gold === 140, JSON.stringify([r.d.error, r.d.character?.gold, r.d.character?.renown]));
     const notif = row("SELECT type, params FROM notifications WHERE user_id = ? AND type = 'renown_gold' ORDER BY id DESC", uid('Rouge1'));
     check('notification de la prime', !!notif && JSON.parse(notif.params).gold === 100, JSON.stringify(notif));
@@ -121,8 +129,8 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
 
     // Attaque gagnée : -5 ; défense perdue : -10.
     resetMap();
-    set('Rouge1', "UPDATE player_state SET territory = 'rowe', status = 'alive', hp = 1 WHERE user_id = ?");
-    set('Bleu1', "UPDATE player_state SET territory = 'rowe', status = 'alive', hp = 1 WHERE user_id = ?");
+    set('Rouge1', "UPDATE player_state SET territory = 'rowe', status = 'alive' WHERE user_id = ?"); setHp('Rouge1', 1);
+    set('Bleu1', "UPDATE player_state SET territory = 'rowe', status = 'alive' WHERE user_id = ?"); setHp('Bleu1', 1);
     battle('rowe', 'rouge', 'bleue', [['Rouge1', 'attack', 'rouge'], ['Bleu1', 'defense', 'bleue']], -1000);
     await C.Rouge1('/map');
     check('attaque gagnée : -5 PV (25/30)', near(hpOf('Rouge1'), 25 / 30), String(hpOf('Rouge1') * 30));
@@ -130,12 +138,12 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
 
     // Malus de puissance.
     resetMap();
-    set('Rouge1', "UPDATE player_state SET territory = 'rowe', status = 'alive', hp = 0.4 WHERE user_id = ?");
+    set('Rouge1', "UPDATE player_state SET territory = 'rowe', status = 'alive' WHERE user_id = ?"); setHp('Rouge1', 0.4);
     set('Bleu1', "UPDATE player_state SET territory = 'blaiddyd', status = 'alive' WHERE user_id = ?");
     battle('rowe', 'rouge', 'bleue', [['Rouge1', 'attack', 'rouge']]);
     let b = (await C.Rouge1('/map')).d.territories.find((x) => x.id === 'rowe').battle;
     check('sous 50 % de PV : puissance ×0,9', near(b.power.attack, 0.9, 0.011), String(b.power.attack));
-    set('Rouge1', 'UPDATE player_state SET hp = 0.2 WHERE user_id = ?');
+    setHp('Rouge1', 0.2);
     b = (await C.Rouge1('/map')).d.territories.find((x) => x.id === 'rowe').battle;
     check('sous 25 % de PV : puissance ×0,8', near(b.power.attack, 0.8, 0.011), String(b.power.attack));
     let pr = await C.Bleu1('/profile?pseudo=Rouge1');
@@ -143,8 +151,8 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
 
     // À 0 PV : mise hors de combat, retour à 50 %.
     resetMap();
-    set('Rouge1', "UPDATE player_state SET territory = 'rowe', status = 'alive', hp = ?, actions = 5 WHERE user_id = ?", 4 / 30);
-    set('Rouge1', 'UPDATE characters SET gold = 1000 WHERE user_id = ?');
+    set('Rouge1', "UPDATE player_state SET territory = 'rowe', status = 'alive', actions = 5 WHERE user_id = ?"); setHp('Rouge1', 4 / 30);
+    set('Rouge1', 'UPDATE characters SET gold = 1000, xp = 0 WHERE user_id = ?'); // pas de montée de niveau (elle remplirait les actions)
     battle('rowe', 'rouge', 'bleue', [['Rouge1', 'attack', 'rouge']], -1000);
     m = (await C.Rouge1('/map')).d;
     check('0 PV : renvoyé à la capitale, actions vidées', m.player.territory === 'hresvelg' && m.player.actions === 0 && m.player.status === 'alive', JSON.stringify([m.player.territory, m.player.actions, m.player.status]));
@@ -154,8 +162,8 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
 
     // Régénération : +4/h sur un territoire allié sans bataille, +2/h ailleurs, plus l'Infirmerie.
     resetMap();
-    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
-    set('Bleu1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive' WHERE user_id = ?"); setHp('Rouge1', 0.5);
+    set('Bleu1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive' WHERE user_id = ?"); setHp('Bleu1', 0.5);
     run("UPDATE campaign_meta SET value = ? WHERE key = 'hp_tick'", String(Date.now() - 3_600_000));
     await C.Rouge1('/map');
     check('régénération en territoire allié : +6 PV/h', near(hpOf('Rouge1'), 0.5 + 6 / 30, 0.003), String(hpOf('Rouge1') * 30));
@@ -164,7 +172,7 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     set('Rouge1', 'UPDATE characters SET gold = 5000 WHERE user_id = ?');
     r = await C.Rouge1('/act', { action: 'build', spec: 'infirmary' });
     check('Infirmerie construite', r.s === 200 && r.d.map.territories.find((x) => x.id === 'hresvelg').build?.spec === 'infirmary', JSON.stringify([r.s, r.d.error]));
-    set('Rouge1', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    setHp('Rouge1', 0.5);
     run("UPDATE campaign_meta SET value = ? WHERE key = 'hp_tick'", String(Date.now() - 3_600_000));
     await C.Rouge1('/map');
     check('Infirmerie niveau 1 : +6 +2 PV/h', near(hpOf('Rouge1'), 0.5 + 8 / 30, 0.003), String(hpOf('Rouge1') * 30));
@@ -180,36 +188,36 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     const tickHour = async () => { run("UPDATE campaign_meta SET value = ? WHERE key = 'hp_tick'", String(Date.now() - 3_600_000)); await C.Rouge1('/map'); };
     resetMap();
     path2(['monk', 'priest', 'bishop']);
-    set('Rouge2', "UPDATE player_state SET territory = 'varley', status = 'alive', hp = 0.5 WHERE user_id = ?");
-    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
-    set('Bleu1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
+    set('Rouge2', "UPDATE player_state SET territory = 'varley', status = 'alive' WHERE user_id = ?"); setHp('Rouge2', 0.5);
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive' WHERE user_id = ?"); setHp('Rouge1', 0.5);
+    set('Bleu1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive' WHERE user_id = ?"); setHp('Bleu1', 0.5);
     await tickHour();
     check('Évêque voisin : +5 PV/h aux alliés (6 + 5)', near(hpOf('Rouge1'), 0.5 + 11 / 30, 0.003), String(hpOf('Rouge1') * 30));
     check('Évêque : pas de soin pour les ennemis', near(hpOf('Bleu1'), 0.5 + 3 / 30, 0.003), String(hpOf('Bleu1') * 30));
     check('Évêque : il se soigne aussi', near(hpOf('Rouge2'), 0.5 + 11 / maxOf('bishop'), 0.003), String(hpOf('Rouge2') * maxOf('bishop')));
     // Hevring est à deux cases de Hresvelg : hors de portée d'un Évêque, à portée d'une Gremory qui a été évêque.
     set('Rouge2', "UPDATE player_state SET territory = 'hevring' WHERE user_id = ?");
-    set('Rouge1', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    setHp('Rouge1', 0.5);
     await tickHour();
     check('Évêque à deux cases : hors de portée', near(hpOf('Rouge1'), 0.5 + 6 / 30, 0.003), String(hpOf('Rouge1') * 30));
     path2(['monk', 'priest', 'bishop', 'gremory']);
-    set('Rouge1', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    setHp('Rouge1', 0.5);
     await tickHour();
     check('Gremory ex-Évêque : soin passif à deux cases', near(hpOf('Rouge1'), 0.5 + 11 / 30, 0.003), String(hpOf('Rouge1') * 30));
     path2(['mage', 'dark-mage', 'gremory']);
-    set('Rouge1', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    setHp('Rouge1', 0.5);
     await tickHour();
     check('Gremory sans passé d\'Évêque : pas de soin passif', near(hpOf('Rouge1'), 0.5 + 6 / 30, 0.003), String(hpOf('Rouge1') * 30));
     // Deux soigneurs ne se cumulent pas : Rouge2 (Évêque) et Linhardt (Évêque) sur le même territoire.
     path2(['monk', 'priest', 'bishop']);
     set('Rouge2', "UPDATE player_state SET territory = 'hresvelg' WHERE user_id = ?");
     run("UPDATE generals SET status = 'alive', territory = 'hresvelg', move_turn = 1e12 WHERE gid = 'linhardt'");
-    set('Rouge1', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    setHp('Rouge1', 0.5);
     await tickHour();
     check('deux soins passifs : le meilleur compte, sans cumul', near(hpOf('Rouge1'), 0.5 + 11 / 30, 0.003), String(hpOf('Rouge1') * 30));
     run("UPDATE generals SET territory = ?, move_turn = -1 WHERE gid = 'linhardt'", linHome);
     path2(['monk']);
-    set('Rouge2', "UPDATE player_state SET hp = 1 WHERE user_id = ?");
+    setHp('Rouge2', 1);
 
     console.log('# Soutiens des soigneurs (Flayn, Marianne, Mercedes)');
     // Généraux passés chez les Aigles pour le test, soutien C avec Rouge1 (Mercedes en C, Annette en C+ pour le lien).
@@ -226,14 +234,13 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     check('Mercedes + Annette en C+ : +1 +1 PV max', m.player.hp.max === 32, JSON.stringify(m.player.hp));
     run("DELETE FROM relations WHERE gid IN ('mercedes', 'annette')");
     support('flayn', 250);
-    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive' WHERE user_id = ?"); setHp('Rouge1', 0.5);
     await tickHour();
-    const perHour = 0.2 * 60 / GAME.campaign.turnMinutes;
-    check('Flayn (C) : +0,2 PV par tour en plus', near(hpOf('Rouge1'), 0.5 + (6 + perHour) / 30, 0.003), String(hpOf('Rouge1') * 30));
+    check('Flayn (C) : +1 PV par heure en plus', hpPts('Rouge1') === 15 + 6 + 1, String(hpPts('Rouge1')));
     run("DELETE FROM relations WHERE gid = 'flayn'");
     support('marianne', 250);
     resetMap();
-    set('Rouge1', "UPDATE player_state SET territory = 'rowe', status = 'alive', hp = ?, actions = 5 WHERE user_id = ?", 4 / 30);
+    set('Rouge1', "UPDATE player_state SET territory = 'rowe', status = 'alive', actions = 5 WHERE user_id = ?"); setHp('Rouge1', 4 / 30);
     battle('rowe', 'rouge', 'bleue', [['Rouge1', 'attack', 'rouge']], -1000);
     await C.Rouge1('/map');
     check('Marianne (C) : 50 % + 2 PV après la mise hors de combat', near(hpOf('Rouge1'), 0.5 + 2 / 30), String(hpOf('Rouge1') * 30));
@@ -241,11 +248,11 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     check('Marianne : PV rendus dans la notification', JSON.parse(mn.params).healed === 2, mn.params);
     run('DELETE FROM relations WHERE user_id = ?', uid('Rouge1'));
     for (const [gid, h] of Object.entries(homes)) run('UPDATE generals SET faction = ?, territory = ?, move_turn = -1 WHERE gid = ?', h.faction, h.territory, gid);
-    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5, actions = 8 WHERE user_id = ?");
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', actions = 8 WHERE user_id = ?"); setHp('Rouge1', 0.5);
 
     console.log('# Soigner');
-    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 0.5 WHERE user_id = ?");
-    set('Rouge2', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', hp = 1, actions = 8, actions_at = ? WHERE user_id = ?", Date.now());
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive' WHERE user_id = ?"); setHp('Rouge1', 0.5);
+    set('Rouge2', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', actions = 8, actions_at = ? WHERE user_id = ?", Date.now()); setHp('Rouge2', 1);
     set('Rouge2', 'UPDATE characters SET xp = 0 WHERE user_id = ?');
     r = await C.Rouge2('/act', { action: 'heal', target: 'Rouge1' });
     check('le moine soigne un allié : +6 PV, 1 action', r.s === 200 && near(hpOf('Rouge1'), 0.5 + 6 / 30) && r.d.player.actions === 7, JSON.stringify([r.d.error, hpOf('Rouge1') * 30, r.d.player?.actions]));
@@ -254,7 +261,7 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     check('le soigné est prévenu', !!row("SELECT 1 FROM notifications WHERE user_id = ? AND type = 'healed_by'", uid('Rouge1')));
     r = await C.Rouge2('/act', { action: 'heal' });
     check('soi-même à pleine santé : refusé', r.s === 409 && r.d.error === 'hp_full', JSON.stringify(r.d));
-    set('Rouge2', 'UPDATE player_state SET hp = 0.5 WHERE user_id = ?');
+    setHp('Rouge2', 0.5);
     r = await C.Rouge2('/act', { action: 'heal' });
     check('soi-même : +3 PV', r.s === 200 && near(hpOf('Rouge2'), 0.5 + 3 / 26), String(hpOf('Rouge2') * 26));
     r = await C.Rouge2('/act', { action: 'heal', target: 'Bleu1' });
@@ -265,51 +272,51 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     r = await C.Rouge1('/act', { action: 'heal' });
     check('un soldat ne sait pas soigner', r.s === 409 && r.d.error === 'invalid_action', JSON.stringify(r.d));
     // Soigner un général allié présent.
-    run("UPDATE generals SET hp = 0.5, territory = 'hresvelg', move_turn = 999999999999 WHERE gid = 'ferdinand'"); // il ne rentre pas chez lui
+    run("UPDATE generals SET territory = 'hresvelg', move_turn = 999999999999 WHERE gid = 'ferdinand'"); setGenHp('ferdinand', 0.5); // il ne rentre pas chez lui
     r = await C.Rouge2('/act', { action: 'heal', target: 'g:ferdinand' });
     const fMax = maxOf(genClass('ferdinand'));
     check('soigner un général allié présent', r.s === 200 && near(genHp('ferdinand').hp, 0.5 + 6 / fMax), JSON.stringify([r.d.error, genHp('ferdinand')]));
-    run("UPDATE generals SET hp = 1, territory = 'aegir', move_turn = -1 WHERE gid = 'ferdinand'");
+    run("UPDATE generals SET territory = 'aegir', move_turn = -1 WHERE gid = 'ferdinand'"); setGenHp('ferdinand', 1);
 
     console.log('# Fioles');
-    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', hp = 0.2, vial_day = NULL, vial_n = 0 WHERE user_id = ?");
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', vial_day = NULL, vial_n = 0 WHERE user_id = ?"); setHp('Rouge1', 0.2);
     set('Rouge1', 'UPDATE characters SET gold = 1000 WHERE user_id = ?');
     r = await C.Rouge1('/act', { action: 'vial' });
     check('fiole : -150 or, +8 PV, sans action', r.s === 200 && r.d.character.gold === 850 && near(hpOf('Rouge1'), 0.2 + 8 / 30) && r.d.player.hp.vial.left === 2, JSON.stringify([r.d.error, r.d.character?.gold, r.d.player?.hp?.vial]));
     await C.Rouge1('/act', { action: 'vial' });
     await C.Rouge1('/act', { action: 'vial' });
-    set('Rouge1', 'UPDATE player_state SET hp = 0.2 WHERE user_id = ?');
+    setHp('Rouge1', 0.2);
     r = await C.Rouge1('/act', { action: 'vial' });
     check('3 fioles par jour au maximum', r.s === 409 && r.d.error === 'vial_limit', JSON.stringify(r.d));
-    set('Rouge1', "UPDATE player_state SET vial_day = NULL, vial_n = 0, hp = 1 WHERE user_id = ?");
+    set('Rouge1', "UPDATE player_state SET vial_day = NULL, vial_n = 0 WHERE user_id = ?"); setHp('Rouge1', 1);
     r = await C.Rouge1('/act', { action: 'vial' });
     check('fiole refusée à pleine santé', r.s === 409 && r.d.error === 'hp_full', JSON.stringify(r.d));
 
     console.log('# Généraux');
     resetMap();
-    run("UPDATE generals SET hp = 1 WHERE gid = 'ferdinand'");
+    setGenHp('ferdinand', 1);
     battle('rowe', 'rouge', 'bleue', [], -1000, [['ferdinand', 'attack']]);
     await C.Rouge1('/map');
     check('un général vainqueur perd aussi des PV (Ferdinand, Paladin : 5 - 2)', near(genHp('ferdinand').hp, 1 - 3 / fMax), JSON.stringify(genHp('ferdinand')));
     resetMap();
-    run("UPDATE generals SET hp = ?, territory = 'aegir', status = 'alive' WHERE gid = 'ferdinand'", 3 / fMax);
+    run("UPDATE generals SET territory = 'aegir', status = 'alive' WHERE gid = 'ferdinand'"); setGenHp('ferdinand', 3 / fMax);
     battle('rowe', 'rouge', 'bleue', [], -1000, [['ferdinand', 'attack']]);
     await C.Rouge1('/map');
     check('à 0 PV, un général meurt d\'épuisement', genHp('ferdinand').status === 'dead', JSON.stringify(genHp('ferdinand')));
     check('journal : mort d\'épuisement', (await C.Rouge1('/journal')).d.events.some((e) => e.type === 'general_exhausted' && e.params.general === 'ferdinand'));
     resetMap();
     const eMax = maxOf(genClass('edelgard'));
-    run("UPDATE generals SET hp = ? WHERE gid = 'edelgard'", 1 / eMax);
+    setGenHp('edelgard', 1 / eMax);
     battle('rowe', 'rouge', 'bleue', [], -1000, [['edelgard', 'attack']]);
     await C.Rouge1('/map');
     check('un seigneur reste debout à 1 PV', genHp('edelgard').status === 'alive' && near(genHp('edelgard').hp, 1 / eMax), JSON.stringify(genHp('edelgard')));
     pr = await C.Rouge1('/profile?general=edelgard');
     check('profil d\'un général : PV et malus', pr.d.hp && pr.d.hp.hp === 1 && pr.d.mods.some((x) => x.type === 'hpLow'), JSON.stringify([pr.d.hp]));
-    run("UPDATE generals SET hp = 1 WHERE gid = 'edelgard'");
+    setGenHp('edelgard', 1);
     // Linhardt (Évêque) soigne un allié blessé sur son territoire.
     resetMap();
     const lin = row("SELECT territory FROM generals WHERE gid = 'linhardt'").territory;
-    set('Rouge1', "UPDATE player_state SET territory = ?, status = 'alive', hp = 0.3 WHERE user_id = ?", lin);
+    set('Rouge1', "UPDATE player_state SET territory = ?, status = 'alive' WHERE user_id = ?", lin); setHp('Rouge1', 0.3);
     run("UPDATE generals SET actions = 4, move_turn = -1 WHERE gid = 'linhardt'");
     await C.Rouge1('/map');
     check('un général soigneur soigne un allié blessé sur place', hpOf('Rouge1') >= 0.3 + HP.heal.bishop / 30 - 0.002, String(hpOf('Rouge1') * 30));
@@ -318,7 +325,7 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     const setClass = (n, path) => set(n, 'UPDATE characters SET class = ?, class_path = ? WHERE user_id = ?', path.at(-1), JSON.stringify(path));
     const fight = async (attackers, defenders) => {
       resetMap();
-      for (const n of [...attackers, ...defenders]) set(n, "UPDATE player_state SET territory = 'rowe', status = 'alive', hp = 0.5 WHERE user_id = ?");
+      for (const n of [...attackers, ...defenders]) { set(n, "UPDATE player_state SET territory = 'rowe', status = 'alive' WHERE user_id = ?"); setHp(n, 0.5); }
       battle('rowe', 'rouge', 'bleue', [...attackers.map((n) => [n, 'attack', 'rouge']), ...defenders.map((n) => [n, 'defense', 'bleue'])], -1000);
       await C.Rouge1('/map');
     };
@@ -345,9 +352,34 @@ const genClass = (gid) => GAME.generals.roster.find((g) => g.id === gid).path.at
     await fight(['Rouge1'], []);
     check('Bretteur sans esquive : perte normale', near(hpOf('Rouge1'), 0.5 - 5 / maxOf('swordsmaster')), String(hpOf('Rouge1') * maxOf('swordsmaster')));
     await stop();
-    await start({ HP_ON: '1', TEST_HP_ROLL: '0' });
+    await start({ HP_ON: '1', TEST_HP_ROLL: '0', HP_PER_LEVEL: '1' });
+    set('Rouge1', 'UPDATE characters SET xp = 0 WHERE user_id = ?');
     await fight(['Rouge1'], []);
     check('Bretteur : esquive, aucun PV perdu', near(hpOf('Rouge1'), 0.5), String(hpOf('Rouge1') * maxOf('swordsmaster')));
+    // +1 PV max par niveau de renommée.
+    set('Rouge1', 'UPDATE characters SET xp = 400 WHERE user_id = ?');
+    m = (await C.Rouge1('/me')).d;
+    check('+1 PV max par niveau de renommée', m.character.renown.level > 0 && m.player.hp.max === maxOf('swordsmaster') + m.character.renown.level, JSON.stringify([m.character.renown.level, m.player.hp]));
+    // Monter de niveau donne aussi +1 PV actuel (un joueur à pleine santé le reste).
+    set('Rouge1', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', actions = 8, actions_at = ?, hp_pts = 10 WHERE user_id = ?", Date.now());
+    set('Rouge1', 'UPDATE characters SET xp = 462 WHERE user_id = ?');
+    const lv0 = (await C.Rouge1('/me')).d.character.renown.level;
+    r = await C.Rouge1('/act', { action: 'gather' });
+    check('niveau gagné : +1 PV actuel', r.s === 200 && r.d.character.renown.level === lv0 + 1 && hpPts('Rouge1') === 11, JSON.stringify([lv0, r.d.character?.renown?.level, hpPts('Rouge1')]));
+
+    console.log('# PV entiers');
+    // Soin sur soi-même arrondi au-dessus : Prêtre 9 → 5 (et non 4,5).
+    setClass('Rouge2', ['monk', 'priest']);
+    m = (await C.Rouge2('/me')).d;
+    check('Prêtre : soin sur soi 9 / 2 arrondi au-dessus = 5', m.player.hp.heal === 9 && m.player.hp.selfHeal === 5, JSON.stringify(m.player.hp));
+    set('Rouge2', "UPDATE player_state SET territory = 'hresvelg', status = 'alive', actions = 8, actions_at = ?, hp_pts = 10 WHERE user_id = ?", Date.now());
+    r = await C.Rouge2('/act', { action: 'heal' });
+    check('Prêtre : +5 PV entiers sur lui-même', r.s === 200 && hpPts('Rouge2') === 15, JSON.stringify([r.d.error, hpPts('Rouge2')]));
+    check('les PV stockés sont toujours entiers', withDb((d) => d.prepare('SELECT COUNT(*) AS n FROM player_state WHERE hp_pts IS NOT NULL AND hp_pts != CAST(hp_pts AS INTEGER)').get().n) === 0);
+    // Changer de classe garde les points (plafonnés au nouveau maximum).
+    setClass('Rouge2', ['monk']);
+    m = (await C.Rouge2('/me')).d;
+    check('changer de classe garde les points', m.player.hp.hp === 15 && m.player.hp.max === maxOf('monk'), JSON.stringify(m.player.hp));
   } catch (e) {
     failures += 1;
     console.error('ERREUR', e);

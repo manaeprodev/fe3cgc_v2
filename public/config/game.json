@@ -25,7 +25,8 @@
     "startGold": 500,
     "renownBaseXp": 100,
     "renownGrowth": 1.1,
-    "levelUpGold": 100
+    "levelUpGold": 100,
+    "levelUpRefill": true
   },
   "rules": [
     {
@@ -44,8 +45,8 @@
         "en": "Resources"
       },
       "text": {
-        "fr": "Actions : tu en gagnes 1 toutes les 10 minutes, jusqu'à 8 en réserve. Certaines missions rendent de l'énergie, même au-delà de 8 : tant que tu en as plus que le maximum, elle ne se recharge pas. Se déplacer, attaquer, défendre et récolter coûtent chacun 1 action.\n\nOr : tu en gagnes en récoltant sur un territoire allié, en remportant des batailles, en accomplissant des missions et avec le bonus de régularité. Il sert à changer de classe, à acheter des avatars, à construire sur tes territoires, à payer des renforts en bataille et à régler la pénalité d'un repli manqué.\n\nRenommée : c'est ton niveau. Elle monte avec l'expérience gagnée en jouant : 100 points pour le niveau 1, puis 10 % de plus à chaque niveau. Elle ouvre l'accès aux classes supérieures et rend chacune de tes actions de combat plus forte. À chaque nouveau niveau, tu reçois une prime de 100 or × ce niveau (500 or au niveau 5).",
-        "en": "Actions: you gain 1 every 10 minutes, up to 8 in reserve. Some missions restore energy, even beyond 8: while you have more than the maximum, it does not recharge. Moving, attacking, defending and gathering each cost 1 action.\n\nGold: you earn it by gathering on an allied territory, winning battles, completing missions and through the regularity bonus. It pays for class changes, avatars, building on your territories, reinforcements in battle and the penalty of a missed retreat.\n\nRenown: this is your level. It rises with the experience you earn by playing: 100 points for level 1, then 10% more for each level. It unlocks higher classes and makes each of your combat actions stronger. Each new level grants a bonus of 100 gold × that level (500 gold at level 5)."
+        "fr": "Actions : tu en gagnes 1 toutes les 10 minutes, jusqu'à 8 en réserve. Certaines missions rendent de l'énergie, même au-delà de 8 : tant que tu en as plus que le maximum, elle ne se recharge pas. Se déplacer, attaquer, défendre et récolter coûtent chacun 1 action.\n\nOr : tu en gagnes en récoltant sur un territoire allié, en remportant des batailles, en accomplissant des missions et avec le bonus de régularité. Il sert à changer de classe, à acheter des avatars, à construire sur tes territoires, à payer des renforts en bataille et à régler la pénalité d'un repli manqué.\n\nRenommée : c'est ton niveau. Elle monte avec l'expérience gagnée en jouant : 100 points pour le niveau 1, puis 10 % de plus à chaque niveau. Elle ouvre l'accès aux classes supérieures et rend chacune de tes actions de combat plus forte. À chaque nouveau niveau, tu reçois une prime de 100 or × ce niveau (500 or au niveau 5), ta réserve d'actions est remplie au maximum et tu gagnes 1 PV max.",
+        "en": "Actions: you gain 1 every 10 minutes, up to 8 in reserve. Some missions restore energy, even beyond 8: while you have more than the maximum, it does not recharge. Moving, attacking, defending and gathering each cost 1 action.\n\nGold: you earn it by gathering on an allied territory, winning battles, completing missions and through the regularity bonus. It pays for class changes, avatars, building on your territories, reinforcements in battle and the penalty of a missed retreat.\n\nRenown: this is your level. It rises with the experience you earn by playing: 100 points for level 1, then 10% more for each level. It unlocks higher classes and makes each of your combat actions stronger. Each new level grants a bonus of 100 gold × that level (500 gold at level 5), your action reserve is filled to the maximum and you gain 1 max HP."
       }
     },
     {
@@ -84,8 +85,8 @@
         "en": "Hit points"
       },
       "text": {
-        "fr": "À partir de la prochaine saison, chaque joueur et chaque général a des points de vie (PV). Les PV max dépendent de la classe : 30 (base), 34 (intermédiaire), 38 (avancée), 42 (maître), +10 pour les classes lourdes (chevalier en armure, chevalier forteresse, grand chevalier), -4 pour les classes fragiles (mages, moines, voleurs, danseur). Changer de classe garde le même pourcentage de PV.\n\nÀ la fin de chaque bataille où tu as attaqué ou défendu, tu perds des PV : attaque gagnée -5, défense gagnée -3, victoire écrasante -2, attaque perdue -12, défense perdue -10. Sous 50 % de PV, ta puissance baisse de 10 % ; sous 25 %, de 20 %. À 0 PV, tu es mis hors de combat (comme un repli manqué) et tu reviens avec la moitié de tes PV.\n\nLes PV remontent seuls : +3 par heure, +6 sur un territoire allié sans bataille, +2 de plus par niveau d'Infirmerie (nouveau bâtiment), et deux fois plus vite pendant l'Overdrive.\n\nSoigner (1 action) : les classes de soin soignent un allié présent sur leur territoire (joueur ou général), ou elles-mêmes à moitié : moine 6 PV, prêtre 9, saint mortel, chevalier sacré, gremory, évêque noir et danseur 11, évêque 13. Soigner un allié rapporte de la renommée. Soin passif : l'évêque (et les classes qui en viennent) rend 5 PV par heure aux alliés de son territoire et des territoires voisins, deux cases pour une gremory ; plusieurs soins passifs ne se cumulent pas. Fiole : 150 or pour +8 PV, sans action, 3 par jour.\n\nLes généraux perdent aussi des PV en combattant, ne partent pas en sortie sous 50 % et se soignent entre eux. À 0 PV, un général meurt d'épuisement ; les seigneurs restent debout à 1 PV.",
-        "en": "From next season, every player and every general has hit points (HP). Max HP depend on the class: 30 (base), 34 (intermediate), 38 (advanced), 42 (master), +10 for heavy classes (armored knight, fortress knight, great knight), -4 for frail classes (mages, monks, thieves, dancer). Changing class keeps the same HP percentage.\n\nAt the end of each battle where you attacked or defended, you lose HP: attack won -5, defence won -3, crushing victory -2, attack lost -12, defence lost -10. Below 50% HP your power drops by 10%; below 25%, by 20%. At 0 HP you are knocked out (like a missed retreat) and come back with half your HP.\n\nHP come back on their own: +3 per hour, +6 on an allied territory without a battle, +2 more per Infirmary level (new building), and twice as fast during Overdrive.\n\nHeal (1 action): healing classes heal an ally present on their territory (player or general), or themselves for half: monk 6 HP, priest 9, mortal savant, holy knight, gremory, dark bishop and dancer 11, bishop 13. Healing an ally earns renown. Passive heal: the bishop (and the classes that come from it) restores 5 HP per hour to allies on its territory and neighbouring ones, two steps for a gremory; passive heals do not stack. Vulnerary: 150 gold for +8 HP, no action, 3 per day.\n\nGenerals also lose HP when fighting, do not go on sorties below 50% and heal each other. At 0 HP a general dies of exhaustion; lords stay standing at 1 HP."
+        "fr": "À partir de la prochaine saison, chaque joueur et chaque général a des points de vie (PV). Les PV max dépendent de la classe : 30 (base), 34 (intermédiaire), 38 (avancée), 42 (maître), +10 pour les classes lourdes (chevalier en armure, chevalier forteresse, grand chevalier), -4 pour les classes fragiles (mages, moines, voleurs, danseur). Chaque niveau de renommée ajoute 1 PV max. Changer de classe garde tes PV (plafonnés au nouveau maximum). Les PV sont toujours des nombres entiers : soins, pertes et régénération sont arrondis au-dessus.\n\nÀ la fin de chaque bataille où tu as attaqué ou défendu, tu perds des PV : attaque gagnée -5, défense gagnée -3, victoire écrasante -2, attaque perdue -12, défense perdue -10. Sous 50 % de PV, ta puissance baisse de 10 % ; sous 25 %, de 20 %. À 0 PV, tu es mis hors de combat (comme un repli manqué) et tu reviens avec la moitié de tes PV.\n\nLes PV remontent seuls, à chaque heure pleine : +3, +6 sur un territoire allié sans bataille, +2 de plus par niveau d'Infirmerie (nouveau bâtiment), et deux fois plus vite pendant l'Overdrive.\n\nSoigner (1 action) : les classes de soin soignent un allié présent sur leur territoire (joueur ou général), ou elles-mêmes à moitié (arrondi au-dessus) : moine 6 PV, prêtre 9, saint mortel, chevalier sacré, gremory, évêque noir et danseur 11, évêque 13. Soigner un allié rapporte de la renommée. Soin passif : l'évêque (et les classes qui en viennent) rend 5 PV par heure aux alliés de son territoire et des territoires voisins, deux cases pour une gremory ; plusieurs soins passifs ne se cumulent pas. Fiole : 150 or pour +8 PV, sans action, 3 par jour.\n\nLes généraux perdent aussi des PV en combattant, ne partent pas en sortie sous 50 % et se soignent entre eux. À 0 PV, un général meurt d'épuisement ; les seigneurs restent debout à 1 PV.",
+        "en": "From next season, every player and every general has hit points (HP). Max HP depend on the class: 30 (base), 34 (intermediate), 38 (advanced), 42 (master), +10 for heavy classes (armored knight, fortress knight, great knight), -4 for frail classes (mages, monks, thieves, dancer). Each renown level adds 1 max HP. Changing class keeps your HP (capped at the new maximum). HP are always whole numbers: heals, losses and regeneration are rounded up.\n\nAt the end of each battle where you attacked or defended, you lose HP: attack won -5, defence won -3, crushing victory -2, attack lost -12, defence lost -10. Below 50% HP your power drops by 10%; below 25%, by 20%. At 0 HP you are knocked out (like a missed retreat) and come back with half your HP.\n\nHP come back on their own, every full hour: +3, +6 on an allied territory without a battle, +2 more per Infirmary level (new building), and twice as fast during Overdrive.\n\nHeal (1 action): healing classes heal an ally present on their territory (player or general), or themselves for half (rounded up): monk 6 HP, priest 9, mortal savant, holy knight, gremory, dark bishop and dancer 11, bishop 13. Healing an ally earns renown. Passive heal: the bishop (and the classes that come from it) restores 5 HP per hour to allies on its territory and neighbouring ones, two steps for a gremory; passive heals do not stack. Vulnerary: 150 gold for +8 HP, no action, 3 per day.\n\nGenerals also lose HP when fighting, do not go on sorties below 50% and heal each other. At 0 HP a general dies of exhaustion; lords stay standing at 1 HP."
       }
     },
     {
@@ -2653,6 +2654,7 @@
           "dancer"
         ]
       },
+      "perLevel": 1,
       "loss": {
         "attackWin": 5,
         "attackDecisive": 2,
@@ -2947,6 +2949,10 @@
             {
               "fr": "Dès maintenant : chaque nouveau niveau de renommée rapporte 100 or × ce niveau (300 or au niveau 3, 1 000 or au niveau 10).",
               "en": "Right now: each new renown level pays 100 gold × that level (300 gold at level 3, 1,000 gold at level 10)."
+            },
+            {
+              "fr": "Monter de niveau remplit aussi ta réserve d'actions au maximum, et chaque niveau ajoute 1 PV max (avec les points de vie).",
+              "en": "Levelling up also fills your action reserve to the maximum, and each level adds 1 max HP (with hit points)."
             }
           ]
         },
@@ -2983,6 +2989,10 @@
             {
               "fr": "Les généraux s'usent aussi : ils se reposent sous 50 % de PV, se soignent entre eux, et meurent d'épuisement à 0 PV (sauf les seigneurs).",
               "en": "Generals wear out too: they rest below 50% HP, heal each other, and die of exhaustion at 0 HP (except lords)."
+            },
+            {
+              "fr": "Les PV sont des nombres entiers : soins, pertes et régénération (à chaque heure pleine) sont arrondis au-dessus. Changer de classe garde tes PV.",
+              "en": "HP are whole numbers: heals, losses and regeneration (every full hour) are rounded up. Changing class keeps your HP."
             }
           ]
         },
@@ -3025,8 +3035,8 @@
           },
           "items": [
             {
-              "fr": "Flayn : tes PV se régénèrent de 0,2 à 1 PV de plus par tour (de C à S).",
-              "en": "Flayn: your HP regenerate 0.2 to 1 more HP per turn (C to S)."
+              "fr": "Flayn : tes PV se régénèrent de 1 à 6 PV de plus par heure (de C à S).",
+              "en": "Flayn: your HP regenerate 1 to 6 more HP per hour (C to S)."
             },
             {
               "fr": "Marianne : blessé ou grièvement blessé, tu récupères aussitôt 2 à 15 PV.",
@@ -5400,15 +5410,15 @@
         ]
       },
       "flayn": {
-        "kind": "hpRegenTurn",
+        "kind": "hpRegenHour",
         "values": [
-          0.2,
-          0.3,
-          0.4,
-          0.5,
-          0.6,
-          0.7,
-          1
+          1,
+          1,
+          2,
+          2,
+          3,
+          4,
+          6
         ]
       }
     },

@@ -560,6 +560,7 @@ function parseParams(s) {
 // fournis par le moteur de campagne dès qu'il est démarré.
 let rewardMods = () => ({ gold: 1, xp: 1 });
 let exileMultOf = () => 1;
+let onLevelUpOf = () => 0; // campagne : montée de niveau (actions remplies, PV en plus)
 
 // Donne de l'or et/ou de l'xp à un joueur, et le prévient s'il gagne un niveau de renommée.
 // Toutes les sources de gains passent ici : les bonus et malus de classe s'appliquent donc à toutes.
@@ -577,10 +578,14 @@ function grant(userId, gold, xp, source = 'other') {
   const after = renown(ch.xp + xp).level;
   // Prime de renommée : levelUpGold × nouveau niveau, pour chaque niveau franchi (réduite pour un exilé, comme tous ses gains).
   const per = Number(process.env.LEVEL_UP_GOLD ?? config.player?.levelUpGold) || 0; // LEVEL_UP_GOLD : tests
+  // Et la réserve d'actions remplie au maximum (une fois, même si plusieurs niveaux sont franchis), avec +1 PV par niveau.
+  const refill = (process.env.LEVEL_UP_REFILL ?? (config.player?.levelUpRefill ? '1' : '0')) === '1'; // LEVEL_UP_REFILL : tests
+  const refilled = after > before ? onLevelUpOf(userId, after - before, refill) : 0;
   for (let l = before + 1; l <= after; l += 1) {
     const bonus = per ? Math.round(per * l * exileMultOf(userId)) : 0;
     if (bonus > 0) { q.addResources.run(bonus, 0, userId); metric('gold_in', bonus); metric('gold_in:renown', bonus); }
-    notify(userId, bonus > 0 ? 'renown_gold' : 'renown', { level: l, ...(bonus > 0 ? { gold: bonus } : {}) });
+    const last = l === after;
+    notify(userId, bonus > 0 ? 'renown_gold' : 'renown', { level: l, ...(bonus > 0 ? { gold: bonus } : {}), ...(last && refilled ? { refill: refilled } : {}) });
   }
 }
 
@@ -721,6 +726,7 @@ const campaign = require('./campaign')({
 // À partir de maintenant, les gains d'or et d'expérience tiennent compte des effets de classe.
 rewardMods = campaign.rewardMods;
 exileMultOf = campaign.exileMult;
+onLevelUpOf = campaign.onLevelUp;
 // Notifications push (voir push.js) : chaque notification du jeu qui compte peut aussi réveiller le téléphone.
 const push = require('./push')({
   db, config, dataDir: DATA_DIR, publicDir: PUBLIC_DIR, currentUser, readJson, send, HttpError,

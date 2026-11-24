@@ -104,7 +104,7 @@ const requiresText = (c) => (c.requires || []).map(className).join(t('classes.or
 const healText = (c) => {
   const hp = state.config.campaign?.hp;
   const n = Number(hp?.heal?.[c?.id]) || 0;
-  return n ? t('hp.healEffect', { hp: n, self: Math.round(n * (hp.selfFactor ?? 0.5)) }) : '';
+  return n ? t('hp.healEffect', { hp: n, self: Math.ceil(n * (hp.selfFactor ?? 0.5)) }) : '';
 };
 // Classes robustes / fragiles (config campaign.hp.sturdy / frail) : PV max en plus ou en moins.
 const hpMaxText = (c) => {
@@ -1288,7 +1288,9 @@ function notifText(n) {
   if (n.type === 'general_order') return { title: t('notif.general_order.title', p), body: t(`notif.general_order.${n.params.outcome}`, p) };
   const body = t(numKey(`notif.${n.type}.body`, n.params.faction), p);
   // Marianne : PV rendus aussitôt après une blessure.
-  return { title: t(`notif.${n.type}.title`, p), body: n.params.healed ? `${body} ${t('notif.woundHealed', { hp: n.params.healed })}` : body };
+  // Montée de niveau : réserve d'actions remplie.
+  const extra = [n.params.healed ? t('notif.woundHealed', { hp: n.params.healed }) : '', n.params.refill ? t('notif.refilled', { n: n.params.refill }) : ''].filter(Boolean).join(' ');
+  return { title: t(`notif.${n.type}.title`, p), body: extra ? `${body} ${extra}` : body };
 }
 
 async function renderNotifs() {

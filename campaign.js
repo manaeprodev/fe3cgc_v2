@@ -309,11 +309,14 @@ module.exports = function createCampaign(ctx) {
     // Raid des Serpents mené par un général.
     if (!cols('battles').includes('general')) db.exec('ALTER TABLE battles ADD COLUMN general TEXT');
     if (!cols('contributions').includes('streak')) db.exec('ALTER TABLE contributions ADD COLUMN streak INTEGER NOT NULL DEFAULT 0');
-    // Points de vie : fraction des PV max (1 = pleine santé), pour que changer de classe garde le même pourcentage.
+    // Points de vie : ancienne fraction des PV max, remplacée par hp_pts (points entiers) ci-dessous.
     if (!cols('player_state').includes('hp')) db.exec('ALTER TABLE player_state ADD COLUMN hp REAL NOT NULL DEFAULT 1');
     if (!cols('player_state').includes('vial_day')) db.exec('ALTER TABLE player_state ADD COLUMN vial_day TEXT');
     if (!cols('player_state').includes('vial_n')) db.exec('ALTER TABLE player_state ADD COLUMN vial_n INTEGER NOT NULL DEFAULT 0');
     if (!cols('generals').includes('hp')) db.exec('ALTER TABLE generals ADD COLUMN hp REAL NOT NULL DEFAULT 1');
+    // PV en points entiers (patch 2.0) : vide = pleine santé ; remplace la fraction « hp » (laissée de côté, plus lue).
+    if (!cols('player_state').includes('hp_pts')) db.exec('ALTER TABLE player_state ADD COLUMN hp_pts INTEGER');
+    if (!cols('generals').includes('hp_pts')) db.exec('ALTER TABLE generals ADD COLUMN hp_pts INTEGER');
   }
   db.exec(`
     -- Relations entre joueurs : une jauge partagée par paire (a < b), permanente comme celles des généraux.
@@ -372,8 +375,8 @@ module.exports = function createCampaign(ctx) {
     state: db.prepare('SELECT * FROM player_state WHERE user_id = ?'),
     insertState: db.prepare('INSERT OR REPLACE INTO player_state (user_id, territory, actions, actions_at, status, retreat_until) VALUES (?, ?, ?, ?, ?, NULL)'),
     setActions: db.prepare('UPDATE player_state SET actions = ?, actions_at = ? WHERE user_id = ?'),
-    setHp: db.prepare('UPDATE player_state SET hp = ? WHERE user_id = ?'),
-    setGenHp: db.prepare('UPDATE generals SET hp = ? WHERE gid = ?'),
+    setHpPts: db.prepare('UPDATE player_state SET hp_pts = ? WHERE user_id = ?'),
+    setGenHpPts: db.prepare('UPDATE generals SET hp_pts = ? WHERE gid = ?'),
     orders: db.prepare('SELECT * FROM general_orders'),
     orderOf: db.prepare('SELECT * FROM general_orders WHERE gid = ?'),
     addOrder: db.prepare('INSERT INTO general_orders (gid, user_id, kind, target, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)'),
@@ -390,8 +393,8 @@ module.exports = function createCampaign(ctx) {
     genFans: db.prepare(`SELECT r.user_id, r.points, c.pseudo, c.avatar FROM relations r JOIN characters c ON c.user_id = r.user_id
                          WHERE r.gid = ? AND r.points > 0 ORDER BY r.points DESC LIMIT ?`),
     setVials: db.prepare('UPDATE player_state SET vial_day = ?, vial_n = ? WHERE user_id = ?'),
-    hpPlayers: db.prepare(`SELECT p.user_id, p.territory, p.hp, COALESCE(p.exile_faction, c.faction) AS faction, c.class
-                           FROM player_state p JOIN characters c ON c.user_id = p.user_id WHERE p.status != 'dead' AND p.hp < 1`),
+    hpPlayers: db.prepare(`SELECT p.user_id, p.territory, COALESCE(p.exile_faction, c.faction) AS faction, c.class
+                           FROM player_state p JOIN characters c ON c.user_id = p.user_id WHERE p.status != 'dead' AND p.hp_pts IS NOT NULL`),
     healers: db.prepare(`SELECT c.*, p.territory, COALESCE(p.exile_faction, c.faction) AS faction FROM player_state p
                          JOIN characters c ON c.user_id = p.user_id WHERE p.status = 'alive' AND p.territory IS NOT NULL`),
     hpHere: db.prepare(`SELECT p.user_id, p.hp, c.class, c.pseudo FROM player_state p JOIN characters c ON c.user_id = p.user_id
@@ -585,7 +588,8 @@ module.exports = function createCampaign(ctx) {
     q.setRewardDebuff.run(woundActions, uid);
     let healed = 0;
     if (hpOn()) {
-      q.setHp.run(Math.max(hpFrac(q.state.get(uid)?.hp), HP.koReturnPct / 100), uid);
+      const hh = playerHp(uid);
+      if (hh) storePlayerHp(uid, Math.max(hh.cur, hpUp((hh.max * HP.koReturnPct) / 100)), hh.max);
       const mar = relSum(relBonuses(uid), 'woundHeal'); // Marianne : soin immédiat après une blessure
       if (mar > 0) healed = healPlayer(uid, mar);
     }
@@ -920,6 +924,24 @@ module.exports = function createCampaign(ctx) {
     const s = settle(ps, t);
     q.setActions.run(s.actions + n, s.actions >= s.max ? t : s.at, userId);
   }
+  // Montée de niveau (appelée par grant) : actions remplies si `refill`, et autant de PV actuels que de PV max gagnés
+  // (un joueur à pleine santé le reste). Renvoie le nombre d'actions rendues.
+  function onLevelUp(userId, levels, refill) {
+    const ps = q.state.get(userId);
+    if (ps && ps.hp_pts != null && hpPerLevel()) q.setHpPts.run(ps.hp_pts + levels * hpPerLevel(), userId);
+    return refill ? refillActions(userId) : 0;
+  }
+  // Remplit la réserve d'actions jusqu'au maximum (une réserve déjà au-delà, par les missions, est gardée).
+  function refillActions(userId) {
+    collectRegen(userId);
+    const ps = q.state.get(userId);
+    if (!ps || ps.status === 'dead') return 0;
+    const t = Date.now();
+    const s = settle(ps, t);
+    if (s.actions >= s.max) return 0;
+    q.setActions.run(s.max, t, userId);
+    return s.max - s.actions;
+  }
   // Dépense 1 action. La première action de chaque tour rapporte un petit bonus de régularité.
   function spend(ps, t) {
     const s = settle(ps, t);
@@ -952,16 +974,37 @@ module.exports = function createCampaign(ctx) {
     if (!HP.enabled) return false;
     return HP.start === 'now' || !!q.meta.get('hp_from');
   }
-  const hpFrac = (v) => Math.max(0, Math.min(1, v ?? 1));
   function hpMaxOf(classId) {
     let m = HP.max[tierOfClass(classId)] ?? HP.max.base ?? 30;
     if ((HP.sturdy.classes || []).includes(classId)) m += HP.sturdy.bonus || 0;
     if ((HP.frail.classes || []).includes(classId)) m += HP.frail.bonus || 0;
     return Math.max(1, m);
   }
-  // PV max d'un joueur : ceux de sa classe, plus le bonus de soutien de Mercedes (relations.bonuses, kind hpMax).
-  const hpMaxPlayer = (uid, classId) => hpMaxOf(classId) + relSum(relBonuses(uid), 'hpMax');
-  const hpPoints = (frac, max) => (frac <= 0 ? 0 : Math.max(1, Math.round(frac * max)));
+  // PV max d'un joueur : ceux de sa classe, +perLevel par niveau de renommée, plus le bonus de soutien de Mercedes (kind hpMax).
+  const hpPerLevel = () => Number(process.env.HP_PER_LEVEL ?? HP.perLevel) || 0; // HP_PER_LEVEL : tests
+  const hpMaxPlayer = (uid, classId, rb = relBonuses(uid)) => {
+    const lvl = hpPerLevel() ? renown(q.char.get(uid)?.xp || 0).level : 0;
+    return hpMaxOf(classId) + lvl * hpPerLevel() + relSum(rb, 'hpMax');
+  };
+  // PV en points entiers : colonne hp_pts (vide = pleine santé), toujours lue plafonnée au maximum du moment (classe, niveau,
+  // soutiens). Tous les gains et toutes les pertes sont des entiers, arrondis au-dessus.
+  const hpUp = (n) => Math.max(0, Math.ceil((Number(n) || 0) - 1e-9));
+  const ptsOf = (stored, max) => (stored == null ? max : Math.max(0, Math.min(max, Math.round(stored))));
+  function playerHp(uid, ps = q.state.get(uid), ch = q.char.get(uid)) {
+    if (!ps || !ch) return null;
+    const max = hpMaxPlayer(uid, ch.class);
+    const cur = ptsOf(ps.hp_pts, max);
+    return { cur, max, frac: cur / max };
+  }
+  function genHpOf(row) {
+    if (!row || !GEN.has(row.gid)) return { cur: 1, max: 1, frac: 1 };
+    const max = hpMaxOf(genClass(row.gid));
+    const cur = ptsOf(row.hp_pts, max);
+    return { cur, max, frac: cur / max };
+  }
+  const storePlayerHp = (uid, cur, max) => q.setHpPts.run(cur >= max ? null : Math.max(0, Math.round(cur)), uid);
+  const storeGenHp = (row, cur, max) => { const v = cur >= max ? null : Math.max(0, Math.round(cur)); q.setGenHpPts.run(v, row.gid); row.hp_pts = v; };
+  const hpPct = (h) => Math.ceil(h.frac * 100);
   // Malus de puissance selon les PV restants (le seuil le plus bas atteint l'emporte).
   function hpMalus(frac) {
     if (!hpOn()) return 0;
@@ -980,19 +1023,19 @@ module.exports = function createCampaign(ctx) {
   function hpOfPlayer(userId) {
     const ps = q.state.get(userId);
     const ch = q.char.get(userId);
-    if (!ps || !ch) return null;
-    const max = hpMaxPlayer(userId, ch.class);
-    const frac = hpFrac(ps.hp);
-    return { frac, max, hp: hpPoints(frac, max), pct: Math.round(frac * 100), malus: hpMalus(frac) };
+    const h = playerHp(userId, ps, ch);
+    if (!h) return null;
+    return { frac: h.frac, max: h.max, hp: h.cur, pct: hpPct(h), malus: hpMalus(h.frac) };
   }
   // Retire des PV à un joueur ; à 0, il est mis hors de combat. Renvoie true s'il tombe.
   function hurtPlayer(uid, pts, t) {
     const ps = q.state.get(uid);
     const ch = q.char.get(uid);
+    pts = hpUp(pts);
     if (!ps || !ch || ps.status === 'dead' || !(pts > 0)) return false;
-    const f = hpFrac(ps.hp) - pts / hpMaxPlayer(uid, ch.class);
-    if (f > 1e-9) { q.setHp.run(f, uid); return false; }
-    q.setHp.run(0, uid);
+    const h = playerHp(uid, ps, ch);
+    if (h.cur - pts > 0) { storePlayerHp(uid, h.cur - pts, h.max); return false; }
+    storePlayerHp(uid, 0, h.max);
     woundPlayer(uid, 1, 0, t, true);
     return true;
   }
@@ -1000,19 +1043,16 @@ module.exports = function createCampaign(ctx) {
     const ps = q.state.get(uid);
     const ch = q.char.get(uid);
     if (!ps || !ch) return 0;
-    const max = hpMaxPlayer(uid, ch.class);
-    const before = hpFrac(ps.hp);
-    const after = Math.min(1, before + pts / max);
-    q.setHp.run(after, uid);
-    return hpPoints(after, max) - hpPoints(before, max);
+    const h = playerHp(uid, ps, ch);
+    const after = Math.min(h.max, h.cur + hpUp(pts));
+    storePlayerHp(uid, after, h.max);
+    return after - h.cur;
   }
   function healGeneral(row, pts) {
-    const max = hpMaxOf(genClass(row.gid));
-    const before = hpFrac(row.hp);
-    const after = Math.min(1, before + pts / max);
-    q.setGenHp.run(after, row.gid);
-    row.hp = after;
-    return hpPoints(after, max) - hpPoints(before, max);
+    const h = genHpOf(row);
+    const after = Math.min(h.max, h.cur + hpUp(pts));
+    storeGenHp(row, after, h.max);
+    return after - h.cur;
   }
   // Effets de classe sur les PV (combattants qui ont agi dans la bataille, joueurs et généraux) :
   // hpDodge (chance de ne rien perdre), hpGuard (les alliés du même côté perdent moins, le plus fort compte),
@@ -1060,16 +1100,17 @@ module.exports = function createCampaign(ctx) {
     for (const c of q.generalContribs.all(b.id)) {
       const row = q.general.get(c.gid);
       if (!row || row.status !== 'alive' || !GEN.has(row.gid)) continue;
-      const max = hpMaxOf(genClass(row.gid));
+      const h = genHpOf(row);
       const w = wearOf(parts.find((x) => x.id === `g:${c.gid}`) || { id: `g:${c.gid}`, side: c.side, eff: [] }, parts, success, decisive);
-      const f = hpFrac(row.hp) - w.loss / max;
-      if (f > 1e-9) { q.setGenHp.run(Math.min(1, f + w.gain / max), row.gid); continue; }
-      if (isLord(row.gid) || row.gid === CH.lord || row.gid === CH.immaculate) { q.setGenHp.run(1 / max, row.gid); continue; }
-      q.setGenHp.run(0, row.gid);
+      const left = h.cur - hpUp(w.loss);
+      if (left > 0) { storeGenHp(row, Math.min(h.max, left + hpUp(w.gain)), h.max); continue; }
+      if (isLord(row.gid) || row.gid === CH.lord || row.gid === CH.immaculate) { storeGenHp(row, 1, h.max); continue; }
+      storeGenHp(row, 0, h.max);
       killGeneral(row, c.side === 'attack' ? b.defender : b.attacker, row.territory, t, true);
     }
   }
-  // Régénération, une fois par minute au plus : plus rapide sur un territoire allié sans bataille, plus encore avec une Infirmerie.
+  // Régénération, à chaque heure pleine et en points entiers : plus rapide sur un territoire allié sans bataille, plus encore
+  // avec une Infirmerie, le soin passif d'un Évêque ou le soutien de Flayn, doublée pendant l'Overdrive.
   // Soin passif (effet « healAura » de l'Évêque, hérité par ses classes suivantes) : PV par heure pour les alliés
   // de son territoire et des territoires voisins, jusqu'à deux cases avec l'effet « reach » (Gremory).
   // Plusieurs soigneurs ne se cumulent pas : le meilleur soin compte. Clé « faction|territoire » → PV par heure.
@@ -1095,11 +1136,13 @@ module.exports = function createCampaign(ctx) {
   }
   function hpTick(t) {
     if (!hpOn()) return;
+    const HOUR = 3_600_000;
     const last = Number(q.meta.get('hp_tick')?.value || 0);
-    if (last && t - last < 60_000) return;
-    q.setMeta.run('hp_tick', String(t));
-    if (!last) return;
-    const h = Math.min(12, (t - last) / 3_600_000);
+    if (!last) { q.setMeta.run('hp_tick', String(t)); return; }
+    const hours = Math.floor((t - last) / HOUR);
+    if (hours < 1) return;
+    q.setMeta.run('hp_tick', String(hours > 12 ? t : last + hours * HOUR)); // au plus 12 heures rattrapées d'un coup
+    const h = Math.min(12, hours);
     const owners = ownersMap();
     const fighting = new Set(q.openBattles.all().map((b) => b.territory));
     const od = overdriveOn(t) ? HP.regen.overdriveFactor || 1 : 1;
@@ -1109,15 +1152,15 @@ module.exports = function createCampaign(ctx) {
       const allied = !!at && !!f && !fighting.has(at) && (o === f || guardians[f] === o);
       return ((allied ? (HP.regen.alliedPerHour || 0) + buildEffect(at, 'hpRegen') : HP.regen.perHour || 0) + (passive.get(`${f}|${at}`) || 0)) * od;
     };
-    const perHourOfTurn = 60 / (C.turnMinutes || 10);
     for (const p of q.hpPlayers.all()) {
-      const rb = relBonuses(p.user_id);
-      const flayn = relSum(rb, 'hpRegenTurn') * perHourOfTurn * od; // Flayn : PV en plus par tour
-      q.setHp.run(Math.min(1, hpFrac(p.hp) + ((rate(p.faction, p.territory) + flayn) * h) / (hpMaxOf(p.class) + relSum(rb, 'hpMax'))), p.user_id);
+      const flayn = relSum(relBonuses(p.user_id), 'hpRegenHour') * od; // Flayn : PV en plus par heure
+      const hh = playerHp(p.user_id);
+      if (hh) storePlayerHp(p.user_id, Math.min(hh.max, hh.cur + hpUp((rate(p.faction, p.territory) + flayn) * h)), hh.max);
     }
     for (const g of q.generals.all()) {
-      if (g.status !== 'alive' || !g.territory || !GEN.has(g.gid) || hpFrac(g.hp) >= 1) continue;
-      q.setGenHp.run(Math.min(1, hpFrac(g.hp) + (rate(g.faction, g.territory) * h) / hpMaxOf(genClass(g.gid))), g.gid);
+      if (g.status !== 'alive' || !g.territory || !GEN.has(g.gid) || g.hp_pts == null) continue;
+      const gh = genHpOf(g);
+      storeGenHp(g, Math.min(gh.max, gh.cur + hpUp(rate(g.faction, g.territory) * h)), gh.max);
     }
   }
   // Jour des fioles (fuseau de la campagne).
@@ -1127,7 +1170,7 @@ module.exports = function createCampaign(ctx) {
     if (!hpOn()) return null;
     const h = hpOfPlayer(userId);
     if (!h) return null;
-    return { ...h, heal: healOf(ch.class), selfHeal: Math.round(healOf(ch.class) * (HP.selfFactor ?? 0.5)), vial: { gold: HP.vial.gold, hp: HP.vial.hp, left: vialsLeft(ps, t), perDay: HP.vial.perDay } };
+    return { ...h, heal: healOf(ch.class), selfHeal: hpUp(healOf(ch.class) * (HP.selfFactor ?? 0.5)), vial: { gold: HP.vial.gold, hp: HP.vial.hp, left: vialsLeft(ps, t), perDay: HP.vial.perDay } };
   }
 
   // Force d'une action de combat : dépend du rang de la classe et de la renommée du joueur.
@@ -1289,9 +1332,9 @@ module.exports = function createCampaign(ctx) {
     const limit = (HP.generals.healBelowPct || 0) / 100;
     const cands = [];
     for (const g of q.generals.all()) {
-      if (g.status === 'alive' && g.territory === row.territory && g.faction === row.faction && GEN.has(g.gid) && hpFrac(g.hp) < limit) cands.push({ frac: hpFrac(g.hp), g });
+      if (g.status === 'alive' && g.territory === row.territory && g.faction === row.faction && GEN.has(g.gid) && genHpOf(g).frac < limit) cands.push({ frac: genHpOf(g).frac, g });
     }
-    for (const p of q.hpHere.all(row.territory, row.faction)) if (hpFrac(p.hp) < limit) cands.push({ frac: hpFrac(p.hp), p });
+    for (const p of q.hpHere.all(row.territory, row.faction)) { const f = playerHp(p.user_id)?.frac ?? 1; if (f < limit) cands.push({ frac: f, p }); }
     if (!cands.length) return false;
     cands.sort((a, b) => a.frac - b.frac);
     const c = cands[0];
@@ -1459,7 +1502,7 @@ module.exports = function createCampaign(ctx) {
       }
       // Sortie : un territoire ennemi voisin, de préférence là où sa faction attaque déjà (jamais trop blessé).
       if (sorties >= G.maxSorties) continue;
-      if (hpOn() && hpFrac(row.hp) * 100 < (HP.generals.sortieMinPct || 0)) continue;
+      if (hpOn() && genHpOf(row).frac * 100 < (HP.generals.sortieMinPct || 0)) continue;
       const targets = neighbors(here).filter((n) => {
         const o = owners.get(n) ?? null;
         const b = q.openBattle.get(n);
@@ -1803,8 +1846,8 @@ module.exports = function createCampaign(ctx) {
     const hpOnNow = hpOn();
     const hpRowMult = (id) => {
       if (!hpOnNow) return 1;
-      if (typeof id === 'string' && id.startsWith('g:')) return hpMult(hpFrac(gens.get(id.slice(2))?.hp));
-      return hpMult(hpFrac(q.state.get(id)?.hp));
+      if (typeof id === 'string' && id.startsWith('g:')) return hpMult(genHpOf(gens.get(id.slice(2))).frac);
+      return hpMult(playerHp(id)?.frac ?? 1);
     };
     // Contre-attaque : évaluée à l'ouverture de la bataille.
     const counter = b.boss_power === 0 && counterOn(b.attacker, T, owners0, b.started_at);
@@ -2419,14 +2462,14 @@ module.exports = function createCampaign(ctx) {
     };
     for (const r of q.occupants.all()) {
       if (r.user_id !== userId && !r.exile_faction && hidden.has(`${r.faction}:${r.territory}`) && !engaged.has(`${r.user_id}:${r.territory}`)) continue;
-      seat(r.territory, { pseudo: r.pseudo, avatar: r.avatar, faction: r.faction, class: r.class, level: renown(r.xp).level, me: r.user_id === userId, retreating: r.status === 'retreating', hp: hpOnMap ? Math.round(hpFrac(r.hp) * 100) : null });
+      seat(r.territory, { pseudo: r.pseudo, avatar: r.avatar, faction: r.faction, class: r.class, level: renown(r.xp).level, me: r.user_id === userId, retreating: r.status === 'retreating', hp: hpOnMap ? hpPct(playerHp(r.user_id) || { frac: 1 }) : null });
     }
     // Les généraux se voient comme les joueurs ; ceux des factions cachées sur leur base ne se montrent que s'ils y combattent.
     const genEngaged = new Set(q.generalsEngaged.all().map((r) => `${r.gid}:${r.territory}`));
     for (const g of q.generals.all()) {
       if (g.status !== 'alive' || !g.territory || !GEN.has(g.gid) || g.faction === C.boss.faction) continue;
       if (hidden.has(`${g.faction}:${g.territory}`) && !genEngaged.has(`${g.gid}:${g.territory}`)) continue;
-      seat(g.territory, { pseudo: GEN.get(g.gid).name, gid: g.gid, avatar: GEN.get(g.gid).avatar, faction: g.faction || null, class: genClass(g.gid), level: genLevel(g), me: false, retreating: false, general: true, lord: isLord(g.gid), hp: hpOnMap ? Math.round(hpFrac(g.hp) * 100) : null, ordered: ordered.has(g.gid) });
+      seat(g.territory, { pseudo: GEN.get(g.gid).name, gid: g.gid, avatar: GEN.get(g.gid).avatar, faction: g.faction || null, class: genClass(g.gid), level: genLevel(g), me: false, retreating: false, general: true, lord: isLord(g.gid), hp: hpOnMap ? hpPct(genHpOf(g)) : null, ordered: ordered.has(g.gid) });
     }
     for (const list of occupants.values()) list.sort((a, b) => (b.me - a.me) || (b.level - a.level) || a.pseudo.localeCompare(b.pseudo));
     const campaign = currentCampaign();
@@ -2726,7 +2769,7 @@ module.exports = function createCampaign(ctx) {
     if ((ps?.reward_debuff || 0) > 0) out.push({ type: 'rewardDebuff', n: ps.reward_debuff, tone: 'debuff' });
     if (ps?.status === 'retreating') out.push({ type: 'retreating', until: ps.retreat_until, tone: 'debuff' });
     if (ps?.status === 'dead') out.push({ type: 'wounded', tone: 'debuff' });
-    if (ps && ps.status !== 'dead' && hpOn()) { const m = hpMalus(hpFrac(ps.hp)); if (m) out.push({ type: 'hpLow', pct: m, hp: Math.round(hpFrac(ps.hp) * 100), tone: 'debuff' }); }
+    if (ps && ps.status !== 'dead' && hpOn()) { const h = playerHp(userId, ps, ch); const m = h ? hpMalus(h.frac) : 0; if (m) out.push({ type: 'hpLow', pct: m, hp: hpPct(h), tone: 'debuff' }); }
     return out;
   }
   // Autres sources : ce que les autres apportent à une unité là où elle se trouve (auras des alliés proches, malus des ennemis
@@ -2816,7 +2859,7 @@ module.exports = function createCampaign(ctx) {
     if (isLord(row.gid)) out.push({ type: 'lordGen', tone: 'buff' });
     if (row.faction && PLAYABLE.has(row.faction) && activeBuff(row.faction)) out.push({ type: 'lord', faction: row.faction, until: buffUntil(row.faction), tone: 'buff' });
     if (row.faction && PLAYABLE.has(row.faction) && capitalLost(row.faction, ownersMap())) out.push({ type: 'capitalLost', pct: C.capital.lossPct || 0, tone: 'debuff' });
-    if (row.status === 'alive' && hpOn()) { const m = hpMalus(hpFrac(row.hp)); if (m) out.push({ type: 'hpLow', pct: m, hp: Math.round(hpFrac(row.hp) * 100), tone: 'debuff' }); }
+    if (row.status === 'alive' && hpOn()) { const h = genHpOf(row); const m = hpMalus(h.frac); if (m) out.push({ type: 'hpLow', pct: m, hp: hpPct(h), tone: 'debuff' }); }
     return out;
   }
 
@@ -3139,19 +3182,22 @@ module.exports = function createCampaign(ctx) {
         const side = effFaction(user.id);
         let heal = null;
         if (!target || target === ch.pseudo) {
-          if (hpFrac(ps.hp) >= 1) throw new HttpError(409, 'hp_full');
+          const mine = playerHp(user.id, ps, ch);
+          if (mine.cur >= mine.max) throw new HttpError(409, 'hp_full');
           bonus = spend(ps, t);
           heal = { name: ch.pseudo, hp: healPlayer(user.id, amount * (HP.selfFactor ?? 0.5)), self: true };
         } else if (String(target).startsWith('g:')) {
           const g = q.general.get(String(target).slice(2));
           if (!g || g.status !== 'alive' || g.territory !== here || g.faction !== side || !GEN.has(g.gid)) throw new HttpError(409, 'heal_target');
-          if (hpFrac(g.hp) >= 1) throw new HttpError(409, 'hp_full');
+          const gh = genHpOf(g);
+          if (gh.cur >= gh.max) throw new HttpError(409, 'hp_full');
           bonus = spend(ps, t);
           heal = { name: GEN.get(g.gid).name, hp: healGeneral(g, amount) };
         } else {
           const other = q.hpHere.all(here, side).find((r) => r.pseudo === target && r.user_id !== user.id);
           if (!other) throw new HttpError(409, 'heal_target');
-          if (hpFrac(other.hp) >= 1) throw new HttpError(409, 'hp_full');
+          const oh = playerHp(other.user_id);
+          if (!oh || oh.cur >= oh.max) throw new HttpError(409, 'hp_full');
           bonus = spend(ps, t);
           heal = { name: other.pseudo, hp: healPlayer(other.user_id, amount + pairHeal(user.id, other.user_id)) };
           notify(other.user_id, 'healed_by', { pseudo: ch.pseudo, hp: heal.hp });
@@ -3165,7 +3211,8 @@ module.exports = function createCampaign(ctx) {
       } else if (action === 'vial') {
         // Fiole : de l'or contre quelques PV, sans action, quelques fois par jour.
         if (!hpOn()) throw new HttpError(409, 'invalid_action');
-        if (hpFrac(ps.hp) >= 1) throw new HttpError(409, 'hp_full');
+        const vh = playerHp(user.id, ps, ch);
+        if (vh.cur >= vh.max) throw new HttpError(409, 'hp_full');
         const left = vialsLeft(ps, t);
         if (left < 1) throw new HttpError(409, 'vial_limit');
         if (!pay(user.id, HP.vial.gold, 'vial')) throw new HttpError(409, 'not_enough_gold');
@@ -3318,7 +3365,7 @@ module.exports = function createCampaign(ctx) {
           territory: g.territory || null, path: cfg.path, class: genClass(gid), level: genLevel(g), status: g.status, spared: !!g.spared,
           spare: cfg.spare || [], coef: cfg.coef, lord: isLord(gid), mods: genModsOf(g),
           closest: closestOfGeneral(gid), ...orderPayload(user.id, g),
-          hp: hpOn() && g.status === 'alive' ? (() => { const max = hpMaxOf(genClass(gid)); return { hp: hpPoints(hpFrac(g.hp), max), max, pct: Math.round(hpFrac(g.hp) * 100) }; })() : null,
+          hp: hpOn() && g.status === 'alive' ? (() => { const h = genHpOf(g); return { hp: h.cur, max: h.max, pct: hpPct(h) }; })() : null,
           others: g.status === 'alive' && g.territory ? otherSources(genPerson(g), g.faction, g.territory) : null,
         });
         return;
@@ -3457,5 +3504,5 @@ module.exports = function createCampaign(ctx) {
     try { return JSON.parse(r.data); } catch { return null; }
   }
 
-  return { routes, tick, giveActions, rewardActions, phaseNow: () => phase(Date.now()), missionState, missionsClaimable, claimMission, playerPayload, mapPayload, ensurePlayer, TURN_MS, fallenState, distinctionsOf, rewardMods, exileMult, resultFor, giftStates };
+  return { routes, tick, giveActions, onLevelUp, rewardActions, phaseNow: () => phase(Date.now()), missionState, missionsClaimable, claimMission, playerPayload, mapPayload, ensurePlayer, TURN_MS, fallenState, distinctionsOf, rewardMods, exileMult, resultFor, giftStates };
 };

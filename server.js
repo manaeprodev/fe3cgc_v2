@@ -558,6 +558,7 @@ function parseParams(s) {
 // Multiplicateurs d'or et d'expérience du joueur (effets de classe, téléportation de l'Évêque noir…),
 // fournis par le moteur de campagne dès qu'il est démarré.
 let rewardMods = () => ({ gold: 1, xp: 1 });
+let exileMultOf = () => 1;
 
 // Donne de l'or et/ou de l'xp à un joueur, et le prévient s'il gagne un niveau de renommée.
 // Toutes les sources de gains passent ici : les bonus et malus de classe s'appliquent donc à toutes.
@@ -573,7 +574,13 @@ function grant(userId, gold, xp, source = 'other') {
   const before = renown(ch.xp).level;
   q.addResources.run(gold, xp, userId);
   const after = renown(ch.xp + xp).level;
-  for (let l = before + 1; l <= after; l += 1) notify(userId, 'renown', { level: l });
+  // Prime de renommée : levelUpGold × nouveau niveau, pour chaque niveau franchi (réduite pour un exilé, comme tous ses gains).
+  const per = Number(process.env.LEVEL_UP_GOLD ?? config.player?.levelUpGold) || 0; // LEVEL_UP_GOLD : tests
+  for (let l = before + 1; l <= after; l += 1) {
+    const bonus = per ? Math.round(per * l * exileMultOf(userId)) : 0;
+    if (bonus > 0) { q.addResources.run(bonus, 0, userId); metric('gold_in', bonus); metric('gold_in:renown', bonus); }
+    notify(userId, bonus > 0 ? 'renown_gold' : 'renown', { level: l, ...(bonus > 0 ? { gold: bonus } : {}) });
+  }
 }
 
 // État des missions du joueur. Marque au passage celles dont la condition vient d'être remplie.
@@ -711,6 +718,7 @@ const campaign = require('./campaign')({
 });
 // À partir de maintenant, les gains d'or et d'expérience tiennent compte des effets de classe.
 rewardMods = campaign.rewardMods;
+exileMultOf = campaign.exileMult;
 // Notifications push (voir push.js) : chaque notification du jeu qui compte peut aussi réveiller le téléphone.
 const push = require('./push')({
   db, config, dataDir: DATA_DIR, publicDir: PUBLIC_DIR, currentUser, readJson, send, HttpError,
@@ -889,7 +897,13 @@ const routes = {
   'GET /api/notifications': async (req, res) => {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
-    send(res, 200, { notifications: q.notifs.all(user.id).map((n) => ({ ...n, params: parseParams(n.params), read: !!n.read })) });
+    // Offrandes reçues d'un joueur : état du bouton « Dire merci » (ouvert 24 h, une fois).
+    const gifts = campaign.giftStates(user.id);
+    send(res, 200, { notifications: q.notifs.all(user.id).map((n) => {
+      const params = parseParams(n.params);
+      if (n.type === 'player_gift') params.thanks = gifts[params.gift] || 'closed';
+      return { ...n, params, read: !!n.read };
+    }) });
   },
 
   // Changement de classe.

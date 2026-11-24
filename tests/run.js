@@ -15,7 +15,7 @@ let failed = 0;
 for (const f of files) {
   const name = f.replace('.test.js', '');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `conquete-${name}-`));
-  const env = { ...process.env, RETREAT_TURNS: '6', DECISIVE: '0', GEN_TICK_MS: '0', GLVL_SMOOTH_MS: '0', GLVL_ALPHA: '1', OVERDRIVE_HOURS: '0', ...(NO_GENERALS.has(name) ? { TEST_NO_GENERALS: '1' } : {}) };
+  const env = { ...process.env, RETREAT_TURNS: '6', DECISIVE: '0', GEN_TICK_MS: '0', GLVL_SMOOTH_MS: '0', GLVL_ALPHA: '1', OVERDRIVE_HOURS: '0', HP_ON: '0', LEVEL_UP_GOLD: '0', ...(NO_GENERALS.has(name) ? { TEST_NO_GENERALS: '1' } : {}) };
   process.stdout.write(`\n=== ${name}\n`);
   const r = spawnSync(process.execPath, [path.join(__dirname, f), path.join(root, 'server.js'), dir], { cwd: root, env, encoding: 'utf8', timeout: 600_000 });
   const out = `${r.stdout || ''}${r.stderr || ''}`;

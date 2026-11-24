@@ -24,7 +24,8 @@
   "player": {
     "startGold": 500,
     "renownBaseXp": 100,
-    "renownGrowth": 1.1
+    "renownGrowth": 1.1,
+    "levelUpGold": 100
   },
   "rules": [
     {
@@ -43,8 +44,8 @@
         "en": "Resources"
       },
       "text": {
-        "fr": "Actions : tu en gagnes 1 toutes les 10 minutes, jusqu'à 8 en réserve. Certaines missions rendent de l'énergie, même au-delà de 8 : tant que tu en as plus que le maximum, elle ne se recharge pas. Se déplacer, attaquer, défendre et récolter coûtent chacun 1 action.\n\nOr : tu en gagnes en récoltant sur un territoire allié, en remportant des batailles, en accomplissant des missions et avec le bonus de régularité. Il sert à changer de classe, à acheter des avatars, à construire sur tes territoires, à payer des renforts en bataille et à régler la pénalité d'un repli manqué.\n\nRenommée : c'est ton niveau. Elle monte avec l'expérience gagnée en jouant : 100 points pour le niveau 1, puis 10 % de plus à chaque niveau. Elle ouvre l'accès aux classes supérieures et rend chacune de tes actions de combat plus forte.",
-        "en": "Actions: you gain 1 every 10 minutes, up to 8 in reserve. Some missions restore energy, even beyond 8: while you have more than the maximum, it does not recharge. Moving, attacking, defending and gathering each cost 1 action.\n\nGold: you earn it by gathering on an allied territory, winning battles, completing missions and through the regularity bonus. It pays for class changes, avatars, building on your territories, reinforcements in battle and the penalty of a missed retreat.\n\nRenown: this is your level. It rises with the experience you earn by playing: 100 points for level 1, then 10% more for each level. It unlocks higher classes and makes each of your combat actions stronger."
+        "fr": "Actions : tu en gagnes 1 toutes les 10 minutes, jusqu'à 8 en réserve. Certaines missions rendent de l'énergie, même au-delà de 8 : tant que tu en as plus que le maximum, elle ne se recharge pas. Se déplacer, attaquer, défendre et récolter coûtent chacun 1 action.\n\nOr : tu en gagnes en récoltant sur un territoire allié, en remportant des batailles, en accomplissant des missions et avec le bonus de régularité. Il sert à changer de classe, à acheter des avatars, à construire sur tes territoires, à payer des renforts en bataille et à régler la pénalité d'un repli manqué.\n\nRenommée : c'est ton niveau. Elle monte avec l'expérience gagnée en jouant : 100 points pour le niveau 1, puis 10 % de plus à chaque niveau. Elle ouvre l'accès aux classes supérieures et rend chacune de tes actions de combat plus forte. À chaque nouveau niveau, tu reçois une prime de 100 or × ce niveau (500 or au niveau 5).",
+        "en": "Actions: you gain 1 every 10 minutes, up to 8 in reserve. Some missions restore energy, even beyond 8: while you have more than the maximum, it does not recharge. Moving, attacking, defending and gathering each cost 1 action.\n\nGold: you earn it by gathering on an allied territory, winning battles, completing missions and through the regularity bonus. It pays for class changes, avatars, building on your territories, reinforcements in battle and the penalty of a missed retreat.\n\nRenown: this is your level. It rises with the experience you earn by playing: 100 points for level 1, then 10% more for each level. It unlocks higher classes and makes each of your combat actions stronger. Each new level grants a bonus of 100 gold × that level (500 gold at level 5)."
       }
     },
     {
@@ -75,6 +76,16 @@
       "text": {
         "fr": "Les généraux sont des personnages du jeu, dirigés par l'ordinateur. Chacun se tient sur son territoire d'origine au début de la campagne et le défend coûte que coûte quand il est attaqué, s'il lui reste assez d'actions. Ils ont 4 actions au maximum (au lieu de 8), une classe avec ses bonus et un niveau de renommée calculé d'après la médiane des joueurs actifs de leur faction (relevé pour une faction en retard, et qui évolue en douceur), selon leur puissance et leur importance. Les Loups de cendre défendent tous Garreg-Mach ; quelques généraux sont indépendants et défendent leur propre territoire.\n\nUne fois un premier territoire conquis sur la carte, les généraux peuvent aussi partir en sortie contre un territoire ennemi voisin, et n'attaquent qu'une fois par bataille.\n\nUn général n'a qu'une vie par campagne : battu en attaque comme en défense, ou si son territoire d'origine est conquis, il meurt et disparaît de la carte (sauf s'il est épargné, voir plus bas). Ceux qui l'ont vaincu reçoivent de l'or et de la renommée en plus, selon son importance.\n\nCertains généraux peuvent être épargnés, seulement par certaines factions, et une seule fois. Les vainqueurs ont alors 1 heure pour décider : l'épargner (il rejoint leur faction, mais défend toujours son territoire d'origine) ou le faire mourir. Sans décision, il meurt. Un général déjà épargné qui est battu à nouveau meurt.\n\nLes seigneurs (Edelgard, Dimitri, Claude) ne quittent jamais leur capitale tant qu'ils la tiennent et la défendent toujours, même sans action. Ils ne peuvent pas mourir tant qu'il reste un autre général sous leur bannière : vaincus, ils se replient auprès des leurs. S'ils perdent leur capitale, ils ordonnent sa reprise et tous les généraux de la faction marchent sur elle. Yuri ne peut mourir que s'il est le dernier général des Loups de cendre (les autres morts ou passés à une autre faction) : vaincu avant cela, il est renvoyé à Garreg-Mach.\n\nL'Église de Seiros a ses généraux : Rhea et les chevaliers de Seiros (Seteth, Catherine, Shamir, Gilbert, Alois, Hanneman, Cyril, Flayn). Ils gardent Garreg-Mach, et Rhea, comme un seigneur, ne le quitte jamais et le défend toujours. Croisade : dès qu'une faction tient 45 % des territoires (hors annexes), Rhea lui déclare la croisade. Trois chevaliers au plus sortent de Garreg-Mach et attaquent ses territoires, en commençant par les plus proches. Ils passent partout, et les territoires qu'ils prennent reviennent à l'Église. La croisade est levée quand la faction redescend sous 38 %.\n\nL'Immaculée : si Garreg-Mach tombe, Rhea ne meurt pas, elle s'éveille en l'Immaculée. Elle lance alors des assauts sur Garreg-Mach, un toutes les 4 heures (jamais entre minuit et 6 h), et ravage parfois un territoire voisin. Les chevaliers survivants marchent avec elle. Un seul assaut réussi, et l'Église reprend Garreg-Mach : Rhea retrouve son siège. Repousser 3 assauts abat l'Immaculée pour de bon, et la faction qui tient Garreg-Mach gagne 10 % de points en fin de campagne.\n\nLes généraux indépendants (Petra, Nader, Shadid) défendent toujours leur territoire quand il est attaqué, quel que soit son maître. S'il tombe, ils sont vaincus : ils meurent, sauf si les vainqueurs peuvent les épargner et le font.\n\nLes Serpents des Ténèbres ont aussi leurs généraux : un raid sur trois environ est mené par l'un d'eux. Epimenides est toujours le dernier à venir. Une fois tombé, les Serpents ne reviennent plus jusqu'à la fin de la campagne, et la faction qui l'a abattu gagne +15 % de points.",
         "en": "Generals are game characters controlled by the computer. Each one stands on their home territory at the start of the campaign and defends it at all costs when it is attacked, as long as they have enough actions left. They have at most 4 actions (instead of 8), a class with its bonuses and a renown level computed from the median of their faction's active players (raised for a faction lagging behind, and changing gradually), according to their strength and importance. The Ashen Wolves all defend Garreg Mach; a few generals are independent and defend their own territory.\n\nOnce a first territory has been conquered on the map, generals may also sortie against a neighbouring enemy territory, and attack only once per battle.\n\nA general has one life per campaign: beaten, whether attacking or defending, or if their home territory is conquered, they die and vanish from the map (unless spared, see below). Those who defeated them earn extra gold and renown, depending on their importance.\n\nSome generals can be spared, only by certain factions, and only once. The victors then have 1 hour to decide: spare them (they join their faction, but still defend their home territory) or put them to death. With no decision, they die. A general who was already spared and is beaten again dies.\n\nThe lords (Edelgard, Dimitri, Claude) never leave their capital while they hold it and always defend it, even without actions. They cannot die while another general remains under their banner: beaten, they fall back to their own. If they lose their capital, they order it retaken and all the faction's generals march on it. Yuri can only die if he is the last general of the Ashen Wolves (the others dead or gone to another faction): beaten before that, he is sent back to Garreg Mach.\n\nThe Church of Seiros has generals of its own: Rhea and the Knights of Seiros (Seteth, Catherine, Shamir, Gilbert, Alois, Hanneman, Cyril, Flayn). They guard Garreg Mach, and Rhea, like a lord, never leaves it and always defends it. Crusade: as soon as a faction holds 45% of the territories (annexes excluded), Rhea declares a crusade against it. Up to three knights leave Garreg Mach and attack its territories, nearest first. They can pass anywhere, and the territories they take go to the Church. The crusade is lifted when the faction falls back below 38%.\n\nThe Immaculate One: if Garreg Mach falls, Rhea does not die, she awakens as the Immaculate One. She then launches assaults on Garreg Mach, one every 4 hours (never between midnight and 6 am), and sometimes ravages a neighbouring territory. The surviving knights march with her. A single successful assault and the Church retakes Garreg Mach: Rhea returns to her seat. Repelling 3 assaults slays the Immaculate One for good, and the faction holding Garreg Mach gains 10% more points at the end of the campaign.\n\nIndependent generals (Petra, Nader, Shadid) always defend their territory when it is attacked, whoever its master. If it falls, they are defeated: they die, unless the winners can spare them and do so.\n\nThose Who Slither in the Dark have generals too: roughly one raid in three is led by one of them. Epimenides always comes last. Once fallen, the Serpents do not return until the end of the campaign, and the faction that slew them gains +15% points."
+      }
+    },
+    {
+      "title": {
+        "fr": "Points de vie",
+        "en": "Hit points"
+      },
+      "text": {
+        "fr": "À partir de la prochaine saison, chaque joueur et chaque général a des points de vie (PV). Les PV max dépendent de la classe : 30 (base), 34 (intermédiaire), 38 (avancée), 42 (maître), +10 pour les classes lourdes (chevalier en armure, chevalier forteresse, grand chevalier), -4 pour les classes fragiles (mages, moines, voleurs, danseur). Changer de classe garde le même pourcentage de PV.\n\nÀ la fin de chaque bataille où tu as attaqué ou défendu, tu perds des PV : attaque gagnée -5, défense gagnée -3, victoire écrasante -2, attaque perdue -12, défense perdue -10. Sous 50 % de PV, ta puissance baisse de 10 % ; sous 25 %, de 20 %. À 0 PV, tu es mis hors de combat (comme un repli manqué) et tu reviens avec la moitié de tes PV.\n\nLes PV remontent seuls : +3 par heure, +6 sur un territoire allié sans bataille, +2 de plus par niveau d'Infirmerie (nouveau bâtiment), et deux fois plus vite pendant l'Overdrive.\n\nSoigner (1 action) : les classes de soin soignent un allié présent sur leur territoire (joueur ou général), ou elles-mêmes à moitié : moine 6 PV, prêtre 9, saint mortel, chevalier sacré, gremory, évêque noir et danseur 11, évêque 13. Soigner un allié rapporte de la renommée. Fiole : 150 or pour +8 PV, sans action, 3 par jour.\n\nLes généraux perdent aussi des PV en combattant, ne partent pas en sortie sous 50 % et se soignent entre eux. À 0 PV, un général meurt d'épuisement ; les seigneurs restent debout à 1 PV.",
+        "en": "From next season, every player and every general has hit points (HP). Max HP depend on the class: 30 (base), 34 (intermediate), 38 (advanced), 42 (master), +10 for heavy classes (armored knight, fortress knight, great knight), -4 for frail classes (mages, monks, thieves, dancer). Changing class keeps the same HP percentage.\n\nAt the end of each battle where you attacked or defended, you lose HP: attack won -5, defence won -3, crushing victory -2, attack lost -12, defence lost -10. Below 50% HP your power drops by 10%; below 25%, by 20%. At 0 HP you are knocked out (like a missed retreat) and come back with half your HP.\n\nHP come back on their own: +3 per hour, +6 on an allied territory without a battle, +2 more per Infirmary level (new building), and twice as fast during Overdrive.\n\nHeal (1 action): healing classes heal an ally present on their territory (player or general), or themselves for half: monk 6 HP, priest 9, mortal savant, holy knight, gremory, dark bishop and dancer 11, bishop 13. Healing an ally earns renown. Vulnerary: 150 gold for +8 HP, no action, 3 per day.\n\nGenerals also lose HP when fighting, do not go on sorties below 50% and heal each other. At 0 HP a general dies of exhaustion; lords stay standing at 1 HP."
       }
     },
     {
@@ -113,8 +124,8 @@
         "en": "Relationships"
       },
       "text": {
-        "fr": "Dans le menu, sous les effets de classe, la partie Relations liste les généraux alliés à ton camp, seigneurs compris. Ceux de ta faction qui sont morts (tête de mort), captifs ou passés à une autre faction (sa bannière) y restent, grisés, en fin de liste.\n\nTouche un général pour voir ton niveau de soutien avec lui et renforcer votre lien :\n- Faire un compliment : 1 action, +1 point de soutien.\n- Offrir une fleur : 1 action et 50 or, +5 points de soutien.\n- Envoyer une lettre : 1 action et 200 or, +25 points de soutien.\n- Offrir un cadeau : gratuit, +10 points de soutien, quand tu es sur le même territoire que le général. Une fois par heure.\n\nLa fenêtre de soutien s'ouvre aussi depuis la carte : touche un général allié, puis Soutien.\n\nNiveaux : C (250 points), C+ (400), B (600), B+ (850), A (1 050), A+ (1 400) et S (2 000). Le niveau S n'est possible qu'avec un seul général. Le soutien est permanent : il se garde d'une campagne à l'autre.\n\nOn ne peut renforcer un lien qu'avec un général vivant allié à son camp. En exil, ce sont les généraux de ta faction d'adoption, y compris ceux qui l'ont rejointe après leur défaite. Se lier d'amitié avec un général pendant l'exil peut donc servir plus tard, quand il rejoindra peut-être ta faction.\n\nChaque général vivant allié à ton camp t'accorde son bonus, selon ton niveau de soutien avec lui (le détail est affiché en touchant le général). Un général mort, captif ou passé ailleurs ne donne plus rien, mais ton soutien est gardé : s'il rejoint un jour ton camp, son bonus revient.",
-        "en": "In the menu, below the class effects, the Relationships section lists the generals allied to your side, lords included. Those of your faction who are dead (skull), captive or gone to another faction (its banner) stay there, greyed out, at the end of the list.\n\nTap a general to see your support rank with them and strengthen your bond:\n- Pay a compliment: 1 action, +1 support point.\n- Give a flower: 1 action and 50 gold, +5 support points.\n- Send a letter: 1 action and 200 gold, +25 support points.\n- Give a present: free, +10 support points, when you stand on the same territory as the general. Once per hour.\n\nThe support window also opens from the map: tap an allied general, then Support.\n\nRanks: C (250 points), C+ (400), B (600), B+ (850), A (1,050), A+ (1,400) and S (2,000). Rank S is only possible with a single general. Support is permanent: it carries over from one campaign to the next.\n\nYou can only strengthen a bond with a living general allied to your side. In exile, these are your adopted faction's generals, including those who joined it after their defeat. Befriending a general during exile can therefore pay off later, if they ever join your faction.\n\nEvery living general allied to your side grants you their bonus, based on your support rank with them (details shown when you tap the general). A dead, captive or departed general gives nothing, but your support is kept: if they ever join your side, their bonus comes back."
+        "fr": "Dans le menu, sous les effets de classe, la partie Relations liste les généraux alliés à ton camp, seigneurs compris. Ceux de ta faction qui sont morts (tête de mort), captifs ou passés à une autre faction (sa bannière) y restent, grisés, en fin de liste.\n\nTouche un général pour voir ton niveau de soutien avec lui et renforcer votre lien :\n- Faire un compliment : 1 action, +1 point de soutien.\n- Offrir une fleur : 1 action et 50 or, +5 points de soutien.\n- Envoyer une lettre : 1 action et 200 or, +25 points de soutien.\n- Offrir un cadeau : gratuit, +10 points de soutien, quand tu es sur le même territoire que le général. Une fois par heure.\n\nLa fenêtre de soutien s'ouvre aussi depuis la carte : touche un général allié, puis Soutien.\n\nNiveaux : C (250 points), C+ (400), B (600), B+ (850), A (1 050), A+ (1 400) et S (2 000). Le niveau S n'est possible qu'avec un seul général. Le soutien est permanent : il se garde d'une campagne à l'autre.\n\nOn ne peut renforcer un lien qu'avec un général vivant allié à son camp. En exil, ce sont les généraux de ta faction d'adoption, y compris ceux qui l'ont rejointe après leur défaite. Se lier d'amitié avec un général pendant l'exil peut donc servir plus tard, quand il rejoindra peut-être ta faction.\n\nChaque général vivant allié à ton camp t'accorde son bonus, selon ton niveau de soutien avec lui (le détail est affiché en touchant le général). Un général mort, captif ou passé ailleurs ne donne plus rien, mais ton soutien est gardé : s'il rejoint un jour ton camp, son bonus revient.\n\nEntre joueurs : ouvre le profil d'un joueur et touche « Soutien ». Mêmes offrandes qu'avec les généraux (le cadeau sur place toutes les 30 minutes par joueur), et la relation est partagée : ce que l'un offre fait monter le niveau des deux, jusqu'à A+. Celui qui reçoit peut « Dire merci » depuis ses notifications (une fois, dans les 24 h) : +20 % des points de l'offrande. Bonus : quand vous combattez dans la même bataille, du même côté et dans le même camp, chacun gagne +1 % (C) à +6 % (A+) de puissance, +10 % au plus en tout ; avec les points de vie, vos soins mutuels gagnent +2 PV (B+) puis +3 (A+). Les profils montrent les 4 relations les plus proches.\n\nCommandes : dès le soutien C avec un général de ton camp, tu peux lui ordonner d'attaquer, de défendre ou de se déplacer vers un territoire (depuis son profil). Il y va avec ses propres actions, fait ce que tu demandes, puis reprend sa route. Défendre : il tient le territoire jusqu'à 6 heures et le défend s'il est attaqué. Un seul ordre à la fois : les autres joueurs attendent qu'il ait fini. La défense de son territoire d'origine passe avant tout. Les seigneurs et les chevaliers de l'Église ne se commandent pas.",
+        "en": "In the menu, below the class effects, the Relationships section lists the generals allied to your side, lords included. Those of your faction who are dead (skull), captive or gone to another faction (its banner) stay there, greyed out, at the end of the list.\n\nTap a general to see your support rank with them and strengthen your bond:\n- Pay a compliment: 1 action, +1 support point.\n- Give a flower: 1 action and 50 gold, +5 support points.\n- Send a letter: 1 action and 200 gold, +25 support points.\n- Give a present: free, +10 support points, when you stand on the same territory as the general. Once per hour.\n\nThe support window also opens from the map: tap an allied general, then Support.\n\nRanks: C (250 points), C+ (400), B (600), B+ (850), A (1,050), A+ (1,400) and S (2,000). Rank S is only possible with a single general. Support is permanent: it carries over from one campaign to the next.\n\nYou can only strengthen a bond with a living general allied to your side. In exile, these are your adopted faction's generals, including those who joined it after their defeat. Befriending a general during exile can therefore pay off later, if they ever join your faction.\n\nEvery living general allied to your side grants you their bonus, based on your support rank with them (details shown when you tap the general). A dead, captive or departed general gives nothing, but your support is kept: if they ever join your side, their bonus comes back.\n\nBetween players: open a player's profile and tap \"Support\". Same gifts as with generals (the on-site gift every 30 minutes per player), and the relationship is shared: what one gives raises the level for both, up to A+. The receiver can \"Say thanks\" from their notifications (once, within 24 h): +20% of the gift's points. Bonus: when you fight in the same battle, on the same side and for the same camp, each gets +1% (C) to +6% (A+) power, +10% at most in total; with hit points, your heals on each other gain +2 HP (B+) then +3 (A+). Profiles show the 4 closest relationships.\n\nOrders: from support C with a general of your side, you can order them to attack, defend or move to a territory (from their profile). They go with their own actions, do what you ask, then carry on. Defend: they hold the territory for up to 6 hours and defend it if attacked. One order at a time: other players wait until it is done. Defending their home territory comes first. Lords and Church knights cannot be ordered."
       }
     }
   ],
@@ -2316,6 +2327,17 @@
             "fr": "+30 % d'expérience récoltée par niveau.",
             "en": "+30% experience gathered per level."
           }
+        },
+        "infirmary": {
+          "hpRegen": 2,
+          "name": {
+            "fr": "Infirmerie",
+            "en": "Infirmary"
+          },
+          "description": {
+            "fr": "+2 PV par heure par niveau pour les alliés présents.",
+            "en": "+2 HP per hour per level for allies present."
+          }
         }
       }
     },
@@ -2564,6 +2586,88 @@
         "gold": 20,
         "xp": 2
       }
+    },
+    "hp": {
+      "enabled": true,
+      "start": "season",
+      "max": {
+        "base": 30,
+        "intermediate": 34,
+        "advanced": 38,
+        "master": 42,
+        "legendary": 60
+      },
+      "sturdy": {
+        "bonus": 10,
+        "classes": [
+          "armored-knight",
+          "fortress-knight",
+          "great-knight"
+        ]
+      },
+      "frail": {
+        "bonus": -4,
+        "classes": [
+          "monk",
+          "priest",
+          "bishop",
+          "mage",
+          "dark-mage",
+          "warlock",
+          "gremory",
+          "dark-bishop",
+          "thief",
+          "assassin",
+          "trickster",
+          "dancer"
+        ]
+      },
+      "loss": {
+        "attackWin": 5,
+        "attackDecisive": 2,
+        "attackLoss": 12,
+        "defenseWin": 3,
+        "defenseDecisive": 2,
+        "defenseLoss": 10
+      },
+      "malus": [
+        {
+          "below": 50,
+          "pct": 10
+        },
+        {
+          "below": 25,
+          "pct": 20
+        }
+      ],
+      "regen": {
+        "perHour": 3,
+        "alliedPerHour": 6,
+        "overdriveFactor": 2
+      },
+      "koReturnPct": 50,
+      "heal": {
+        "monk": 6,
+        "priest": 9,
+        "mortal-savant": 11,
+        "holy-knight": 11,
+        "gremory": 11,
+        "dark-bishop": 11,
+        "dancer": 11,
+        "bishop": 13,
+        "saint": 15
+      },
+      "selfFactor": 0.5,
+      "healXp": 10,
+      "vial": {
+        "gold": 150,
+        "hp": 8,
+        "perDay": 3
+      },
+      "generals": {
+        "sortieMinPct": 50,
+        "healBelowPct": 70
+      }
     }
   },
   "daily": {
@@ -2751,6 +2855,108 @@
     }
   ],
   "patches": [
+    {
+      "id": "2.0",
+      "date": "2026-11-24",
+      "title": {
+        "fr": "Patch 2.0",
+        "en": "Patch 2.0"
+      },
+      "intro": {
+        "fr": "La plus grosse mise à jour à ce jour : soutiens entre joueurs, ordres aux généraux, primes de renommée, et les points de vie à la prochaine saison.",
+        "en": "The biggest update yet: support between players, orders for generals, renown bonuses, and hit points next season."
+      },
+      "sections": [
+        {
+          "title": {
+            "fr": "Soutiens entre joueurs",
+            "en": "Support between players"
+          },
+          "items": [
+            {
+              "fr": "Offre compliments, fleurs, lettres et cadeaux aux autres joueurs depuis leur profil. La relation est partagée et monte jusqu'à A+.",
+              "en": "Give compliments, flowers, letters and gifts to other players from their profile. The relationship is shared and goes up to A+."
+            },
+            {
+              "fr": "« Dire merci » depuis les notifications : +20 % des points de l'offrande reçue.",
+              "en": "\"Say thanks\" from notifications: +20% of the gift's points."
+            },
+            {
+              "fr": "Combattre ensemble dans la même bataille : +1 % à +6 % de puissance chacun selon votre niveau, +10 % au plus.",
+              "en": "Fight together in the same battle: +1% to +6% power each depending on your level, +10% at most."
+            },
+            {
+              "fr": "Les profils montrent les 4 personnes les plus proches, généraux et joueurs confondus.",
+              "en": "Profiles show the 4 closest people, generals and players alike."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Ordres aux généraux",
+            "en": "Orders for generals"
+          },
+          "items": [
+            {
+              "fr": "Dès le soutien C, ordonne à un général de ton camp d'attaquer, de défendre ou de se déplacer : il y va avec ses actions et exécute l'ordre.",
+              "en": "From support C, order a general of your side to attack, defend or move: they go with their actions and carry it out."
+            },
+            {
+              "fr": "Un seul ordre à la fois par général : les autres joueurs attendent qu'il ait fini. Tu es prévenu quand c'est fait.",
+              "en": "One order at a time per general: other players wait until it is done. You are notified when it is."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Prime de renommée",
+            "en": "Renown bonus"
+          },
+          "items": [
+            {
+              "fr": "Dès maintenant : chaque nouveau niveau de renommée rapporte 100 or × ce niveau (300 or au niveau 3, 1 000 or au niveau 10).",
+              "en": "Right now: each new renown level pays 100 gold × that level (300 gold at level 3, 1,000 gold at level 10)."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Points de vie (prochaine saison)",
+            "en": "Hit points (next season)"
+          },
+          "items": [
+            {
+              "fr": "PV max selon la classe : 30 à 42 selon le palier, +10 pour les classes lourdes, -4 pour les classes fragiles.",
+              "en": "Max HP by class: 30 to 42 by tier, +10 for heavy classes, -4 for frail classes."
+            },
+            {
+              "fr": "Perte de PV à la fin de chaque bataille : -5 en attaque gagnée, -3 en défense gagnée, -2 sur une victoire écrasante, -12 en attaque perdue, -10 en défense perdue.",
+              "en": "HP lost at the end of each battle: -5 attack won, -3 defence won, -2 crushing victory, -12 attack lost, -10 defence lost."
+            },
+            {
+              "fr": "Sous 50 % de PV : -10 % de puissance ; sous 25 % : -20 %. À 0 PV : mis hors de combat, retour à 50 % de PV.",
+              "en": "Below 50% HP: -10% power; below 25%: -20%. At 0 HP: knocked out, back at 50% HP."
+            },
+            {
+              "fr": "Régénération : +3 PV/h, +6 sur un territoire allié sans bataille, doublée pendant l'Overdrive.",
+              "en": "Regeneration: +3 HP/h, +6 on an allied territory without a battle, doubled during Overdrive."
+            },
+            {
+              "fr": "Nouvelle action Soigner pour les moines, prêtres, évêques, saints mortels, chevaliers sacrés, gremory, évêques noirs et danseurs.",
+              "en": "New Heal action for monks, priests, bishops, mortal savants, holy knights, gremories, dark bishops and dancers."
+            },
+            {
+              "fr": "Fioles : 150 or pour +8 PV, 3 par jour. Nouveau bâtiment : Infirmerie (+2 PV/h par niveau).",
+              "en": "Vulneraries: 150 gold for +8 HP, 3 per day. New building: Infirmary (+2 HP/h per level)."
+            },
+            {
+              "fr": "Les généraux s'usent aussi : ils se reposent sous 50 % de PV, se soignent entre eux, et meurent d'épuisement à 0 PV (sauf les seigneurs).",
+              "en": "Generals wear out too: they rest below 50% HP, heal each other, and die of exhaustion at 0 HP (except lords)."
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "1.7",
       "date": "2026-11-23",
@@ -4339,6 +4545,10 @@
         "maxRaids": 1,
         "pointsBonus": 0.1
       }
+    },
+    "orders": {
+      "minLevel": "C",
+      "maxHours": 6
     }
   },
   "tutorial": {
@@ -5041,6 +5251,58 @@
           12
         ]
       }
+    },
+    "players": {
+      "maxLevel": "A+",
+      "gifts": {
+        "compliment": {
+          "actions": 1,
+          "gold": 0,
+          "points": 1
+        },
+        "flower": {
+          "actions": 1,
+          "gold": 50,
+          "points": 5
+        },
+        "letter": {
+          "actions": 1,
+          "gold": 200,
+          "points": 25
+        },
+        "present": {
+          "actions": 0,
+          "gold": 0,
+          "points": 10,
+          "sameTerritory": true,
+          "cooldownMinutes": 30
+        }
+      },
+      "thanks": {
+        "pct": 20,
+        "min": 1,
+        "hours": 24
+      },
+      "bonus": {
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "capPct": 10,
+        "heal": [
+          0,
+          0,
+          0,
+          2,
+          2,
+          3
+        ]
+      },
+      "closest": 4
     }
   }
 }

@@ -513,6 +513,8 @@ function drawTopbar() {
       ${pl ? `<span class="res" title="${esc(pl.nextActionAt ? t('res.actionsNext', { time: fmtLeft(pl.nextActionAt - serverNow()) }) : t('res.actionsFull'))}">
         <img src="assets/ui/action.svg" alt="${esc(t('res.actions'))}"><strong>${pl.actions}</strong><small class="muted">/ ${pl.maxActions}</small>
         ${pl.nextActionAt ? `<small class="muted timer" data-until="${pl.nextActionAt}">${fmtLeft(pl.nextActionAt - serverNow())}</small>` : ''}</span>` : ''}
+      ${pl?.hp && pl.status !== 'dead' ? `<span class="res hp ${pl.hp.pct < 25 ? 'crit' : pl.hp.pct < 50 ? 'low' : ''}" title="${esc(t('hp.title', { hp: pl.hp.hp, max: pl.hp.max }))}">
+        <span class="hp-ico" aria-hidden="true">\u2764\uFE0F</span><strong>${pl.hp.hp}</strong><small class="muted">/ ${pl.hp.max}</small></span>` : ''}
       <span class="res grow" title="${esc(t('res.renown'))}"><img src="assets/ui/renown.svg" alt="${esc(t('res.renown'))}"><strong>${r.level}</strong>
         <span class="xpbar" role="progressbar" aria-valuemin="0" aria-valuemax="${r.needed}" aria-valuenow="${r.xp}"
           aria-label="${esc(t('res.xpProgress'))}"><i style="width:${(r.xp / r.needed) * 100}%"></i></span>
@@ -746,8 +748,8 @@ async function renderMap() {
   };
 
   // Les actions secondaires (renforts payés, appel à l'aide, retours alternatifs) ont un bouton discret.
-  const QUIET = new Set(['hire', 'rally', 'teleport', 'revive-renown', 'revive-ask']);
-  const btn = (act, label, disabled) => `<button type="button" class="btn compact ${QUIET.has(act) ? 'ghost' : ''}" data-act="${act}" ${disabled ? 'disabled' : ''}>${esc(label)}</button>`;
+  const QUIET = new Set(['hire', 'rally', 'teleport', 'revive-renown', 'revive-ask', 'vial']);
+  const btn = (act, label, disabled) => `<button type="button" class="btn compact ${QUIET.has(act) || act.startsWith('heal') ? 'ghost' : ''}" data-act="${act}" ${disabled ? 'disabled' : ''}>${esc(label)}</button>`;
   const bindActs = (box) => {
     box.querySelectorAll('[data-act]').forEach((el) => el.addEventListener('click', () => {
       box.querySelectorAll('[data-act]').forEach((x) => { x.disabled = true; });
@@ -810,7 +812,7 @@ async function renderMap() {
           actions += btn('hire', t(home ? 'camp.hireDefense' : 'camp.hireAttack', { gold: fmtNum(price) }), hired >= costs.hireMax || mine.gold < price);
         }
         // Construire sur son territoire (spécialité par territoire, jusqu'au niveau 3), hors bataille.
-        const bsp = state.config.campaign?.build?.specs || {};
+        const bsp = Object.fromEntries(Object.entries(state.config.campaign?.build?.specs || {}).filter(([, sp]) => !sp.hpRegen || p.hp)); // Infirmerie : seulement avec les PV
         if (st.faction === myFaction() && !b && costs.build) {
           const lvl = st.build?.level || 0;
           if (!st.build) actions += Object.entries(bsp).map(([id, sp]) => btn(`build:${id}`, t('build.build', { name: loc(sp.name), gold: fmtNum(costs.build[0]) }), noAct || mine.gold < costs.build[0])).join('');
@@ -818,6 +820,12 @@ async function renderMap() {
         }
         // … et appeler sa faction à l'aide, une fois par bataille.
         if (b && (b.attacker === myFaction() || b.defender === myFaction())) actions += btn('rally', t(b.rallied ? 'camp.rallied' : 'camp.rally'), b.rallied);
+        // Points de vie : se soigner soi-même (classes de soin) ou boire une fiole (or, sans action).
+        const hp = p.hp;
+        if (hp && hp.pct < 100) {
+          if (hp.heal) actions += btn('heal-self', t('hp.healSelf', { hp: hp.selfHeal }), noAct);
+          actions += btn('vial', t('hp.vial', { gold: fmtNum(hp.vial.gold), hp: hp.vial.hp, left: hp.vial.left, max: hp.vial.perDay }), hp.vial.left < 1 || mine.gold < hp.vial.gold);
+        }
       }
       // Évêque noir : se téléporter vers un territoire de sa faction ou voisin de sa faction, sans dépenser d'action.
       if (!here && costs.teleport != null && myEffects().some((e) => e.kind === 'teleport') && canEnter(tr.id)) {
@@ -874,6 +882,11 @@ async function renderMap() {
         <div class="odds ${tone}"><span class="odds-bar"><i style="width:${pct}%"></i></span><b>${esc(label)} · ${pct} %</b></div>
         <p class="muted">${esc(t('camp.oddsLine', { attack: bt.power.attack, defense: bt.power.defense }))}</p></div>`;
     };
+    // Soigneur sur son territoire : un bouton par allié blessé présent (les plus blessés d'abord).
+    const healHtml = here && p.status === 'alive' && p.hp?.heal ? (() => {
+      const hurt = (st.occupants || []).filter((o) => !o.me && o.hp != null && o.hp < 100 && o.faction === myFaction()).sort((x, y) => x.hp - y.hp).slice(0, 6);
+      return hurt.length ? `<div class="row act-row heal-row">${hurt.map((o) => btn(`heal:${o.general ? `g:${o.gid}` : o.pseudo}`, t('hp.heal', { name: o.pseudo, hp: p.hp.heal, pct: o.hp }), noAct)).join('')}</div>` : '';
+    })() : '';
     const verdicts = (state.map?.verdicts || []).map((vd) => `<div class="verdict">
         <img src="${esc(vd.avatar)}" alt="">
         <div><strong>${esc(vd.name)}</strong> <small>${flag(vd.faction)}${esc(className(vd.class))} · ${esc(t('menu.playerRenown', { level: vd.level }))}</small>
@@ -888,14 +901,16 @@ async function renderMap() {
       ${(st.occupants || []).length ? `<div class="present-list" aria-label="${esc(t('camp.present'))}">${st.occupants.map((o) => {
     const of = faction(o.faction);
     return `<span class="who ${o.me ? 'me' : ''} ${o.general ? 'general' : ''}" style="--c:${esc(of?.color || '#888')}" title="${esc(of ? loc(of.name) : '')}" ${o.general ? `data-gprofile="${esc(o.gid)}"` : `data-profile="${esc(o.pseudo)}"`} role="button" tabindex="0">
-        <img src="${occImg(o)}" alt=""><span><b>${esc(o.pseudo)}${o.lord ? ' \u{1F451}' : ''}</b>
-        <small>${flag(o.faction)}<img class="class-icon tiny" src="${esc(klass(o.class)?.icon || '')}" alt="">${o.general ? `<em>${esc(t('camp.general'))}</em> · ` : ''}${esc(className(o.class))} · ${esc(t('menu.playerRenown', { level: o.level }))}${o.retreating ? ' · ' + esc(t('camp.retreatingTag')) : ''}</small></span></span>`;
+        <img src="${occImg(o)}" alt=""><span><b>${esc(o.pseudo)}${o.lord ? ' \u{1F451}' : ''}${o.ordered ? ' \u{1F4EF}' : ''}</b>
+        <small>${flag(o.faction)}<img class="class-icon tiny" src="${esc(klass(o.class)?.icon || '')}" alt="">${o.general ? `<em>${esc(t('camp.general'))}</em> · ` : ''}${esc(className(o.class))} · ${esc(t('menu.playerRenown', { level: o.level }))}${o.retreating ? ' · ' + esc(t('camp.retreatingTag')) : ''}</small>
+        ${o.hp != null ? `<i class="hpbar ${o.hp < 25 ? 'crit' : o.hp < 50 ? 'low' : ''}" title="${esc(t('hp.pct', { pct: o.hp }))}"><b style="width:${o.hp}%"></b></i>` : ''}</span></span>`;
   }).join('')}</div>` : ''}
       ${b ? battleHtml(b, st) : ''}
       ${shielded ? `<p class="small note">${withTimer('camp.untouchable', {}, st.untouchableUntil)}</p>` : ''}
       ${st.counter && !shielded ? `<p class="small note">${esc(t('camp.counter', { pct: st.counterPct || counterBonus }))}</p>` : ''}
       ${p.rewardDebuff > 0 ? `<p class="small note">${esc(t('camp.rewardDebuff', { n: p.rewardDebuff }))}</p>` : ''}
       ${actions ? `<div class="row act-row">${actions}</div>` : ''}
+      ${healHtml}
       ${pingBox}
       ${near.length ? `<div class="chips">${near.map((id) => {
     const o = ownerOf(id) ? faction(ownerOf(id)) : null;
@@ -952,6 +967,8 @@ async function renderMap() {
         : act === 'rally' ? ['/rally', {}]
           : act.startsWith('revive-') ? ['/revive', { mode: act.slice(7) }]
             : act.startsWith('build:') ? ['/act', { action: 'build', spec: act.slice(6) }]
+              : act === 'heal-self' ? ['/act', { action: 'heal' }]
+              : act.startsWith('heal:') ? ['/act', { action: 'heal', target: act.slice(5) }]
               : act.startsWith('ping:') ? ['/ping', { territory: state.selected, kind: act.slice(5) }] : ['/act', { action: act }];
     actionError = '';
     actionNote = '';
@@ -1086,6 +1103,8 @@ async function renderMenu() {
         <h2>\u{1F490} ${esc(t('rel.title'))}</h2>
         <p class="muted small">${esc(t('rel.hint'))}</p>
         ${state.relations ? (state.relations.generals.length ? `<div class="rel-grid">${state.relations.generals.map(relTile).join('')}</div>` : `<p class="muted small">${esc(t('rel.none'))}</p>`) : `<p class="muted small">${esc(t('common.loading'))}</p>`}
+        ${state.relations ? `<h3 class="rel-sub">${esc(t('prel.title'))}</h3>
+        ${(state.relations.players || []).length ? `<div class="rel-grid">${state.relations.players.map(playerTile).join('')}</div>` : `<p class="muted small">${esc(t('prel.none'))}</p>`}` : ''}
       </section>
 
       <section class="card">
@@ -1156,6 +1175,7 @@ async function renderMenu() {
     view.querySelector('[data-pushsettings]').addEventListener('click', () => go('pushsettings'));
     view.querySelector('[data-avatars]').addEventListener('click', () => go('avatars'));
     view.querySelectorAll('[data-rel]').forEach((b) => b.addEventListener('click', () => showRelation(b.dataset.rel, draw)));
+    view.querySelectorAll('[data-prel]').forEach((b) => b.addEventListener('click', () => showPlayerRelation(b.dataset.prel, draw)));
     view.querySelector('[data-classes]').addEventListener('click', () => {
       state.classesFrom = 'menu';
       state.classSel = state.me.character.class;
@@ -1188,9 +1208,12 @@ function notifText(n) {
     p.effect = loc(ab?.description) || '';
   }
   if (p.class) p.class = className(p.class);
+  if (n.type === 'player_gift' && p.kind) p.kind = t(`prel.kind.${p.kind}`);
+  if (n.type === 'general_order') p.order = t(`order.kind.${n.params.kind}`);
   if (p.distinction) p.distinction = loc((state.config.distinctions || []).find((x) => x.id === p.distinction)?.name) || p.distinction;
   for (const k of ['territory', 'home']) if (p[k]) p[k] = loc(state.config.map.territories.find((x) => x.id === p[k])?.name) || p[k];
   for (const k of ['gold', 'xp', 'points', 'rank']) if (typeof p[k] === 'number') p[k] = fmtNum(p[k]);
+  if (n.type === 'general_order') return { title: t('notif.general_order.title', p), body: t(`notif.general_order.${n.params.outcome}`, p) };
   return { title: t(`notif.${n.type}.title`, p), body: t(numKey(`notif.${n.type}.body`, n.params.faction), p) };
 }
 
@@ -1216,11 +1239,24 @@ async function renderNotifs() {
         <article class="card notif ${n.read ? '' : 'unread'}">
           <div class="notif-head"><strong>${esc(txt.title)}</strong>${n.read ? '' : `<span class="new">${esc(t('notifs.new'))}</span>`}</div>
           <p>${esc(txt.body)}</p>
+          ${n.type === 'player_gift' && n.params.thanks === 'open' ? `<button type="button" class="btn compact" data-thank="${esc(n.params.gift)}">\u{1F64F} ${esc(t('prel.thank'))}</button>` : ''}
+          ${n.type === 'player_gift' && n.params.thanks === 'thanked' ? `<small class="muted">\u{1F64F} ${esc(t('prel.thanked'))}</small><br>` : ''}
           <small class="muted">${esc(when(n.created_at))}</small>
         </article>`;
       }).join('')
       : `<p class="muted">${esc(t('notifs.empty'))}</p>`);
   bindClose(view);
+  view.querySelectorAll('[data-thank]').forEach((b) => b.addEventListener('click', async () => {
+    b.disabled = true;
+    try {
+      const res = await api('/relations/thanks', { gift: Number(b.dataset.thank) });
+      flash(t('prel.thankDone', { name: res.thanks.pseudo, points: res.thanks.gained }));
+      b.outerHTML = `<small class="muted">\u{1F64F} ${esc(t('prel.thanked'))}</small><br>`;
+    } catch (err) {
+      if (err.status === 401) return sessionLost();
+      flash(err.message, 'error');
+    }
+  }));
   view.querySelector('[data-clear]')?.addEventListener('click', async (e) => {
     e.target.disabled = true;
     try { setMe(await api('/notifications/clear', {})); } catch (err) {
@@ -1349,7 +1385,8 @@ async function renderJournal() {
     if (p.general) p.general = generalName(p.general);
     let key = 'journal.' + e.type;
     if (e.type === 'battle_started' && p.general) key = e.params.attacker === 'eglise' ? 'journal.battle_started_immaculate' : 'journal.battle_started_general';
-    if (['general_fell', 'serpents_gone', 'immaculate_fell'].includes(e.type) && !p.faction) key += '_none';
+    if (['general_fell', 'general_exhausted', 'serpents_gone', 'immaculate_fell'].includes(e.type) && !p.faction) key += '_none';
+    if (e.type === 'general_order') key += `_${e.params.kind}`;
     if (e.type === 'battle_started' && p.defender) key += '_def';
     if (e.type === 'campaign_ended' && !p.faction) key += '_draw';
     if (['battle_started', 'territory_taken', 'faction_out', 'general_spared', 'general_captured', 'serpents_gone', 'immaculate_awoke', 'immaculate_wave', 'immaculate_fell'].includes(e.type)) key = numKey(key, main);
@@ -1504,6 +1541,142 @@ function relTile(g) {
     <span class="rel-face"><img src="${esc(g.avatar)}" alt="" loading="lazy">${mark}${g.level ? `<b class="rel-lvl">${esc(g.level)}</b>` : ''}</span>
     <small>${esc(g.name)}${g.lord ? ' \u{1F451}' : ''}</small></button>`;
 }
+function playerTile(x) {
+  return `<button type="button" class="rel" data-prel="${esc(x.pseudo)}">
+    <span class="rel-face"><img src="${avatarUrl(x.avatar)}" alt="" loading="lazy"><span class="rel-mark">${flag(x.faction)}</span>${x.level ? `<b class="rel-lvl">${esc(x.level)}</b>` : ''}</span>
+    <small>${esc(x.pseudo)}</small></button>`;
+}
+// Relation avec un autre joueur : jauge partagée (jusqu'à A+), offrandes, bonus quand on combat ensemble.
+async function showPlayerRelation(pseudo, redraw) {
+  let d;
+  try { d = await api(`/relations/player?pseudo=${encodeURIComponent(pseudo)}`); } catch (err) {
+    if (err.status === 401) return sessionLost();
+    flash(err.message, 'error');
+    return;
+  }
+  document.getElementById('rel-overlay')?.remove();
+  const lv = d.levels;
+  const idx = lv.findIndex((l) => l.id === d.level);
+  const next = lv[idx + 1] || null;
+  const from = idx >= 0 ? lv[idx].points : 0;
+  const pct = next ? Math.min(100, ((d.points - from) / (next.points - from)) * 100) : 100;
+  const pl = state.me.player || {};
+  const gold = state.me.character.gold;
+  const capped = d.points >= d.cap;
+  const fac = faction(d.faction);
+  const giftBtn = (kind, icon) => {
+    const c = d.gifts[kind];
+    const off = capped || (pl.actions || 0) < c.actions || gold < c.gold;
+    if (kind === 'compliment') return `<button type="button" class="btn ghost" data-gift="${kind}" ${off ? 'disabled' : ''}>${icon} ${esc(t('rel.compliment', { points: c.points }))}</button>`;
+    return `<button type="button" class="btn ${kind === 'letter' ? '' : 'ghost'}" data-gift="${kind}" ${off ? 'disabled' : ''}>${icon} ${esc(t(`rel.${kind}`, { gold: fmtNum(c.gold), points: c.points }))}</button>`;
+  };
+  const presentBtn = () => {
+    const c = d.gifts.present;
+    if (!c) return '';
+    const wait = d.presentReadyAt > serverNow();
+    return `<button type="button" class="btn ghost" data-gift="present" ${capped || !d.together || wait ? 'disabled' : ''}>\u{1F381} ${esc(t('rel.present', { points: c.points }))}</button>
+      <p class="muted small">${wait ? withTimer('rel.presentWait', {}, d.presentReadyAt) : esc(t('prel.presentHint', { minutes: c.cooldownMinutes }))}</p>`;
+  };
+  const bonusVals = d.bonus.values || [];
+  const overlay = document.createElement('div');
+  overlay.id = 'rel-overlay';
+  overlay.className = 'overlay';
+  overlay.innerHTML = `<div class="modal rel-card" role="dialog" aria-modal="true" style="--c:${esc(fac?.color || '#c9a25a')}">
+    <div class="rel-head"><span class="rel-face big"><img src="${avatarUrl(d.avatar)}" alt=""></span>
+      <div><h2>${esc(d.pseudo)}</h2>
+        <p class="small">${flag(d.faction)}<span style="color:${esc(fac?.color || 'inherit')}">${esc(fac ? loc(fac.name) : '')}</span> · ${esc(className(d.class))}</p>
+        ${d.sameCamp ? '' : `<span class="pill">${esc(t('prel.otherCamp'))}</span>`}</div>
+      <b class="rel-big">${esc(d.level || '\u2014')}</b></div>
+    <div class="rel-levels">${lv.map((l, i) => `<span class="${i <= idx ? 'on' : ''}">${esc(l.id)}</span>`).join('')}</div>
+    <div class="progress"><span class="xpbar"><i style="width:${pct}%"></i></span>
+      <small class="muted">${next ? esc(t('rel.progress', { points: fmtNum(d.points), next: fmtNum(next.points), level: next.id })) : esc(t('prel.maxed', { points: fmtNum(d.points) }))}</small></div>
+    <p class="muted small">${esc(t('prel.shared'))}</p>
+    <div class="rel-gifts">${giftBtn('compliment', '\u{1F4AC}')}${giftBtn('flower', '\u{1F33C}')}${giftBtn('letter', '\u{2709}\uFE0F')}${presentBtn()}</div>
+    <p class="muted small">${esc(t('rel.costs', { actions: pl.actions || 0, gold: fmtNum(gold) }))}</p>
+    <div class="rel-bonus ${d.sameCamp && idx >= 0 ? 'on' : ''}"><strong>\u2728 ${esc(t('rel.bonus'))}</strong>
+      <p class="small">${esc(t('prel.bonus', { v: bonusVals[Math.max(0, idx)] || 0, cap: d.bonus.capPct }))}</p>
+      <div class="rel-values">${bonusVals.map((v, i) => `<span class="${i === idx ? 'on' : ''}"><small>${esc(lv[i]?.id || '')}</small>${esc(String(v))}</span>`).join('')}</div>
+      ${state.me.player?.hp ? `<p class="small">${esc(t('prel.heal'))}</p>` : ''}
+      <p class="muted small">${esc(t(!d.sameCamp ? 'prel.bonusCamp' : idx < 0 ? 'rel.bonusLocked' : 'prel.bonusActive'))}</p></div>
+    <p class="error" role="alert" hidden></p>
+    <button type="button" class="btn ghost" data-close>${esc(t('common.close'))}</button></div>`;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector('[data-close]').addEventListener('click', close);
+  overlay.querySelectorAll('[data-gift]').forEach((b) => b.addEventListener('click', async () => {
+    b.disabled = true;
+    try {
+      const res = await api('/relations/player/gift', { pseudo: d.pseudo, kind: b.dataset.gift });
+      setMe(res);
+      if (res.map) setMap(res.map);
+      state.relations = res.relations;
+      flash(res.gift.up ? t('rel.levelUp', { name: d.pseudo, level: res.gift.level }) : t('rel.gained', { name: d.pseudo, points: res.gift.gained }));
+      if (redraw && document.querySelector('.relations')) redraw();
+      showPlayerRelation(d.pseudo, redraw);
+    } catch (err) {
+      if (err.status === 401) return sessionLost();
+      const el = overlay.querySelector('.error');
+      el.textContent = err.message;
+      el.hidden = false;
+      b.disabled = false;
+    }
+  }));
+}
+// Commandes d'un général (profil) : ordre en cours, ou choix de l'ordre et du territoire.
+function ordersHtml(d) {
+  if (!d.command && !d.order) return '';
+  const terrName = (id) => loc(state.config.map.territories.find((x) => x.id === id)?.name) || id;
+  if (d.order) {
+    return `<div class="pf-orders"><h3>\u{1F4EF} ${esc(t('order.title'))}</h3>
+      <p class="small">${esc(t('order.current', { order: t(`order.kind.${d.order.kind}`), territory: terrName(d.order.target), pseudo: d.order.by || '' }))}</p>
+      ${d.order.mine ? `<button type="button" class="btn compact ghost" data-ocancel>${esc(t('order.cancel'))}</button>` : `<p class="muted small">${esc(t('order.busy'))}</p>`}</div>`;
+  }
+  const c = d.command;
+  if (!c.can) return `<div class="pf-orders"><h3>\u{1F4EF} ${esc(t('order.title'))}</h3><p class="muted small">${esc(t(`order.locked.${c.reason}`, { level: c.minLevel }))}</p></div>`;
+  return `<div class="pf-orders"><h3>\u{1F4EF} ${esc(t('order.title'))}</h3>
+    <p class="muted small">${esc(t('order.hint'))}</p>
+    <div class="row order-kinds">${['attack', 'defend', 'move'].map((k, i) => `<button type="button" class="btn compact ${i ? 'ghost' : ''}" data-okind="${k}" ${c.targets[k].length ? '' : 'disabled'}>${esc(t(`order.kind.${k}`))}</button>`).join('')}</div>
+    <select class="order-target" data-otarget aria-label="${esc(t('order.target'))}"></select>
+    <button type="button" class="btn" data-ogo>${esc(t('order.give'))}</button></div>`;
+}
+function bindOrders(overlay, d, reopen) {
+  const box = overlay.querySelector('.pf-orders');
+  if (!box) return;
+  const terrName = (id) => loc(state.config.map.territories.find((x) => x.id === id)?.name) || id;
+  let kind = 'attack';
+  const sel = box.querySelector('[data-otarget]');
+  const fill = () => {
+    if (!sel) return;
+    const list = [...(d.command?.targets?.[kind] || [])].sort((a, b) => terrName(a).localeCompare(terrName(b)));
+    sel.innerHTML = list.map((id) => `<option value="${esc(id)}">${esc(terrName(id))}</option>`).join('');
+    box.querySelectorAll('[data-okind]').forEach((b) => b.classList.toggle('ghost', b.dataset.okind !== kind));
+    box.querySelector('[data-ogo]').disabled = !list.length;
+  };
+  if (d.command?.targets && !d.command.targets.attack.length) kind = d.command.targets.defend.length ? 'defend' : 'move';
+  fill();
+  box.querySelectorAll('[data-okind]').forEach((b) => b.addEventListener('click', () => { kind = b.dataset.okind; fill(); }));
+  const send = async (body) => {
+    try {
+      const res = await api('/general/order', { general: d.id, ...body });
+      setMe(res);
+      if (res.map) setMap(res.map);
+      flash(body.cancel ? t('order.cancelled') : t('order.given', { name: d.name }));
+      overlay.remove();
+      reopen();
+    } catch (err) {
+      if (err.status === 401) return sessionLost();
+      flash(err.message, 'error');
+    }
+  };
+  box.querySelector('[data-ogo]')?.addEventListener('click', () => send({ kind, target: sel.value }));
+  box.querySelector('[data-ocancel]')?.addEventListener('click', () => send({ cancel: true }));
+}
+function closestHtml(d) {
+  if (!(d.closest || []).length) return '';
+  return `<h3>${esc(t('profile.closest'))}</h3><div class="pf-closest">${d.closest.map((c) => `<button type="button" class="close-one" ${c.type === 'general' ? `data-gprofile="${esc(c.id)}"` : `data-profile="${esc(c.id)}"`}>
+    <img src="${c.type === 'general' ? esc(c.avatar) : avatarUrl(c.avatar)}" alt=""><b>${esc(c.level || '\u2014')}</b><small>${esc(c.name)}</small></button>`).join('')}</div>`;
+}
 // Bonus de soutien d'un général : texte au niveau atteint (ou au niveau C), valeurs de C à S, et s'il est actif.
 function relBonusHtml(g, idx) {
   const bd = state.config.relations?.bonuses?.[g.id];
@@ -1609,7 +1782,7 @@ function confirmBox({ title, body, ok, cancel }) {
 function modIcon(m) {
   if (m.type === 'class') return classIcon(klass(m.class));
   if (m.type === 'support') return `<img class="mod-face" src="${esc((state.config.generals?.roster || []).find((x) => x.id === m.general)?.avatar || '')}" alt="">`;
-  const icons = { overdrive: '\u26A1', perk: '\u{1F43A}', lord: '\u{1F451}', lordGen: '\u{1F451}', capitalLost: '\u{1F3DA}\uFE0F', exile: '\u{1F3F3}\uFE0F', rewardDebuff: '\u{1FA79}', retreating: '\u{1F3C3}', wounded: '\u{1F915}' };
+  const icons = { overdrive: '\u26A1', perk: '\u{1F43A}', lord: '\u{1F451}', lordGen: '\u{1F451}', capitalLost: '\u{1F3DA}\uFE0F', exile: '\u{1F3F3}\uFE0F', rewardDebuff: '\u{1FA79}', retreating: '\u{1F3C3}', wounded: '\u{1F915}', hpLow: '\u{1F494}', playerSupport: '\u{1F91D}' };
   return `<span class="mod-ico" aria-hidden="true">${icons[m.type] || '\u2728'}</span>`;
 }
 function modText(m) {
@@ -1674,9 +1847,13 @@ async function showProfile(target) {
       <div class="pf-class">${classIcon(klass(d.class))}<div><b>${esc(className(d.class))}</b><small>${esc(t('menu.playerRenown', { level: d.level }))}</small></div></div>
       ${row(t('profile.birthday'), d.birthday ? esc(fmtDate(d.birthday)) : null)}
       ${d.type === 'player' ? row(t('profile.score'), `${fmtNum(d.score)}${d.rank ? ` \u00B7 #${d.rank}` : ''}`) : ''}
+      ${d.hp ? row(t('hp.label'), `${d.hp.hp} / ${d.hp.max} <i class="hpbar inline ${d.hp.pct < 25 ? 'crit' : d.hp.pct < 50 ? 'low' : ''}"><b style="width:${d.hp.pct}%"></b></i>`) : ''}
       ${d.type === 'general' ? row(t('profile.statusLabel'), esc(statusTxt)) : ''}
       ${d.type === 'general' && d.home ? row(t('profile.home'), esc(loc(state.config.map.territories.find((x) => x.id === d.home)?.name))) : ''}
       ${d.type === 'general' && (d.spare || []).length && !d.spared ? row(t('profile.spare'), d.spare.map((f) => flag(f)).join(' ')) : ''}
+      ${d.type === 'player' && d.relation ? row(t('prel.withYou'), esc(d.relation.level || t('prel.noLevel'))) : ''}
+      ${ordersHtml(d)}
+      ${closestHtml(d)}
       <h3>${esc(t('profile.path'))}</h3><div class="pf-path">${pathHtml}</div>
       ${dists ? `<h3>${esc(t('menu.distinctions'))}</h3><div class="pf-dists">${dists}</div>` : ''}
       <details class="pf-mods"><summary>${esc(t('mods.button', { n: (d.mods || []).length }))}</summary>
@@ -1685,9 +1862,12 @@ async function showProfile(target) {
       </details>
     </div>
     ${d.type === 'general' ? `<button type="button" class="btn ghost" data-relopen hidden>${esc(t('rel.open'))}</button>` : ''}
+    ${d.type === 'player' && !d.me ? `<button type="button" class="btn ghost" data-prelopen>${esc(t('rel.open'))}</button>` : ''}
     <button type="button" class="btn" data-close>${esc(t('common.close'))}</button></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('[data-close]').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('[data-prelopen]')?.addEventListener('click', () => { overlay.remove(); showPlayerRelation(d.pseudo); });
+  bindOrders(overlay, d, () => showProfile(target));
   // Soutien : seulement pour un général de mon camp (vivant allié, ou de ma faction et grisé).
   const relBtn = overlay.querySelector('[data-relopen]');
   if (relBtn) {

@@ -612,7 +612,7 @@ h3 { font-family: "Alegreya Sans", system-ui, sans-serif; font-weight: 700; }
 @keyframes fx-ring { 0% { transform: scale(.4); opacity: .9; } 100% { transform: scale(3); opacity: 0; } }
 .modal.confirm .row { justify-content: flex-end; flex-wrap: wrap; }
 .btn.danger { background: var(--danger); color: #fff; }
-.profile-card { padding: 0; overflow: hidden; max-width: 440px; }
+.profile-card { padding: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; max-width: 440px; }
 .profile-card > .btn { margin: 0 16px 16px; }
 .pf-head { position: relative; display: flex; align-items: flex-end; gap: 12px; padding: 18px 16px 14px; min-height: 150px; overflow: hidden; isolation: isolate;
   background: linear-gradient(135deg, color-mix(in srgb, var(--c) 35%, var(--panel)), var(--panel) 75%); border-bottom: 3px solid var(--c); }
@@ -716,3 +716,30 @@ h3 { font-family: "Alegreya Sans", system-ui, sans-serif; font-weight: 700; }
 .others h4 { margin: 0 0 4px; font-size: .85rem; }
 .others-total { margin: 0 0 4px; font-size: .85rem; }
 .others-total b.neg { color: var(--danger); }
+/* Liste des bonus et malus : elle défile d'elle-même quand elle est longue, sans bloquer le défilement de la fiche. */
+.pf-mods[open] { max-height: 55vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* Points de vie : compteur du haut, barres des présents et du profil. */
+.res.hp .hp-ico { font-size: 1rem; line-height: 1; }
+.res.hp.low strong { color: #ffb347; }
+.res.hp.crit strong { color: #ff6b6b; }
+.hpbar { display: block; width: 100%; min-width: 40px; height: 4px; margin-top: 2px; border-radius: 2px; background: rgba(0, 0, 0, .35); overflow: hidden; }
+.hpbar b { display: block; height: 100%; background: #5fd17a; border-radius: 2px; }
+.hpbar.low b { background: #ffb347; }
+.hpbar.crit b { background: #ff6b6b; }
+.hpbar.inline { display: inline-block; width: 70px; height: 6px; margin: 0 0 0 6px; vertical-align: middle; }
+.heal-row .btn { font-size: .8rem; }
+
+/* Relations entre joueurs, proches et commandes des généraux. */
+.rel-sub { margin: 14px 0 6px; font-size: .95rem; }
+.pf-closest { display: flex; gap: 8px; flex-wrap: wrap; }
+.close-one { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 64px; padding: 0; background: none; border: 0; color: inherit; cursor: pointer; }
+.close-one img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c, #c9a25a); background: var(--panel-2); }
+.close-one b { position: absolute; top: 34px; right: 4px; min-width: 22px; padding: 0 4px; border-radius: 8px; background: #1b1e29; border: 1px solid var(--c, #c9a25a); font-size: .68rem; text-align: center; }
+.close-one small { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .68rem; }
+.pf-orders { margin: 10px 0; padding: 10px; border-radius: 10px; background: var(--panel-2); }
+.pf-orders h3 { margin: 0 0 4px; }
+.pf-orders .order-kinds { gap: 6px; margin: 6px 0; }
+.pf-orders .order-target { width: 100%; margin: 4px 0 8px; padding: 8px; border-radius: 8px; background: #1b1e29; color: inherit; border: 1px solid rgba(255, 255, 255, .15); font: inherit; }
+.pf-orders .btn { width: 100%; }
+.pf-orders .order-kinds .btn { width: auto; flex: 1; }

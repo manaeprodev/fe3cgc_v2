@@ -108,8 +108,9 @@ db.exec(`
 // (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS ; destinataire BUG_REPORT_TO). Voir mailer.js.
 db.exec(`CREATE TABLE IF NOT EXISTS bug_reports (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, pseudo TEXT, message TEXT NOT NULL, created_at TEXT NOT NULL, emailed INTEGER NOT NULL DEFAULT 0)`);
 const mailer = require('./mailer');
-// Confirmation des adresses email à l'inscription : active dès que l'envoi de mails est configuré (EMAIL_VERIFY=0 pour la couper).
-const VERIFY_EMAILS = () => mailer.configured() && process.env.EMAIL_VERIFY !== '0';
+// Confirmation des adresses email à l'inscription : coupée par défaut (souci avec le serveur Gmail) ; EMAIL_VERIFY=1 la rallume
+// si l'envoi de mails est configuré. Coupée, tous les comptes sont considérés comme confirmés.
+const VERIFY_EMAILS = () => mailer.configured() && process.env.EMAIL_VERIFY === '1';
 async function sendCode(userId, email, lang) {
   const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
   const prev = db.prepare('SELECT sends FROM email_codes WHERE user_id = ?').get(userId);
@@ -636,7 +637,7 @@ function mePayload(user) {
   const ch = q.character.get(user.id);
   const claimable = missionState(user.id).filter((m) => m.status === 'done').length + (ch ? daily.claimable(user.id) : 0) + (ch ? campaign.missionsClaimable(user.id) : 0);
   return {
-    user: { id: user.id, email: user.email, lang: user.lang || null, verified: user.email_verified !== 0 },
+    user: { id: user.id, email: user.email, lang: user.lang || null, verified: !VERIFY_EMAILS() || user.email_verified !== 0 },
     // `path` : lignée de classes du joueur (ses effets de classe se cumulent le long de ce chemin).
     character: ch ? (({ class_path: _p, ...rest }) => ({ ...rest, path: fx.pathOf(ch), renown: renown(ch.xp) }))(ch) : null,
     unread: q.unread.get(user.id).n,
@@ -873,7 +874,7 @@ const routes = {
   'POST /api/character': async (req, res) => {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
-    if (user.email_verified === 0) throw new HttpError(403, 'email_unverified');
+    if (VERIFY_EMAILS() && user.email_verified === 0) throw new HttpError(403, 'email_unverified');
     if (q.character.get(user.id)) throw new HttpError(409, 'character_exists');
     const { pseudo, birthday, class: klass, avatar, faction } = await readJson(req);
     if (typeof pseudo !== 'string' || !PSEUDO_RE.test(pseudo)) throw new HttpError(400, 'invalid_pseudo');

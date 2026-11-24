@@ -58,7 +58,7 @@ let server;
   try {
     await new Promise((ok) => smtp.listen(SMTP_PORT, ok));
     server = spawn(process.execPath, [serverFile], {
-      env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, SMTP_HOST: '127.0.0.1', SMTP_PORT: String(SMTP_PORT), SMTP_USER: 'jeu@example.test', SMTP_PASS: 'secret', SMTP_INSECURE: '1', BUG_REPORT_TO: 'equipe@example.test' },
+      env: { ...process.env, PORT: String(PORT), DATA_DIR: dataDir, SMTP_HOST: '127.0.0.1', SMTP_PORT: String(SMTP_PORT), SMTP_USER: 'jeu@example.test', SMTP_PASS: 'secret', SMTP_INSECURE: '1', EMAIL_VERIFY: '1', BUG_REPORT_TO: 'equipe@example.test' },
       stdio: ['ignore', 'ignore', 'inherit'],
     });
     await sleep(1500);

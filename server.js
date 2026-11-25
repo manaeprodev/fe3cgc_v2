@@ -172,6 +172,8 @@ const MISSION_EVENTS = new Set([...MISSIONS.filter((m) => m.condition?.type === 
   if (!cols.includes('xp')) db.exec('ALTER TABLE characters ADD COLUMN xp INTEGER NOT NULL DEFAULT 0');
   // Lignée de classes (« arbre de classes ») : les classes traversées depuis la classe de base, en JSON.
   if (!cols.includes('class_path')) db.exec('ALTER TABLE characters ADD COLUMN class_path TEXT');
+  // Ancien pseudo (le dernier abandonné), affiché sur le profil : « (alias AncienNom) ».
+  if (!cols.includes('former_pseudo')) db.exec('ALTER TABLE characters ADD COLUMN former_pseudo TEXT');
   {
     const fill = db.prepare('UPDATE characters SET class_path = ? WHERE user_id = ?');
     for (const r of db.prepare('SELECT user_id, class, class_path FROM characters').all()) {
@@ -301,6 +303,8 @@ const q = {
   unlockAvatar: db.prepare('INSERT OR IGNORE INTO unlocked_avatars (user_id, avatar, source, created_at) VALUES (?, ?, ?, ?)'),
   setAvatar: db.prepare('UPDATE characters SET avatar = ? WHERE user_id = ?'),
   buyAvatar: db.prepare('UPDATE characters SET avatar = ?, gold = gold - ? WHERE user_id = ? AND gold >= ?'),
+  rename: db.prepare('UPDATE characters SET pseudo = ?, former_pseudo = pseudo, gold = gold - ? WHERE user_id = ? AND gold >= ?'),
+  pseudoOwner: db.prepare('SELECT user_id FROM characters WHERE pseudo = ?'),
   changeClass: db.prepare('UPDATE characters SET class = ?, class_path = ?, gold = gold - ? WHERE user_id = ? AND gold >= ?'),
   logClass: db.prepare('INSERT INTO class_changes (user_id, from_class, to_class, cost, created_at) VALUES (?, ?, ?, ?, ?)'),
   unread: db.prepare('SELECT count(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL'),
@@ -875,6 +879,28 @@ const routes = {
     statAdd(user.id, 'gold_spent', a.price);
     metric('gold_out:avatar', a.price);
     send(res, 200, { ...mePayload(user), avatars: avatarList(user.id) });
+  },
+
+  // Changer de pseudo, contre de l'or (player.renameGold). L'ancien reste affiché sur le profil.
+  'POST /api/pseudo': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    const ch = q.character.get(user.id);
+    if (!ch) throw new HttpError(409, 'no_character');
+    const { pseudo } = await readJson(req);
+    if (typeof pseudo !== 'string' || !PSEUDO_RE.test(pseudo)) throw new HttpError(400, 'invalid_pseudo');
+    if (pseudo === ch.pseudo) throw new HttpError(400, 'same_pseudo');
+    const owner = q.pseudoOwner.get(pseudo);
+    if (owner && owner.user_id !== user.id) throw new HttpError(409, 'pseudo_taken');
+    const price = Math.max(0, Number(PLAYER.renameGold ?? 750) || 0);
+    let changed;
+    try { changed = q.rename.run(pseudo, price, user.id, price).changes; } catch (err) {
+      if (/UNIQUE/i.test(String(err.message))) throw new HttpError(409, 'pseudo_taken');
+      throw err;
+    }
+    if (changed !== 1) throw new HttpError(409, 'not_enough_gold');
+    if (price) { statAdd(user.id, 'gold_spent', price); metric('gold_out:rename', price); }
+    send(res, 200, mePayload(user));
   },
 
   'POST /api/character': async (req, res) => {

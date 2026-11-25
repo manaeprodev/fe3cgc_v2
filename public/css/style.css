@@ -621,6 +621,11 @@ h3 { font-family: "Alegreya Sans", system-ui, sans-serif; font-weight: 700; }
 .pf-avatar { width: 84px; height: 84px; border-radius: 16px; object-fit: cover; object-position: top; border: 3px solid var(--c); background: var(--panel-2); flex: none; }
 .pf-id { min-width: 0; padding-right: 70px; }
 .pf-id h2 { margin: 0 0 4px; font-size: 1.35rem; }
+.pf-id .pf-aka { margin: -2px 0 6px; font-size: .82rem; font-weight: 500; font-style: italic; color: var(--muted); }
+.rename-form { display: grid; gap: 6px; margin: 0 16px 16px; }
+.rename-form[hidden] { display: none; }
+.rename-form p { margin: 0; }
+.rename-error { color: var(--danger); }
 .pf-id p { margin: 0 0 6px; display: flex; align-items: center; gap: 6px; font-weight: 600; }
 .pf-flag { height: 26px; width: auto; }
 .pf-id .pill { margin: 2px 4px 0 0; }

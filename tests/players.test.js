@@ -201,6 +201,34 @@ const until = async (fn, ms = 15000) => { const end = Date.now() + ms; while (Da
     check('le général attaque la cible', done && fought?.territory === atk, JSON.stringify([done, fought, atk]));
     r = await C.Rouge1('/general/order', { general: 'ferdinand', kind: 'move', target: 'nowhere' });
     check('cible inconnue refusée', r.s === 400 || r.s === 409, JSON.stringify(r.d));
+
+    console.log('# Changement de pseudo');
+    const price = GAME.player.renameGold;
+    check('prix : 750 or', price === 750, String(price));
+    set('Rouge1', 'UPDATE characters SET gold = 700 WHERE user_id = ?');
+    r = await C.Rouge1('/pseudo', { pseudo: 'Sylvestre' });
+    check('pas assez d\'or : refusé', r.s === 409 && r.d.error === 'not_enough_gold' && row("SELECT pseudo, gold FROM characters WHERE gold = 700").pseudo === 'Rouge1', JSON.stringify(r.d));
+    set('Rouge1', 'UPDATE characters SET gold = 1000 WHERE user_id = ?');
+    r = await C.Rouge1('/pseudo', { pseudo: 'rouge2' });
+    check('pseudo déjà pris (casse ignorée) : refusé', r.s === 409 && r.d.error === 'pseudo_taken', JSON.stringify(r.d));
+    r = await C.Rouge1('/pseudo', { pseudo: 'ab' });
+    check('pseudo invalide : refusé', r.s === 400 && r.d.error === 'invalid_pseudo', JSON.stringify(r.d));
+    r = await C.Rouge1('/pseudo', { pseudo: 'Rouge1' });
+    check('même pseudo : refusé', r.s === 400 && r.d.error === 'same_pseudo', JSON.stringify(r.d));
+    const me1 = uid('Rouge1');
+    r = await C.Rouge1('/pseudo', { pseudo: 'Sylvestre' });
+    check('pseudo changé contre 750 or', r.s === 200 && r.d.character.pseudo === 'Sylvestre' && r.d.character.gold === 250, JSON.stringify([r.d.error, r.d.character?.pseudo, r.d.character?.gold]));
+    check('même compte, ancien pseudo gardé', row('SELECT user_id, former_pseudo FROM characters WHERE pseudo = ?', 'Sylvestre')?.user_id === me1 && row('SELECT former_pseudo FROM characters WHERE user_id = ?', me1).former_pseudo === 'Rouge1');
+    pr = await C.Rouge2('/profile?pseudo=Sylvestre');
+    check('le profil affiche l\'ancien pseudo', pr.s === 200 && pr.d.pseudo === 'Sylvestre' && pr.d.formerPseudo === 'Rouge1', JSON.stringify([pr.s, pr.d.pseudo, pr.d.formerPseudo]));
+    pr = await C.Rouge2('/profile?pseudo=Rouge2');
+    check('sans changement, pas d\'ancien pseudo', pr.s === 200 && pr.d.formerPseudo === null, JSON.stringify(pr.d.formerPseudo));
+    check('l\'ancien pseudo est libéré', (await C.Rouge2('/profile?pseudo=Rouge1')).s === 404);
+    r = await C.Rouge1('/pseudo', { pseudo: 'Sylvestre2' });
+    check('plus assez d\'or pour un second changement', r.s === 409 && r.d.error === 'not_enough_gold', JSON.stringify(r.d));
+    set('Sylvestre', 'UPDATE characters SET gold = 750 WHERE user_id = ?');
+    r = await C.Rouge1('/pseudo', { pseudo: 'Rouge1' });
+    check('revenir à son ancien pseudo : l\'alias devient le dernier abandonné', r.s === 200 && row('SELECT former_pseudo FROM characters WHERE user_id = ?', me1).former_pseudo === 'Sylvestre' && r.d.character.gold === 0, JSON.stringify([r.d.error, r.d.character?.gold]));
   } catch (e) {
     failures += 1;
     console.error('ERREUR', e);

@@ -504,7 +504,7 @@ module.exports = function createCampaign(ctx) {
     dropGenEngagements: db.prepare('DELETE FROM general_contribs WHERE gid = ? AND battle_id IN (SELECT id FROM battles WHERE resolved_at IS NULL AND territory = ?)'),
     exilesAll: db.prepare('SELECT user_id FROM player_state WHERE exile_faction IS NOT NULL'),
     latestEvent: db.prepare('SELECT max(id) AS id FROM world_events'),
-    profileOf: db.prepare('SELECT user_id, pseudo, faction, class, class_path, xp, avatar, birthday FROM characters WHERE pseudo = ?'),
+    profileOf: db.prepare('SELECT user_id, pseudo, former_pseudo, faction, class, class_path, xp, avatar, birthday FROM characters WHERE pseudo = ?'),
     buildGet: db.prepare('SELECT spec, level FROM territory_builds WHERE territory = ?'),
     buildSet: db.prepare(`INSERT INTO territory_builds (territory, spec, level) VALUES (?, ?, ?)
                           ON CONFLICT (territory) DO UPDATE SET spec = excluded.spec, level = excluded.level`),
@@ -3414,7 +3414,7 @@ module.exports = function createCampaign(ctx) {
       const cid = currentCampaign().id;
       const sc = q.myScore.get(cid, ch.user_id)?.score || 0;
       send(res, 200, {
-        type: 'player', pseudo: ch.pseudo, avatar: ch.avatar, faction: ch.faction, exile: ps?.exile_faction || null, territory: ps?.territory || null, class: ch.class, path: fx.pathOf(ch),
+        type: 'player', pseudo: ch.pseudo, formerPseudo: ch.former_pseudo || null, avatar: ch.avatar, faction: ch.faction, exile: ps?.exile_faction || null, territory: ps?.territory || null, class: ch.class, path: fx.pathOf(ch),
         level: renown(ch.xp).level, birthday: ch.birthday, score: sc, rank: sc > 0 ? q.betterScores.get(cid, sc).n + 1 : null,
         distinctions: distinctionsOf(ch.user_id), status: ps?.status || null, me: ch.user_id === user.id, mods: modsOf(ch.user_id), others: playerOthers(ch.user_id),
         hp: hpOn() && ps && ps.status !== 'dead' ? (({ hp, max, pct }) => ({ hp, max, pct }))(hpOfPlayer(ch.user_id)) : null,

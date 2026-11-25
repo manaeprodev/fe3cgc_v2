@@ -26,7 +26,8 @@
     "renownBaseXp": 100,
     "renownGrowth": 1.1,
     "levelUpGold": 100,
-    "levelUpRefill": true
+    "levelUpRefill": true,
+    "renameGold": 750
   },
   "rules": [
     {
@@ -3122,6 +3123,18 @@
             {
               "fr": "Croisade repoussée : un seul chevalier tombe (ou peut être épargné s'il en remplit les conditions), les autres battent en retraite vers Garreg-Mach au lieu de mourir.",
               "en": "Repelled crusade: only one knight falls (or may be spared if eligible), the others retreat to Garreg Mach instead of dying."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Profil",
+            "en": "Profile"
+          },
+          "items": [
+            {
+              "fr": "Tu peux changer de pseudo depuis ton profil, pour 750 or. Ton ancien pseudo reste affiché sous le nouveau (alias AncienNom).",
+              "en": "You can change your name from your profile for 750 gold. Your former name still shows under the new one (formerly known as OldName)."
             }
           ]
         }

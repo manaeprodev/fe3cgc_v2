@@ -1,6 +1,6 @@
 // Service worker : réseau d'abord, cache en secours (pour ouvrir l'app hors ligne).
 // L'API (/api/) n'est jamais mise en cache.
-const CACHE = 'conquete-v25';
+const CACHE = 'conquete-v26';
 const SHELL = ['./', 'css/style.css', 'js/app.js', 'config/game.json', 'config/map.json', 'assets/map/fodlan.jpg', 'i18n/fr.json', 'i18n/en.json', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {

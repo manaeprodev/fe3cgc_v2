@@ -1929,6 +1929,7 @@ async function showProfile(target) {
       ${home?.lord ? `<img class="pf-lord" src="${esc(home.lord)}" alt="">` : ''}
       <img class="pf-avatar" src="${img}" alt="">
       <div class="pf-id"><h2>${esc(d.type === 'general' ? d.name : d.pseudo)}${d.lord ? ' \u{1F451}' : ''}</h2>
+        ${d.formerPseudo ? `<p class="pf-aka">${esc(t('profile.aka', { name: d.formerPseudo }))}</p>` : ''}
         <p>${home?.logo ? `<img class="pf-flag" src="${esc(home.logo)}" alt="">` : ''}<span style="color:${esc(home?.color || 'inherit')}">${esc(home ? loc(home.name) : t('profile.independent'))}</span></p>
         ${d.type === 'general' ? `<span class="pill">${esc(t(d.lord ? 'profile.lord' : 'camp.general'))}</span>` : ''}
         ${d.exile ? `<span class="pill exile">${esc(t('exile.tag'))} ${flag(d.exile)} ${esc(loc(now?.name))}</span>` : ''}
@@ -1954,10 +1955,43 @@ async function showProfile(target) {
     </div>
     ${d.type === 'general' ? `<button type="button" class="btn ghost" data-relopen hidden>${esc(t('rel.open'))}</button>` : ''}
     ${d.type === 'player' && !d.me ? `<button type="button" class="btn ghost" data-prelopen>${esc(t('rel.open'))}</button>` : ''}
+    ${d.type === 'player' && d.me ? `<button type="button" class="btn ghost" data-rename>${esc(t('rename.open', { gold: fmtNum(state.config.player?.renameGold ?? 750) }))}</button>
+      <form class="rename-form" hidden><label class="small muted" for="rename-input">${esc(t('rename.label'))}</label>
+        <input id="rename-input" type="text" maxlength="20" autocomplete="off" spellcheck="false" value="${esc(d.pseudo)}">
+        <p class="small muted">${esc(t('rename.hint', { gold: fmtNum(state.config.player?.renameGold ?? 750) }))}</p>
+        <p class="small rename-error" hidden></p>
+        <div class="row"><button type="button" class="btn ghost" data-rename-cancel>${esc(t('build.back'))}</button><button type="submit" class="btn">${esc(t('rename.do'))}</button></div></form>` : ''}
     <button type="button" class="btn" data-close>${esc(t('common.close'))}</button></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('[data-close]').addEventListener('click', () => overlay.remove());
   overlay.querySelector('[data-prelopen]')?.addEventListener('click', () => { overlay.remove(); showPlayerRelation(d.pseudo); });
+  // Changer de pseudo (contre de l'or) : petit formulaire dans mon propre profil.
+  const renameBtn = overlay.querySelector('[data-rename]');
+  if (renameBtn) {
+    const form = overlay.querySelector('.rename-form');
+    const input = form.querySelector('input');
+    const errEl = form.querySelector('.rename-error');
+    renameBtn.addEventListener('click', () => { renameBtn.hidden = true; form.hidden = false; input.focus(); input.select(); });
+    form.querySelector('[data-rename-cancel]').addEventListener('click', () => { form.hidden = true; renameBtn.hidden = false; errEl.hidden = true; });
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pseudo = input.value.trim();
+      const submit = form.querySelector('[type=submit]');
+      submit.disabled = true;
+      try {
+        state.me = await api('/pseudo', { pseudo });
+        overlay.remove();
+        flash(t('rename.done', { name: pseudo }));
+        render();
+        showProfile({ pseudo });
+      } catch (err) {
+        if (err.status === 401) return sessionLost();
+        errEl.textContent = err.message;
+        errEl.hidden = false;
+        submit.disabled = false;
+      }
+    });
+  }
   bindOrders(overlay, d, () => showProfile(target));
   // Soutien : seulement pour un général de mon camp (vivant allié, ou de ma faction et grisé).
   const relBtn = overlay.querySelector('[data-relopen]');

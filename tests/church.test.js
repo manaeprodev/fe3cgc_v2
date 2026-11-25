@@ -142,6 +142,37 @@ function insertBattle(territory, attacker, defender, endsIn, boss = 0, general =
     await clients.Rouge1('/map');
     check('croisade levée quand la domination recule', !meta('crusade') && (await journalTypes()).includes('crusade_ended'), String(meta('crusade')));
 
+    console.log('# Croisade repoussée');
+    // Plusieurs chevaliers vaincus sur une terre des Aigles : un seul tombe (l'épargnable d'abord), les autres rentrent à Garreg-Mach.
+    {
+      const homes = new Set(ROSTER.map((g) => g.home));
+      const land = MAP.territories.find((t) => t.faction === 'rouge' && !homes.has(t.id) && !ANNEX.has(t.id)).id;
+      const who = (ks) => ks.map((k) => k + ':' + gen(k).status + '@' + gen(k).territory).join(',');
+      const crusadeLost = async (party) => {
+        resetWorld();
+        withDb((d) => {
+          const cid = d.prepare('SELECT id FROM campaigns WHERE ended_at IS NULL').get().id;
+          const now = Date.now();
+          for (const [gid] of party) d.prepare("UPDATE generals SET territory = ?, status = 'alive', spared = 0, move_turn = 999999999999 WHERE gid = ?").run(land, gid);
+          const id = Number(d.prepare('INSERT INTO battles (campaign_id, territory, attacker, defender, boss_power, started_at, ends_at) VALUES (?, ?, ?, ?, 0, ?, ?)')
+            .run(cid, land, 'eglise', 'rouge', now, now + 2500).lastInsertRowid);
+          for (const [gid, power] of party) d.prepare("INSERT INTO general_contribs (battle_id, gid, side, power) VALUES (?, ?, 'attack', ?)").run(id, gid, power);
+          d.prepare("INSERT INTO contributions (battle_id, territory, user_id, faction, side, power, created_at, expires_at, kind, streak) VALUES (?, ?, ?, 'rouge', 'defense', 60, ?, NULL, 'action', 0)")
+            .run(id, land, uidOf(d, 'Rouge1'), now);
+        });
+        await sleep(2500 + TURN + 800);
+        await clients.Rouge1('/map');
+      };
+      await restart({ TEST_ROLL: '0.999' });
+      await crusadeLost([['seteth', 3], ['shamir', 1], ['cyril', 2]]);
+      check("croisade repoussée : un seul chevalier vaincu, l'épargnable (Shamir) attend le verdict", gen('shamir').status === 'captive' && !!row('SELECT 1 FROM general_verdicts WHERE gid = ?', 'shamir'), who(['seteth', 'shamir', 'cyril']));
+      check('les autres battent en retraite à Garreg-Mach, vivants', ['seteth', 'cyril'].every((k) => gen(k).status === 'alive' && gen(k).territory === 'garreg-mach'), who(['seteth', 'cyril']));
+      check('journal de la retraite', (await journalTypes()).includes('knight_retreated'));
+      await crusadeLost([['seteth', 1], ['catherine', 3]]);
+      check("sans chevalier épargnable : celui qui a le plus pesé tombe (Catherine), l'autre rentre", gen('catherine').status === 'dead' && gen('seteth').status === 'alive' && gen('seteth').territory === 'garreg-mach', who(['seteth', 'catherine']));
+      await restart({});
+    }
+
     console.log('# L\'Immaculée');
     resetWorld();
     insertBattle('garreg-mach', 'rouge', 'eglise', 1200, 0, null, [['Rouge1', 'attack']]);

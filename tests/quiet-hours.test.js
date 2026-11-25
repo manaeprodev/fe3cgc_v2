@@ -41,7 +41,7 @@ const paris = (iso) => Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit'
 
 (async () => {
   try {
-    check('config : 4 % de chances par tour', cfg.campaign.boss.chancePerTurn === 0.04, String(cfg.campaign.boss.chancePerTurn));
+    check('config : 5 % de chances par tour', cfg.campaign.boss.chancePerTurn === 0.05, String(cfg.campaign.boss.chancePerTurn));
     check('config : interdit de minuit (inclus) à 6 h (exclu), heure de Paris', JSON.stringify(cfg.campaign.boss.quietHours) === '{"from":0,"to":6,"timezone":"Europe/Paris"}');
     // Lecture de l'heure de Paris : heure d'hiver (UTC+1) et d'été (UTC+2), y compris autour de minuit et de 6 h.
     check('heure de Paris, hiver : 23 h 30 UTC = 0 h', paris('2026-01-15T23:30:00Z') === 0);

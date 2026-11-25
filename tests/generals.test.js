@@ -331,6 +331,30 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
       }
       return null;
     };
+    // La faction la plus faible (le moins de territoires) n'est jamais attaquée : les Lions réduits à deux territoires.
+    {
+      const own = (await clients.Rouge1('/map')).d.territories.filter((t) => !t.annex);
+      const lions = own.filter((t) => t.faction === 'bleue').map((t) => t.id);
+      withDb((d) => { const up = d.prepare("UPDATE territories SET faction = 'rouge' WHERE id = ?"); lions.slice(2).forEach((id) => up.run(id)); });
+      await restart({ GEN_ATTACK_CHANCE: '0', BOSS_CHANCE: '1', GENERAL_CHANCE: '0', TEST_ROLL: '0.999', TURN_SECONDS: '0.5' });
+      withDb((d) => d.exec("DELETE FROM battles WHERE attacker = 'serpents'")); // raids lancés avant le redémarrage
+      const held = {};
+      for (const t of (await clients.Rouge1('/map')).d.territories) if (!t.annex && ['rouge', 'bleue', 'jaune', 'violette'].includes(t.faction)) held[t.faction] = (held[t.faction] || 0) + 1;
+      const min = Math.min(...Object.values(held));
+      const weakest = Object.keys(held).filter((f) => held[f] === min);
+      const seen = new Set();
+      for (let i = 0; i < 30; i += 1) {
+        await clients.Rouge1('/map');
+        for (const b of withDb((d) => d.prepare("SELECT defender FROM battles WHERE attacker = 'serpents'").all())) seen.add(b.defender);
+        withDb((d) => d.exec("DELETE FROM battles WHERE attacker = 'serpents'"));
+        await sleep(300);
+      }
+      check('les Serpents attaquent, mais jamais la faction la plus faible', seen.size > 0 && weakest.every((f) => !seen.has(f)), JSON.stringify({ held, weakest, seen: [...seen] }));
+      withDb((d) => { const up = d.prepare("UPDATE territories SET faction = 'bleue' WHERE id = ?"); lions.forEach((id) => up.run(id)); });
+      resetAll(); resetGen();
+      withDb((d) => d.exec('DELETE FROM battles'));
+      await restart({ GEN_ATTACK_CHANCE: '0', BOSS_CHANCE: '1', GENERAL_CHANCE: '1', TEST_ROLL: '0.999' });
+    }
     const first = await raid();
     const SERP = ['cornelia', 'kronya', 'solon', 'thales', 'nemesis'];
     check('un raid mené par un général des Serpents (chance 100 % ici)', first && SERP.includes(first.general), JSON.stringify(first));
@@ -338,7 +362,7 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
     const imp = (await clients.Rouge1('/map')).d.territories.find((t) => t.id === first.territory).importance;
     check('sa puissance suit son coefficient (3 × importance × coef)', Math.abs(first.boss_power - 3 * imp * coef) < 0.001, `${first.boss_power} vs ${3 * imp * coef}`);
     map = (await clients.Rouge1('/map')).d;
-    check('la bataille nomme le général', terrOf(map, first.territory).battle.general?.id === first.general);
+    check('la bataille nomme le général, avec son portrait', terrOf(map, first.territory).battle.general?.id === first.general && terrOf(map, first.territory).battle.general.avatar === ROSTER.find((g) => g.id === first.general).avatar);
     check('il n\'est pas encore sur la carte', !map.territories.some((t) => t.occupants.some((o) => o.pseudo.toLowerCase() === first.general)));
     await sleep(13500);
     await clients.Rouge1('/map');
@@ -430,6 +454,9 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
       const bt = d.prepare('INSERT INTO battles (campaign_id, territory, attacker, defender, started_at, ends_at, resolved_at, success, credit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
       for (let i = 0; i < 3; i += 1) bt.run(cid, 'rowe', 'violette', 'bleue', 1, 1, 1, 1, null);
       for (let i = 0; i < 2; i += 1) bt.run(cid, 'garreg-mach', 'rouge', 'eglise', 1, 1, 1, 0, 'violette');
+      // Deux attaques des Serpents non repoussées chez les Aigles (une repoussée ne compte pas) : -6 %.
+      for (let i = 0; i < 2; i += 1) bt.run(cid, 'varley', 'serpents', 'rouge', 1, 1, 1, 1, null);
+      bt.run(cid, 'varley', 'serpents', 'rouge', 1, 1, 1, 0, null);
     });
     // Un combat encore ouvert au moment de la clôture : il se termine, et la fin de campagne est calculée ensuite.
     withDb((d) => d.exec("UPDATE territories SET faction = 'bleue' WHERE id = 'duval'"));
@@ -461,7 +488,11 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
     const partsOf = (r) => Object.fromEntries(r.parts.map((p) => [p.key, p.points]));
     check('points des Aigles : territoires, survivants, activité (700 × 5 %) — sans l\'exilé — avec ×1,15',
       res.mult === 1.15 && partsOf(res).activity === 37 && partsOf(res).territories > 0, JSON.stringify(res.parts) + ' x' + res.mult);
+    const baseR = res.parts.reduce((a, x) => a + x.points, 0);
+    check('Serpents non repoussés : 2 attaques, -6 % sur les points des Aigles', res.raids === 2 && res.malus === 6
+      && res.factionPoints === Math.round(baseR * 1.15 * 0.94) + (res.won ? 100 : 0), JSON.stringify([res.raids, res.malus, baseR, res.factionPoints, res.won]));
     const rb = (await me('Bleu1')).result;
+    check('aucune attaque non repoussée chez les Lions : pas de malus', rb.malus === 0 && rb.raids === 0, JSON.stringify([rb.raids, rb.malus]));
     check('Lions : l\'exilé n\'ajoute rien à leur activité, ni survivant (300 × 5 % = 15)', partsOf(rb).activity === 15, JSON.stringify(rb?.parts));
     const rw = (await me('Bleu2')).result;
     const pw = partsOf(rw);

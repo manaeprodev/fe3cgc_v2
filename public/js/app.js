@@ -672,7 +672,16 @@ async function renderMap() {
       const s0 = shape(st.id);
       if (!s0) continue;
       const s = { ...s0, x: s0.cx ?? s0.x, y: s0.cy ?? s0.y }; // cx, cy : centre visuel du territoire (map.json)
-      if (st.battle) {
+      if (st.battle && st.battle.general?.avatar) {
+        // Raid mené par un général (Serpents, Immaculée) : son portrait à la place de la croix.
+        const r = 12 * u, id = `bg-${st.id}`, col = esc(faction(st.battle.attacker)?.color || '#e5484d');
+        parts.push(`<g class="battle-mark general" transform="translate(${s.x + 22 * u} ${s.y - 16 * u})">
+        <clipPath id="${esc(id)}"><circle r="${r}"/></clipPath>
+        <circle r="${r + 2 * u}" fill="${col}" stroke="#fff" stroke-width="${1.5 * u}"/>
+        <image href="${esc(st.battle.general.avatar)}" x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" clip-path="url(#${esc(id)})" preserveAspectRatio="xMidYMin slice"/>
+        <g transform="translate(${r * 0.8} ${r * 0.8})"><circle r="${4.5 * u}" fill="${col}" stroke="#fff" stroke-width="${u}"/>
+        <path d="M${-2 * u} ${-2 * u}L${2 * u} ${2 * u}M${2 * u} ${-2 * u}L${-2 * u} ${2 * u}" stroke="#fff" stroke-width="${1.2 * u}" stroke-linecap="round"/></g></g>`);
+      } else if (st.battle) {
         const k = 4 * u;
         parts.push(`<g class="battle-mark" transform="translate(${s.x} ${s.y - 20 * u})">
         <circle r="${9 * u}" fill="${esc(faction(st.battle.attacker)?.color || '#e5484d')}" stroke="#fff" stroke-width="${1.5 * u}"/>
@@ -890,7 +899,8 @@ async function renderMap() {
       const sure = bt.decisive ? ((bt.decisive === 'win') === !defMine ? 'win' : 'lose') : null;
       const label = sure === 'win' ? t('camp.decisiveWin') : sure === 'lose' ? t('camp.decisiveLose') : pct >= 60 ? t('camp.odds.good') : pct >= 40 ? t('camp.odds.even') : t('camp.odds.bad');
       const tone = sure ? sure : pct >= 60 ? 'good' : pct >= 40 ? 'even' : 'bad';
-      return `<div class="small battle-line"><p>${bt.general
+      const gFace = bt.general?.avatar ? `<button type="button" class="battle-general" data-gprofile="${esc(bt.general.id)}" style="--c:${esc(faction(bt.attacker)?.color || '#e5484d')}"><img src="${esc(bt.general.avatar)}" alt=""><span>${esc(bt.general.name)}</span></button>` : '';
+      return `<div class="small battle-line">${gFace}<p>${bt.general
         ? withTimer('camp.battleGeneral', { general: bt.general.name, attacker: loc(faction(bt.attacker)?.name), chance: bt.chance }, bt.endsAt)
         : withTimer(numKey('camp.battle', bt.attacker), { attacker: loc(faction(bt.attacker)?.name), chance: bt.chance }, bt.endsAt)}
         · ${esc(t('camp.forces', { attackers: bt.attackers, defenders: bt.defenders }))}</p>
@@ -2037,6 +2047,7 @@ function showResult() {
   const lines = [
     ...r.parts.map((x) => part(t(`result.part.${x.key}`), x.points)),
     ...(r.mult > 1 ? [`<li><span>${esc(t('result.mult', { n: Math.round((r.mult - 1) * 100) }))}</span><b>×${r.mult}</b></li>`] : []),
+    ...(r.malus > 0 ? [`<li class="malus"><span>${esc(t(r.raids === 1 ? 'result.malus.1' : 'result.malus', { n: r.raids, pct: r.malus }))}</span><b>−${r.malus} %</b></li>`] : []),
     ...(r.win ? [part(t('result.part.win'), r.win)] : []),
   ].join('');
   // Sothis remonte le temps : sa citation dépend de l'issue (victoire, défaite, égalité, exil).

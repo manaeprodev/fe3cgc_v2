@@ -21,7 +21,7 @@ module.exports = function createCampaign(ctx) {
     counter: { minutes: 240, attackBonus: 25, factionBonus: {} },
     // Factions qui défendent comme chez elles les territoires d'une autre (Loups de cendre : Église de Seiros).
     guardians: {},
-    boss: { faction: 'serpents', chancePerTurn: 0.07, max: 1, power: 3, quietHours: { from: 0, to: 6, timezone: 'Europe/Paris' } },
+    boss: { faction: 'serpents', chancePerTurn: 0.07, max: 1, power: 3, unrepelledMalus: 0.03, quietHours: { from: 0, to: 6, timezone: 'Europe/Paris' } },
     points: { win: 100 },
     // Fin de campagne automatique (jour de la semaine : 0 = dimanche … 6 = samedi) et points de fin de campagne par faction.
     // Clôture le mardi à minuit, soit la nuit du lundi au mardi (plus d'attaque, les combats se terminent), puis pause jusqu'à `reopenHour`,
@@ -490,6 +490,7 @@ module.exports = function createCampaign(ctx) {
     survivors: db.prepare(`SELECT c.faction, count(*) AS n FROM player_state p JOIN characters c ON c.user_id = p.user_id
                            WHERE p.status != 'dead' AND p.exile_faction IS NULL GROUP BY c.faction`),
     attacksWon: db.prepare('SELECT count(*) AS n FROM battles WHERE campaign_id = ? AND attacker = ? AND success = 1 AND resolved_at IS NOT NULL'),
+    raidsLost: db.prepare('SELECT count(*) AS n FROM battles WHERE campaign_id = ? AND attacker = ? AND defender = ? AND success = 1 AND resolved_at IS NOT NULL'),
     defensesWon: db.prepare(`SELECT count(*) AS n FROM battles WHERE campaign_id = ? AND success = 0 AND resolved_at IS NOT NULL
                              AND (credit = ? OR (credit IS NULL AND defender = ?))`),
     addResult: db.prepare('INSERT OR REPLACE INTO campaign_results (campaign_id, user_id, data, seen) VALUES (?, ?, ?, 0)'),
@@ -1721,14 +1722,24 @@ module.exports = function createCampaign(ctx) {
     return null;
   }
   // Bilan d'une bataille pour les généraux : ceux du camp battu sont vaincus, les autres généraux présents sur un territoire perdu reculent.
+  // Chevaliers de Seiros vaincus hors de Garreg-Mach (croisade) : un seul tombe (ou attend le verdict s'il est épargnable),
+  // les autres battent en retraite vers Garreg-Mach, vivants.
+  const isKnight = (row) => row.faction === CH.faction && row.gid !== CH.lord && row.gid !== CH.immaculate;
   function settleGenerals(b, success, defWinner, t) {
     const handled = new Set();
+    const knightsBeaten = []; // { row, foes, winner, power }
+    const power = new Map();
+    for (const c of q.generalContribs.all(b.id)) power.set(c.gid, (power.get(c.gid) || 0) + (c.power || 0));
+    const beaten = (row, foes, winner) => {
+      handled.add(row.gid);
+      if (isKnight(row) && b.territory !== CH.seat) knightsBeaten.push({ row, foes, winner, power: power.get(row.gid) || 0 });
+      else defeatGeneral(row, foes, winner, b, t);
+    };
     for (const c of q.generalContribs.all(b.id)) {
       const row = q.general.get(c.gid);
-      if (!row || row.status !== 'alive' || (c.side === 'attack') === success) continue;
-      handled.add(row.gid);
-      if (c.side === 'defense') defeatGeneral(row, q.sideActors.all(b.id, 'attack').map((r) => r.user_id), b.attacker, b, t);
-      else defeatGeneral(row, q.sideActors.all(b.id, 'defense').map((r) => r.user_id), defWinner, b, t);
+      if (!row || row.status !== 'alive' || handled.has(row.gid) || (c.side === 'attack') === success) continue;
+      if (c.side === 'defense') beaten(row, q.sideActors.all(b.id, 'attack').map((r) => r.user_id), b.attacker);
+      else beaten(row, q.sideActors.all(b.id, 'defense').map((r) => r.user_id), defWinner);
     }
     if (success) {
       // Territoire conquis : tout général du camp vaincu qui s'y trouve, ou dont c'est la maison, est vaincu avec lui
@@ -1738,7 +1749,18 @@ module.exports = function createCampaign(ctx) {
       const attackers = q.sideActors.all(b.id, 'attack').map((r) => r.user_id);
       for (const row of q.generals.all()) {
         if (row.status !== 'alive' || !GEN.has(row.gid) || !mine(row) || handled.has(row.gid)) continue;
-        if (row.territory === b.territory || GEN.get(row.gid).home === b.territory) defeatGeneral(row, attackers, b.attacker, b, t);
+        if (row.territory === b.territory || GEN.get(row.gid).home === b.territory) beaten(row, attackers, b.attacker);
+      }
+    }
+    if (knightsBeaten.length) {
+      // Celui qui tombe : un chevalier que les vainqueurs peuvent épargner d'abord, sinon celui qui a pesé le plus dans la bataille.
+      const canSpare = (k) => !k.row.spared && k.winner && PLAYABLE.has(k.winner) && (GEN.get(k.row.gid).spare || []).includes(k.winner);
+      knightsBeaten.sort((x, y) => (canSpare(y) - canSpare(x)) || (y.power - x.power) || x.row.gid.localeCompare(y.row.gid));
+      const [fallen, ...rest] = knightsBeaten;
+      defeatGeneral(fallen.row, fallen.foes, fallen.winner, b, t);
+      for (const k of rest) {
+        moveGeneral(k.row, CH.seat);
+        journal('knight_retreated', { general: k.row.gid, territory: b.territory }, t);
       }
     }
   }
@@ -2115,7 +2137,7 @@ module.exports = function createCampaign(ctx) {
   }
 
   // Mini-boss : à chaque nouveau tour, la faction ennemie a une chance d'attaquer un territoire au hasard (pas la nuit).
-  // Général des Serpents qui mène le raid : 30 % de chances (les autres raids restent des attaques normales). Epimenides, le dernier,
+  // Général des Serpents qui mène le raid : 45 % de chances (les autres raids restent des attaques normales). Epimenides, le dernier,
   // ne vient qu'une fois tous les autres tombés, et alors à coup sûr.
   const SERPENT_GENERAL_CHANCE = process.env.GENERAL_CHANCE !== undefined ? Number(process.env.GENERAL_CHANCE) : G.serpents.chance;
   function pickSerpentGeneral() {
@@ -2125,6 +2147,17 @@ module.exports = function createCampaign(ctx) {
     if (!others.length) return pool.find((g) => g.gid === last) || null;
     if (genRand() >= SERPENT_GENERAL_CHANCE) return null;
     return others[Math.floor(genRand() * others.length) % others.length];
+  }
+  // Faction(s) la(les) plus faible(s) : le moins de territoires parmi celles qui en tiennent encore. Les Serpents ne s'en prennent
+  // jamais à elle(s) ; à égalité générale (début de campagne), personne n'est épargné.
+  function weakestFactions(owners) {
+    const held = new Map();
+    for (const x of TERR) if (!ANNEX.has(x.id) && PLAYABLE.has(owners.get(x.id))) held.set(owners.get(x.id), (held.get(owners.get(x.id)) || 0) + 1);
+    const counts = [...held.values()];
+    if (counts.length < 2) return new Set();
+    const min = Math.min(...counts);
+    if (counts.every((n) => n === min)) return new Set();
+    return new Set([...held].filter(([, n]) => n === min).map(([f]) => f));
   }
   function spawnBosses(t) {
     if (q.meta.get('serpents_gone')?.value === '1' || phase(t) !== 'open') return; // Epimenides est tombé, ou la campagne se clôt
@@ -2138,7 +2171,8 @@ module.exports = function createCampaign(ctx) {
       if (open.filter((b) => b.boss_power > 0).length >= C.boss.max) return;
       const owners = ownersMap();
       const busy = new Set(open.map((b) => b.territory));
-      const targets = TERR.filter((x) => !ANNEX.has(x.id) && !busy.has(x.id) && PLAYABLE.has(owners.get(x.id)) && !shieldUntil(x.id, owners, t));
+      const weak = weakestFactions(owners);
+      const targets = TERR.filter((x) => !ANNEX.has(x.id) && !busy.has(x.id) && PLAYABLE.has(owners.get(x.id)) && !weak.has(owners.get(x.id)) && !shieldUntil(x.id, owners, t));
       if (!targets.length) return;
       const target = targets[Math.floor(Math.random() * targets.length)];
       const general = pickSerpentGeneral();
@@ -2246,7 +2280,10 @@ module.exports = function createCampaign(ctx) {
       const base = parts.reduce((a, p) => a + p.points, 0);
       // Epimenides ou l'Immaculée abattus par cette faction.
       const mult = Math.round((1 + (q.meta.get(`epi:${f}`) ? G.serpents.pointsBonus || 0 : 0) + (q.meta.get(`immac:${f}`) ? CH.awakening.pointsBonus || 0 : 0)) * 100) / 100;
-      out[f] = { held, pct, parts, base, mult, total: Math.round(base * mult) };
+      // Attaques des Serpents non repoussées : -3 % des points de faction chacune (sans descendre sous 0).
+      const raids = q.raidsLost.get(cid, C.boss.faction, f).n;
+      const malus = Math.min(100, Math.round(raids * (C.boss.unrepelledMalus ?? 0.03) * 100));
+      out[f] = { held, pct, parts, base, mult, raids, malus, total: Math.round(base * mult * (1 - malus / 100)) };
     }
     return out;
   }
@@ -2308,6 +2345,7 @@ module.exports = function createCampaign(ctx) {
       q.addResult.run(campaign.id, r.user_id, JSON.stringify({
         campaign: campaign.id, reason, winner, faction: r.faction, won: winner === r.faction, exile: r.exile_faction || null,
         factionPoints: gained[r.faction] || 0, parts: detail[r.faction]?.parts || [], mult: detail[r.faction]?.mult || 1,
+        raids: detail[r.faction]?.raids || 0, malus: detail[r.faction]?.malus || 0,
         win: r.faction === winner ? C.points.win : 0, standings, score: r.score, rank,
         rankGold: rank && rank <= podium.length ? C.ranking.rewards[rank - 1] : 0, exileGold, at: t,
       }));

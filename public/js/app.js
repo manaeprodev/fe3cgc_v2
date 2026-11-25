@@ -1171,6 +1171,7 @@ async function renderMenu() {
         <div class="row">
           <button class="btn ghost" type="button" data-avatars>${esc(t('avatars.change'))}</button>
           <button class="btn ghost" type="button" data-classes>${esc(t('classes.change'))}</button>
+          <button class="btn ghost" type="button" data-menu-rename>${esc(t('rename.open', { gold: fmtNum(state.config.player?.renameGold ?? 750) }))}</button>
         </div>
       </section>
 
@@ -1256,6 +1257,7 @@ async function renderMenu() {
     view.querySelector('[data-bug]').addEventListener('click', () => go('bug'));
     view.querySelector('[data-pushsettings]').addEventListener('click', () => go('pushsettings'));
     view.querySelector('[data-avatars]').addEventListener('click', () => go('avatars'));
+    view.querySelector('[data-menu-rename]').addEventListener('click', () => showProfile({ pseudo: ch.pseudo, rename: true }));
     view.querySelectorAll('[data-rel]').forEach((b) => b.addEventListener('click', () => showRelation(b.dataset.rel, draw)));
     view.querySelectorAll('[data-prel]').forEach((b) => b.addEventListener('click', () => showPlayerRelation(b.dataset.prel, draw)));
     view.querySelector('[data-classes]').addEventListener('click', () => {
@@ -1972,6 +1974,7 @@ async function showProfile(target) {
     const input = form.querySelector('input');
     const errEl = form.querySelector('.rename-error');
     renameBtn.addEventListener('click', () => { renameBtn.hidden = true; form.hidden = false; input.focus(); input.select(); });
+    if (target.rename) { renameBtn.click(); form.scrollIntoView({ block: 'nearest' }); } // ouvert depuis le menu
     form.querySelector('[data-rename-cancel]').addEventListener('click', () => { form.hidden = true; renameBtn.hidden = false; errEl.hidden = true; });
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

@@ -86,8 +86,8 @@
         "en": "Hit points"
       },
       "text": {
-        "fr": "À partir de la prochaine saison, chaque joueur et chaque général a des points de vie (PV). Les PV max dépendent de la classe : 30 (base), 34 (intermédiaire), 38 (avancée), 42 (maître), +10 pour les classes lourdes (chevalier en armure, chevalier forteresse, grand chevalier), -4 pour les classes fragiles (mages, moines, voleurs, danseur). Chaque niveau de renommée ajoute 1 PV max. Changer de classe garde tes PV (plafonnés au nouveau maximum). Les PV sont toujours des nombres entiers : soins, pertes et régénération sont arrondis au-dessus.\n\nÀ la fin de chaque bataille où tu as attaqué ou défendu, tu perds des PV : attaque gagnée -5, défense gagnée -3, victoire écrasante -2, attaque perdue -12, défense perdue -10. Sous 50 % de PV, ta puissance baisse de 10 % ; sous 25 %, de 20 %. À 0 PV, tu es mis hors de combat (comme un repli manqué) et tu reviens avec la moitié de tes PV.\n\nLes PV remontent seuls, à chaque heure pleine : +3, +6 sur un territoire allié sans bataille, +2 de plus par niveau d'Infirmerie (nouveau bâtiment), et deux fois plus vite pendant l'Overdrive.\n\nSoigner (1 action) : les classes de soin soignent un allié présent sur leur territoire (joueur ou général), ou elles-mêmes à moitié (arrondi au-dessus) : moine 6 PV, prêtre 9, saint mortel, chevalier sacré, gremory, évêque noir et danseur 11, évêque 13. Soigner un allié rapporte de la renommée. Soin passif : l'évêque (et les classes qui en viennent) rend 5 PV par heure aux alliés de son territoire et des territoires voisins, deux cases pour une gremory ; plusieurs soins passifs ne se cumulent pas. Fiole : 150 or pour +8 PV, sans action, 3 par jour.\n\nLes généraux perdent aussi des PV en combattant, ne partent pas en sortie sous 50 % et se soignent entre eux. À 0 PV, un général meurt d'épuisement ; les seigneurs restent debout à 1 PV.",
-        "en": "From next season, every player and every general has hit points (HP). Max HP depend on the class: 30 (base), 34 (intermediate), 38 (advanced), 42 (master), +10 for heavy classes (armored knight, fortress knight, great knight), -4 for frail classes (mages, monks, thieves, dancer). Each renown level adds 1 max HP. Changing class keeps your HP (capped at the new maximum). HP are always whole numbers: heals, losses and regeneration are rounded up.\n\nAt the end of each battle where you attacked or defended, you lose HP: attack won -5, defence won -3, crushing victory -2, attack lost -12, defence lost -10. Below 50% HP your power drops by 10%; below 25%, by 20%. At 0 HP you are knocked out (like a missed retreat) and come back with half your HP.\n\nHP come back on their own, every full hour: +3, +6 on an allied territory without a battle, +2 more per Infirmary level (new building), and twice as fast during Overdrive.\n\nHeal (1 action): healing classes heal an ally present on their territory (player or general), or themselves for half (rounded up): monk 6 HP, priest 9, mortal savant, holy knight, gremory, dark bishop and dancer 11, bishop 13. Healing an ally earns renown. Passive heal: the bishop (and the classes that come from it) restores 5 HP per hour to allies on its territory and neighbouring ones, two steps for a gremory; passive heals do not stack. Vulnerary: 150 gold for +8 HP, no action, 3 per day.\n\nGenerals also lose HP when fighting, do not go on sorties below 50% and heal each other. At 0 HP a general dies of exhaustion; lords stay standing at 1 HP."
+        "fr": "À partir de la prochaine saison, chaque joueur et chaque général a des points de vie (PV). Les PV max dépendent de la classe : 30 (base), 34 (intermédiaire), 38 (avancée), 42 (maître), +10 pour les classes lourdes (chevalier en armure, chevalier forteresse, grand chevalier), -4 pour les classes fragiles (mages, moines, voleurs, danseur). Chaque niveau de renommée ajoute 1 PV max. Changer de classe garde tes PV (plafonnés au nouveau maximum). Les PV sont toujours des nombres entiers : soins, pertes et régénération sont arrondis au-dessus.\n\nÀ la fin de chaque bataille où tu as attaqué ou défendu, tu perds des PV : attaque gagnée -5, défense gagnée -3, victoire écrasante -2, attaque perdue -12, défense perdue -10. Sous 50 % de PV, ta puissance baisse de 10 % ; sous 25 %, de 20 %. À 0 PV, tu es mis hors de combat (comme un repli manqué) et tu reviens avec la moitié de tes PV.\n\nLes PV remontent seuls, à chaque heure pleine : +3, +6 sur un territoire allié sans bataille, +2 de plus par niveau d'Infirmerie (nouveau bâtiment), et deux fois plus vite pendant l'Overdrive.\n\nSoigner (1 action) : les classes de soin soignent un allié présent sur leur territoire (joueur ou général), ou elles-mêmes à moitié (arrondi au-dessus) : moine 6 PV, prêtre 9, saint mortel, chevalier sacré, gremory, évêque noir et danseur 11, évêque 13. Soigner un allié rapporte de la renommée. Soin passif : l'évêque (et les classes qui en viennent) rend 5 PV par heure aux alliés de son territoire et des territoires voisins, deux cases pour une gremory ; plusieurs soins passifs ne se cumulent pas. Fiole : 150 or pour +8 PV, sans action, 3 par jour.\n\nLes généraux perdent aussi des PV en combattant, ne partent pas en sortie sous 50 % et se soignent entre eux. À 0 PV, un général meurt d'épuisement ; les seigneurs restent debout à 1 PV.\n\nStrike down! Après une bataille, ceux qui l'ont gagnée (en attaque comme en défense) et y ont agi peuvent frapper un vaincu resté en repli sur le territoire : il perd 3 PV de plus (5 face à un Cavalier archer), une fois par vainqueur. À 0 PV, il est mis hors de combat : retour à sa capitale, retour payant et actions réduites.",
+        "en": "From next season, every player and every general has hit points (HP). Max HP depend on the class: 30 (base), 34 (intermediate), 38 (advanced), 42 (master), +10 for heavy classes (armored knight, fortress knight, great knight), -4 for frail classes (mages, monks, thieves, dancer). Each renown level adds 1 max HP. Changing class keeps your HP (capped at the new maximum). HP are always whole numbers: heals, losses and regeneration are rounded up.\n\nAt the end of each battle where you attacked or defended, you lose HP: attack won -5, defence won -3, crushing victory -2, attack lost -12, defence lost -10. Below 50% HP your power drops by 10%; below 25%, by 20%. At 0 HP you are knocked out (like a missed retreat) and come back with half your HP.\n\nHP come back on their own, every full hour: +3, +6 on an allied territory without a battle, +2 more per Infirmary level (new building), and twice as fast during Overdrive.\n\nHeal (1 action): healing classes heal an ally present on their territory (player or general), or themselves for half (rounded up): monk 6 HP, priest 9, mortal savant, holy knight, gremory, dark bishop and dancer 11, bishop 13. Healing an ally earns renown. Passive heal: the bishop (and the classes that come from it) restores 5 HP per hour to allies on its territory and neighbouring ones, two steps for a gremory; passive heals do not stack. Vulnerary: 150 gold for +8 HP, no action, 3 per day.\n\nGenerals also lose HP when fighting, do not go on sorties below 50% and heal each other. At 0 HP a general dies of exhaustion; lords stay standing at 1 HP.\n\nStrike down! After a battle, those who won it (attacking or defending) and acted in it can strike a defeated foe still retreating on the territory: they lose 3 more HP (5 against a Bow Knight), once per victor. At 0 HP they are knocked out: back to their capital, paid return and reduced actions."
       }
     },
     {
@@ -1195,11 +1195,15 @@
           },
           "pct": 10,
           "max": 50
+        },
+        {
+          "kind": "strikeDown",
+          "hp": 2
         }
       ],
       "effectText": {
-        "fr": "Inflige -30 % de défense supplémentaire (60 % au total) aux ennemis volants et gagne +10 % de puissance d'attaque ou de défense pour chaque ennemi volant présent sur le territoire en bataille (maximum +50 %).",
-        "en": "Inflicts a further -30% defence (60% in total) on flying enemies and gains +10% attack or defence power for each flying enemy on the battle territory (maximum +50%)."
+        "fr": "Inflige -30 % de défense supplémentaire (60 % au total) aux ennemis volants et gagne +10 % de puissance d'attaque ou de défense pour chaque ennemi volant présent sur le territoire en bataille (maximum +50 %). Strike down! : inflige 2 PV de plus aux vaincus en repli.",
+        "en": "Inflicts a further -30% defence (60% in total) on flying enemies and gains +10% attack or defence power for each flying enemy on the battle territory (maximum +50%). Strike down!: deals 2 more HP to defeated foes retreating."
       }
     },
     {
@@ -2702,7 +2706,8 @@
       "generals": {
         "sortieMinPct": 50,
         "healBelowPct": 70
-      }
+      },
+      "strikeDown": 3
     }
   },
   "daily": {
@@ -3135,6 +3140,34 @@
             {
               "fr": "Tu peux changer de pseudo depuis ton profil, pour 750 or. Ton ancien pseudo reste affiché sous le nouveau (alias AncienNom).",
               "en": "You can change your name from your profile for 750 gold. Your former name still shows under the new one (formerly known as OldName)."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Distinctions",
+            "en": "Distinctions"
+          },
+          "items": [
+            {
+              "fr": "47 nouvelles distinctions, la plupart à paliers (I, II, III), à retrouver dans le menu (section Distinctions) avec ta progression. Celles que tu remplis déjà te sont attribuées tout de suite.",
+              "en": "47 new distinctions, most with tiers (I, II, III), in the menu (Distinctions section) with your progress. Those you already meet are awarded right away."
+            },
+            {
+              "fr": "Touche une distinction (profil, menu) pour voir sa description et ses paliers.",
+              "en": "Tap a distinction (profile, menu) to see its description and tiers."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Strike down!",
+            "en": "Strike down!"
+          },
+          "items": [
+            {
+              "fr": "Les vainqueurs d'une bataille peuvent frapper un vaincu en repli sur le territoire : -3 PV (-5 avec un Cavalier archer). À 0 PV, il est mis hors de combat.",
+              "en": "Battle victors can strike a defeated foe retreating on the territory: -3 HP (-5 with a Bow Knight). At 0 HP they are knocked out."
             }
           ]
         }
@@ -5520,5 +5553,845 @@
       },
       "closest": 4
     }
-  }
+  },
+  "feats": [
+    {
+      "id": "headhunter",
+      "icon": "🎯",
+      "value": "cm:general",
+      "tiers": [
+        10,
+        25,
+        50
+      ],
+      "name": {
+        "fr": "Chasseur de têtes",
+        "en": "Headhunter"
+      },
+      "description": {
+        "fr": "Vaincre {n} généraux.",
+        "en": "Defeat {n} generals."
+      }
+    },
+    {
+      "id": "conqueror",
+      "icon": "🚩",
+      "value": "cm:conquest",
+      "tiers": [
+        25,
+        100,
+        300
+      ],
+      "name": {
+        "fr": "Conquérant",
+        "en": "Conqueror"
+      },
+      "description": {
+        "fr": "Remporter {n} conquêtes de territoire.",
+        "en": "Win {n} territory conquests."
+      }
+    },
+    {
+      "id": "living_shield",
+      "icon": "🛡️",
+      "value": "cm:defense",
+      "tiers": [
+        30,
+        150,
+        400
+      ],
+      "name": {
+        "fr": "Bouclier vivant",
+        "en": "Living Shield"
+      },
+      "description": {
+        "fr": "Réussir {n} défenses.",
+        "en": "Win {n} defences."
+      }
+    },
+    {
+      "id": "lone_wolf",
+      "icon": "🐺",
+      "value": "stat:solo_attacks",
+      "tiers": [
+        3,
+        10,
+        30
+      ],
+      "name": {
+        "fr": "Loup solitaire",
+        "en": "Lone Wolf"
+      },
+      "description": {
+        "fr": "Remporter {n} attaques seul.",
+        "en": "Win {n} attacks alone."
+      }
+    },
+    {
+      "id": "last_standing",
+      "icon": "🗿",
+      "value": "stat:solo_defenses",
+      "tiers": [
+        3,
+        10,
+        30
+      ],
+      "name": {
+        "fr": "Dernier debout",
+        "en": "Last One Standing"
+      },
+      "description": {
+        "fr": "Réussir {n} défenses seul.",
+        "en": "Win {n} defences alone."
+      }
+    },
+    {
+      "id": "unstoppable",
+      "icon": "⚡",
+      "value": "stat:best_atk_streak",
+      "tiers": [
+        5,
+        10,
+        15
+      ],
+      "name": {
+        "fr": "Inarrêtable",
+        "en": "Unstoppable"
+      },
+      "description": {
+        "fr": "Enchaîner {n} attaques gagnées d'affilée.",
+        "en": "Win {n} attacks in a row."
+      }
+    },
+    {
+      "id": "unshakable",
+      "icon": "⛰️",
+      "value": "stat:best_def_streak",
+      "tiers": [
+        5,
+        12,
+        20
+      ],
+      "name": {
+        "fr": "Inébranlable",
+        "en": "Unshakable"
+      },
+      "description": {
+        "fr": "Enchaîner {n} défenses réussies d'affilée.",
+        "en": "Win {n} defences in a row."
+      }
+    },
+    {
+      "id": "reconqueror",
+      "icon": "🔁",
+      "value": "cm:retake",
+      "tiers": [
+        5,
+        25,
+        75
+      ],
+      "name": {
+        "fr": "Reconquérant",
+        "en": "Reconqueror"
+      },
+      "description": {
+        "fr": "Reprendre {n} territoires perdus par sa faction.",
+        "en": "Retake {n} territories lost by your faction."
+      }
+    },
+    {
+      "id": "serpent_bane",
+      "icon": "🐍",
+      "value": "stat:serpents_repelled",
+      "tiers": [
+        10,
+        50,
+        150
+      ],
+      "name": {
+        "fr": "Fléau des Serpents",
+        "en": "Serpent Bane"
+      },
+      "description": {
+        "fr": "Repousser {n} attaques des Serpents des Ténèbres.",
+        "en": "Repel {n} attacks of Those Who Slither in the Dark."
+      }
+    },
+    {
+      "id": "myth_slayer",
+      "icon": "🌑",
+      "value": "stat:epimenides_slain",
+      "tiers": [
+        1
+      ],
+      "name": {
+        "fr": "Tueur de mythe",
+        "en": "Myth Slayer"
+      },
+      "description": {
+        "fr": "Participer à la chute d'Epimenides.",
+        "en": "Take part in the fall of Epimenides."
+      }
+    },
+    {
+      "id": "heretic",
+      "icon": "🐉",
+      "value": "stat:immaculate_slain",
+      "tiers": [
+        1
+      ],
+      "name": {
+        "fr": "Hérétique",
+        "en": "Heretic"
+      },
+      "description": {
+        "fr": "Participer à la chute de l'Immaculée.",
+        "en": "Take part in the fall of the Immaculate One."
+      }
+    },
+    {
+      "id": "armed_pilgrim",
+      "icon": "⛪",
+      "value": "cm:garreg_conquest",
+      "tiers": [
+        1,
+        5,
+        15
+      ],
+      "name": {
+        "fr": "Pèlerin armé",
+        "en": "Armed Pilgrim"
+      },
+      "description": {
+        "fr": "Participer à {n} prises de Garreg-Mach.",
+        "en": "Take part in {n} captures of Garreg Mach."
+      }
+    },
+    {
+      "id": "merciful",
+      "icon": "🕊️",
+      "value": "cm:spare",
+      "tiers": [
+        3,
+        10,
+        30
+      ],
+      "name": {
+        "fr": "Miséricordieux",
+        "en": "Merciful"
+      },
+      "description": {
+        "fr": "Épargner {n} généraux.",
+        "en": "Spare {n} generals."
+      }
+    },
+    {
+      "id": "soulmate",
+      "icon": "💞",
+      "value": "genS",
+      "tiers": [
+        1
+      ],
+      "name": {
+        "fr": "Âme sœur",
+        "en": "Soulmate"
+      },
+      "description": {
+        "fr": "Atteindre un soutien S avec un général.",
+        "en": "Reach an S support with a general."
+      }
+    },
+    {
+      "id": "company_heart",
+      "icon": "💗",
+      "value": "genA",
+      "tiers": [
+        3,
+        6,
+        10
+      ],
+      "name": {
+        "fr": "Cœur de la compagnie",
+        "en": "Heart of the Company"
+      },
+      "description": {
+        "fr": "Atteindre un soutien A avec {n} généraux différents.",
+        "en": "Reach an A support with {n} different generals."
+      }
+    },
+    {
+      "id": "strategist",
+      "icon": "♟️",
+      "value": "stat:campaigns_won",
+      "tiers": [
+        3,
+        10,
+        25
+      ],
+      "name": {
+        "fr": "Stratège",
+        "en": "Strategist"
+      },
+      "description": {
+        "fr": "Gagner {n} campagnes avec sa faction.",
+        "en": "Win {n} campaigns with your faction."
+      }
+    },
+    {
+      "id": "tyrant",
+      "icon": "👑",
+      "value": "stat:campaigns_conquest",
+      "tiers": [
+        1
+      ],
+      "name": {
+        "fr": "Tyran",
+        "en": "Tyrant"
+      },
+      "description": {
+        "fr": "Gagner une campagne par conquête totale de la carte.",
+        "en": "Win a campaign by conquering the whole map."
+      }
+    },
+    {
+      "id": "untouchable",
+      "icon": "✨",
+      "value": "stat:campaigns_flawless",
+      "tiers": [
+        1,
+        3,
+        10
+      ],
+      "name": {
+        "fr": "Intouchable",
+        "en": "Untouchable"
+      },
+      "description": {
+        "fr": "Finir {n} campagnes sans jamais être mis hors de combat.",
+        "en": "Finish {n} campaigns without ever being knocked out."
+      }
+    },
+    {
+      "id": "podium",
+      "icon": "🏅",
+      "value": "stat:campaigns_top3",
+      "tiers": [
+        3,
+        10,
+        25
+      ],
+      "name": {
+        "fr": "Toujours sur le podium",
+        "en": "Always on the Podium"
+      },
+      "description": {
+        "fr": "Finir {n} fois dans le top 3 d'une campagne.",
+        "en": "Finish in the top 3 of a campaign {n} times."
+      }
+    },
+    {
+      "id": "patron",
+      "icon": "💰",
+      "value": "stat:gold_spent",
+      "tiers": [
+        10000,
+        50000,
+        200000
+      ],
+      "name": {
+        "fr": "Mécène",
+        "en": "Patron"
+      },
+      "description": {
+        "fr": "Dépenser {n} or.",
+        "en": "Spend {n} gold."
+      }
+    },
+    {
+      "id": "builder",
+      "icon": "🧱",
+      "value": "cm:build",
+      "tiers": [
+        10,
+        30,
+        100
+      ],
+      "name": {
+        "fr": "Bâtisseur",
+        "en": "Builder"
+      },
+      "description": {
+        "fr": "Faire {n} constructions ou améliorations.",
+        "en": "Make {n} constructions or upgrades."
+      }
+    },
+    {
+      "id": "phoenix",
+      "icon": "🔥",
+      "value": "deaths",
+      "tiers": [
+        10,
+        50,
+        150
+      ],
+      "name": {
+        "fr": "Phénix",
+        "en": "Phoenix"
+      },
+      "description": {
+        "fr": "Être mis hors de combat {n} fois.",
+        "en": "Be knocked out {n} times."
+      }
+    },
+    {
+      "id": "siege_breaker",
+      "icon": "🏰",
+      "value": "stat:siege_breaks",
+      "tiers": [
+        5,
+        15,
+        30
+      ],
+      "name": {
+        "fr": "Briseur de sièges",
+        "en": "Siege Breaker"
+      },
+      "description": {
+        "fr": "Repousser {n} attaques où l'ennemi était plus nombreux.",
+        "en": "Repel {n} attacks where the enemy outnumbered you."
+      }
+    },
+    {
+      "id": "giant_slayer",
+      "icon": "🪨",
+      "value": "stat:underdog_wins",
+      "tiers": [
+        1,
+        5,
+        15
+      ],
+      "name": {
+        "fr": "David contre Goliath",
+        "en": "Giant Slayer"
+      },
+      "description": {
+        "fr": "Remporter {n} attaques à moins de 25 % de chances.",
+        "en": "Win {n} attacks with less than 25% odds."
+      }
+    },
+    {
+      "id": "kingslayer",
+      "icon": "🗡️",
+      "value": "stat:lords_slain",
+      "tiers": [
+        1,
+        3,
+        10
+      ],
+      "name": {
+        "fr": "Tueur de rois",
+        "en": "Kingslayer"
+      },
+      "description": {
+        "fr": "Vaincre un seigneur {n} fois.",
+        "en": "Defeat a lord {n} times."
+      }
+    },
+    {
+      "id": "knight_bane",
+      "icon": "⚔️",
+      "value": "stat:knights_slain",
+      "tiers": [
+        5,
+        15,
+        40
+      ],
+      "name": {
+        "fr": "Fossoyeur des chevaliers",
+        "en": "Bane of Knights"
+      },
+      "description": {
+        "fr": "Vaincre {n} chevaliers de Seiros.",
+        "en": "Defeat {n} Knights of Seiros."
+      }
+    },
+    {
+      "id": "mercenary",
+      "icon": "🪙",
+      "value": "stat:hires",
+      "tiers": [
+        10,
+        50,
+        150
+      ],
+      "name": {
+        "fr": "Mercenaire",
+        "en": "Mercenary"
+      },
+      "description": {
+        "fr": "Engager {n} bataillons ou fortifications contre de l'or.",
+        "en": "Hire {n} battalions or fortifications for gold."
+      }
+    },
+    {
+      "id": "horn_blower",
+      "icon": "📯",
+      "value": "stat:rally_wins",
+      "tiers": [
+        5,
+        20,
+        50
+      ],
+      "name": {
+        "fr": "Sonneur de cor",
+        "en": "Horn Blower"
+      },
+      "description": {
+        "fr": "Lancer {n} appels à l'aide suivis d'une victoire.",
+        "en": "Call for help {n} times, followed by a victory."
+      }
+    },
+    {
+      "id": "bannerless",
+      "icon": "🏴",
+      "value": "exileCombats",
+      "tiers": [
+        10,
+        50,
+        150
+      ],
+      "name": {
+        "fr": "Sans bannière",
+        "en": "Bannerless"
+      },
+      "description": {
+        "fr": "Combattre {n} fois en Exilé.",
+        "en": "Fight {n} times as an Exile."
+      }
+    },
+    {
+      "id": "loyal",
+      "icon": "🎖️",
+      "value": "loyal",
+      "tiers": [
+        3,
+        10,
+        25
+      ],
+      "name": {
+        "fr": "Fidèle jusqu'au bout",
+        "en": "Loyal to the End"
+      },
+      "description": {
+        "fr": "Obtenir {n} fois les distinctions Vétéran ou Dernier rempart.",
+        "en": "Earn the Veteran or Last Stand distinctions {n} times."
+      }
+    },
+    {
+      "id": "abyss_shadow",
+      "icon": "🌘",
+      "value": "wolvesWins",
+      "tiers": [
+        1,
+        3,
+        10
+      ],
+      "name": {
+        "fr": "Ombre de l'Abysse",
+        "en": "Shadow of the Abyss"
+      },
+      "description": {
+        "fr": "Gagner {n} campagnes avec les Loups de cendre.",
+        "en": "Win {n} campaigns with the Ashen Wolves."
+      }
+    },
+    {
+      "id": "helping_hand",
+      "icon": "🤲",
+      "value": "stat:hp_healed",
+      "tiers": [
+        500,
+        2000,
+        10000
+      ],
+      "name": {
+        "fr": "Main secourable",
+        "en": "Helping Hand"
+      },
+      "description": {
+        "fr": "Rendre {n} PV à des alliés.",
+        "en": "Restore {n} HP to allies."
+      }
+    },
+    {
+      "id": "guardian_angel",
+      "icon": "😇",
+      "value": "stat:rescues",
+      "tiers": [
+        10,
+        50,
+        150
+      ],
+      "name": {
+        "fr": "Ange gardien",
+        "en": "Guardian Angel"
+      },
+      "description": {
+        "fr": "Soigner {n} fois un allié à 25 % de PV ou moins.",
+        "en": "Heal an ally at 25% HP or less {n} times."
+      }
+    },
+    {
+      "id": "unkillable",
+      "icon": "💪",
+      "value": "stat:wounds_survived",
+      "tiers": [
+        5,
+        20,
+        50
+      ],
+      "name": {
+        "fr": "Increvable",
+        "en": "Unkillable"
+      },
+      "description": {
+        "fr": "Revenir {n} fois d'une blessure grave (moins de 25 % de PV) sans être mis hors de combat.",
+        "en": "Recover {n} times from a grave wound (under 25% HP) without being knocked out."
+      }
+    },
+    {
+      "id": "living_legend",
+      "icon": "🌟",
+      "value": "renown",
+      "tiers": [
+        10,
+        25,
+        50
+      ],
+      "name": {
+        "fr": "Légende vivante",
+        "en": "Living Legend"
+      },
+      "description": {
+        "fr": "Atteindre la renommée {n}.",
+        "en": "Reach renown {n}."
+      }
+    },
+    {
+      "id": "weapon_master",
+      "icon": "🎓",
+      "value": "classes",
+      "tiers": [
+        5,
+        15,
+        30
+      ],
+      "name": {
+        "fr": "Maître d'armes",
+        "en": "Weapon Master"
+      },
+      "description": {
+        "fr": "Débloquer {n} classes différentes.",
+        "en": "Unlock {n} different classes."
+      }
+    },
+    {
+      "id": "collector",
+      "icon": "🖼️",
+      "value": "avatars",
+      "tiers": [
+        10,
+        25,
+        40
+      ],
+      "name": {
+        "fr": "Collectionneur",
+        "en": "Collector"
+      },
+      "description": {
+        "fr": "Posséder {n} avatars.",
+        "en": "Own {n} avatars."
+      }
+    },
+    {
+      "id": "friend_to_all",
+      "icon": "🤝",
+      "value": "friends",
+      "tiers": [
+        10,
+        20,
+        30
+      ],
+      "name": {
+        "fr": "Ami de tous",
+        "en": "Friend to All"
+      },
+      "description": {
+        "fr": "Atteindre un soutien C ou plus avec {n} joueurs.",
+        "en": "Reach a C support or better with {n} players."
+      }
+    },
+    {
+      "id": "harvester",
+      "icon": "🌾",
+      "value": "stat:gather",
+      "tiers": [
+        200,
+        1000,
+        5000
+      ],
+      "name": {
+        "fr": "Moissonneur",
+        "en": "Harvester"
+      },
+      "description": {
+        "fr": "Récolter {n} fois.",
+        "en": "Gather {n} times."
+      }
+    },
+    {
+      "id": "treasurer",
+      "icon": "🏦",
+      "value": "stat:gold_earned",
+      "tiers": [
+        20000,
+        100000,
+        500000
+      ],
+      "name": {
+        "fr": "Trésorier",
+        "en": "Treasurer"
+      },
+      "description": {
+        "fr": "Gagner {n} or au total.",
+        "en": "Earn {n} gold in total."
+      }
+    },
+    {
+      "id": "architect",
+      "icon": "📐",
+      "value": "stat:max_builds",
+      "tiers": [
+        3,
+        10,
+        25
+      ],
+      "name": {
+        "fr": "Architecte",
+        "en": "Architect"
+      },
+      "description": {
+        "fr": "Porter {n} bâtiments au niveau maximum.",
+        "en": "Bring {n} buildings to the maximum level."
+      }
+    },
+    {
+      "id": "diligent",
+      "icon": "📅",
+      "value": "stat:days_played",
+      "tiers": [
+        7,
+        30,
+        100
+      ],
+      "name": {
+        "fr": "Assidu",
+        "en": "Diligent"
+      },
+      "description": {
+        "fr": "Jouer {n} jours différents.",
+        "en": "Play on {n} different days."
+      }
+    },
+    {
+      "id": "night_owl",
+      "icon": "🦉",
+      "value": "stat:night_actions",
+      "tiers": [
+        50,
+        200,
+        1000
+      ],
+      "name": {
+        "fr": "Oiseau de nuit",
+        "en": "Night Owl"
+      },
+      "description": {
+        "fr": "Agir {n} fois pendant les heures calmes (minuit à 6 h).",
+        "en": "Act {n} times during the quiet hours (midnight to 6 am)."
+      }
+    },
+    {
+      "id": "overdriver",
+      "icon": "🚀",
+      "value": "stat:overdrive_wins",
+      "tiers": [
+        10,
+        50,
+        150
+      ],
+      "name": {
+        "fr": "Overdrive !",
+        "en": "Overdrive!"
+      },
+      "description": {
+        "fr": "Remporter {n} batailles pendant l'Overdrive.",
+        "en": "Win {n} battles during Overdrive."
+      }
+    },
+    {
+      "id": "sothis_approves",
+      "icon": "⏳",
+      "value": "played",
+      "tiers": [
+        10,
+        25,
+        50
+      ],
+      "name": {
+        "fr": "Sothis approuve",
+        "en": "Sothis Approves"
+      },
+      "description": {
+        "fr": "Participer à {n} campagnes.",
+        "en": "Take part in {n} campaigns."
+      }
+    },
+    {
+      "id": "carrier_pigeon",
+      "icon": "🕊",
+      "value": "stat:move",
+      "tiers": [
+        500,
+        2000,
+        10000
+      ],
+      "name": {
+        "fr": "Pigeon voyageur",
+        "en": "Carrier Pigeon"
+      },
+      "description": {
+        "fr": "Faire {n} déplacements.",
+        "en": "Make {n} moves."
+      }
+    },
+    {
+      "id": "cutthroat",
+      "icon": "🔪",
+      "value": "stat:strikes",
+      "tiers": [
+        5,
+        25,
+        75
+      ],
+      "name": {
+        "fr": "Coupe-gorge",
+        "en": "Cutthroat"
+      },
+      "description": {
+        "fr": "Utiliser Strike down! {n} fois.",
+        "en": "Use Strike down! {n} times."
+      }
+    }
+  ]
 }

@@ -283,6 +283,22 @@ module.exports = function createCampaign(ctx) {
       created_at  TEXT NOT NULL,
       PRIMARY KEY (user_id, distinction, campaign_id)
     );
+    -- Strike down! : un vainqueur frappe un vaincu en repli (une fois par bataille et par cible).
+    CREATE TABLE IF NOT EXISTS battle_strikes (
+      battle_id INTEGER NOT NULL,
+      striker   INTEGER NOT NULL,
+      target    INTEGER NOT NULL,
+      at        INTEGER NOT NULL,
+      PRIMARY KEY (battle_id, striker, target)
+    );
+    -- Distinctions à paliers (config « feats ») : le plus haut palier atteint par joueur.
+    CREATE TABLE IF NOT EXISTS feat_tiers (
+      user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      feat       TEXT NOT NULL,
+      tier       INTEGER NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (user_id, feat)
+    );
   `);
   {
     const cols = (table) => db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
@@ -410,6 +426,23 @@ module.exports = function createCampaign(ctx) {
     deadPlayers: db.prepare("SELECT p.user_id, c.faction FROM player_state p JOIN characters c ON c.user_id = p.user_id WHERE p.status = 'dead'"),
     // Membres d'une faction qui ont pris part à la campagne (au moins un point au classement).
     participants: db.prepare('SELECT s.user_id FROM campaign_scores s JOIN characters c ON c.user_id = s.user_id WHERE s.campaign_id = ? AND s.score > 0 AND c.faction = ?'),
+    lastResolvedAt: db.prepare('SELECT * FROM battles WHERE territory = ? AND resolved_at IS NOT NULL ORDER BY resolved_at DESC, id DESC LIMIT 1'),
+    retreatingHere: db.prepare(`SELECT p.user_id, p.retreat_until, p.retreat_penalty, p.fall_mult, c.pseudo, c.avatar, c.class, c.xp, c.faction FROM player_state p
+                                 JOIN characters c ON c.user_id = p.user_id WHERE p.territory = ? AND p.status = 'retreating' AND p.retreat_until > ?`),
+    struck: db.prepare('SELECT 1 FROM battle_strikes WHERE battle_id = ? AND striker = ? AND target = ?'),
+    addStrike: db.prepare('INSERT OR IGNORE INTO battle_strikes (battle_id, striker, target, at) VALUES (?, ?, ?, ?)'),
+    onSide: db.prepare('SELECT 1 FROM contributions WHERE battle_id = ? AND user_id = ? AND side = ? LIMIT 1'),
+    featTiers: db.prepare('SELECT feat, tier FROM feat_tiers WHERE user_id = ?'),
+    setFeatTier: db.prepare('INSERT INTO feat_tiers (user_id, feat, tier, created_at) VALUES (?, ?, ?, ?) ON CONFLICT (user_id, feat) DO UPDATE SET tier = excluded.tier, created_at = excluded.created_at WHERE excluded.tier > feat_tiers.tier'),
+    fvCm: db.prepare('SELECT coalesce(sum(count), 0) AS n FROM campaign_mission_progress WHERE user_id = ? AND event = ?'),
+    fvDeaths: db.prepare('SELECT coalesce(sum(deaths), 0) AS n FROM campaign_scores WHERE user_id = ?'),
+    fvExile: db.prepare('SELECT coalesce(sum(exile_combats), 0) AS n FROM campaign_scores WHERE user_id = ?'),
+    fvGenRel: db.prepare('SELECT count(*) AS n FROM relations WHERE user_id = ? AND points >= ?'),
+    fvFriends: db.prepare('SELECT count(*) AS n FROM player_relations WHERE (a = ? OR b = ?) AND points >= ?'),
+    fvLoyal: db.prepare("SELECT count(*) AS n FROM distinctions WHERE user_id = ? AND distinction IN ('veteran', 'last_stand')"),
+    fvWolves: db.prepare("SELECT count(*) AS n FROM campaign_results WHERE user_id = ? AND json_extract(data, '$.won') = 1 AND json_extract(data, '$.faction') = ?"),
+    fvPlayed: db.prepare('SELECT count(*) AS n FROM campaign_results WHERE user_id = ?'),
+    fvRallies: db.prepare('SELECT user_id FROM battle_rallies WHERE battle_id = ?'),
     addDistinction: db.prepare('INSERT OR IGNORE INTO distinctions (user_id, distinction, campaign_id, created_at) VALUES (?, ?, ?, ?)'),
     distinctions: db.prepare('SELECT distinction, count(*) AS n FROM distinctions WHERE user_id = ? GROUP BY distinction'),
     clearStates: db.prepare('DELETE FROM player_state'),
@@ -577,6 +610,8 @@ module.exports = function createCampaign(ctx) {
   // pendant `wound.actions` actions. Sa faction tombée, il reste hors jeu (exil possible) comme avant.
   function woundPlayer(uid, mult, snipe, t, byHp = false) {
     q.addDeath.run(currentCampaign().id, uid);
+    featsDirty.add(uid);
+    if (ctx.statOf && ctx.setStat && ctx.statOf(uid, 'wound_flag')) ctx.setStat(uid, 'wound_flag', 0); // tombé : la blessure ne compte pas
     metric('wounded', 1);
     const side = effFaction(uid);
     const spot = side && spawnTerritory(side, ownersMap());
@@ -735,7 +770,8 @@ module.exports = function createCampaign(ctx) {
 
   // ------------------------------------------------------------ Missions de campagne
   // Événements comptés par le serveur : conquest, defense, garreg_conquest, retake, annex_conquest, spare, general.
-  const cm = (userId, event, n = 1) => { q.cmBump.run(currentCampaign().id, userId, event, n); };
+  const cm = (userId, event, n = 1) => { q.cmBump.run(currentCampaign().id, userId, event, n); featsDirty.add(userId); };
+  const st = (userId, key, n = 1) => { if (ctx.countStat && n > 0) ctx.countStat(userId, key, n); featsDirty.add(userId); };
   function missionState(userId) {
     const cid = currentCampaign().id;
     const progress = new Map(q.cmProgress.all(cid, userId).map((r) => [r.event, r.count]));
@@ -800,6 +836,108 @@ module.exports = function createCampaign(ctx) {
     const fallen = isOut(ch.faction);
     return { fallen, frozen: fallen && q.state.get(userId)?.status === 'dead' };
   }
+  // ------------------------------------------------------------ Distinctions à paliers (config « feats »)
+  // Chaque distinction suit une valeur (compteur de campagne cumulé, statistique durable ou valeur calculée) et des seuils ;
+  // le palier atteint est gardé (rétroactif : la plupart des valeurs viennent de l'historique).
+  const FEATS = config.feats || [];
+  const featsDirty = new Set();
+  const featChecked = new Map(); // dernière vérification complète par joueur (/me)
+  let featsBooted = false;
+  function featValue(userId, key, cache) {
+    if (cache.has(key)) return cache.get(key);
+    let v = 0;
+    const [kind, arg] = key.split(':');
+    const lvl = (id) => R.levels.find((l) => l.id === id)?.points ?? Infinity;
+    if (kind === 'cm') v = q.fvCm.get(userId, arg).n;
+    else if (kind === 'stat') v = ctx.statOf ? ctx.statOf(userId, arg) : 0;
+    else if (kind === 'deaths') v = q.fvDeaths.get(userId).n;
+    else if (kind === 'exileCombats') v = q.fvExile.get(userId).n;
+    else if (kind === 'genS') v = q.fvGenRel.get(userId, lvl('S')).n;
+    else if (kind === 'genA') v = q.fvGenRel.get(userId, lvl('A')).n;
+    else if (kind === 'friends') v = q.fvFriends.get(userId, userId, lvl('C')).n;
+    else if (kind === 'loyal') v = q.fvLoyal.get(userId).n;
+    else if (kind === 'wolvesWins') v = q.fvWolves.get(userId, 'violette').n;
+    else if (kind === 'played') v = q.fvPlayed.get(userId).n;
+    else if (kind === 'renown') v = renown(q.char.get(userId)?.xp || 0).level;
+    else if (kind === 'classes') {
+      const ch = q.char.get(userId);
+      const seen = new Set(ch ? fx.pathOf(ch) : []);
+      for (const r of db.prepare('SELECT from_class AS a, to_class AS b FROM class_changes WHERE user_id = ?').all(userId)) { seen.add(r.a); seen.add(r.b); }
+      v = seen.size;
+    } else if (kind === 'avatars') {
+      const free = config.avatars?.free?.length || 0;
+      v = free + db.prepare('SELECT count(*) AS n FROM unlocked_avatars WHERE user_id = ?').get(userId).n;
+    }
+    cache.set(key, Number(v) || 0);
+    return cache.get(key);
+  }
+  const featsOf = (userId) => q.featTiers.all(userId).map((r) => ({ id: r.feat, tier: r.tier }));
+  // Valeur actuelle de chaque distinction (pour son propre suivi).
+  function featProgress(userId) {
+    const cache = new Map();
+    return Object.fromEntries(FEATS.map((f) => [f.id, featValue(userId, f.value, cache)]));
+  }
+  // Vérifie et attribue les paliers atteints. Plus de 2 d'un coup (rattrapage) : une seule notification.
+  function checkFeats(userId) {
+    if (!FEATS.length || !q.char.get(userId)) return [];
+    const have = new Map(featsOf(userId).map((x) => [x.id, x.tier]));
+    const cache = new Map();
+    const gained = [];
+    for (const f of FEATS) {
+      const v = featValue(userId, f.value, cache);
+      const tier = f.tiers.filter((n) => v >= n).length;
+      if (tier > (have.get(f.id) || 0) && q.setFeatTier.run(userId, f.id, tier, iso()).changes === 1) gained.push({ feat: f.id, tier });
+    }
+    if (gained.length > 2) notify(userId, 'feats_many', { n: gained.length });
+    else for (const g of gained) notify(userId, 'feat', g);
+    return gained;
+  }
+  function flushFeats() {
+    if (!featsBooted) { featsBooted = true; for (const c of q.chars.all()) featsDirty.add(c.user_id); } // rattrapage au démarrage
+    if (!featsDirty.size) return;
+    const ids = [...featsDirty];
+    featsDirty.clear();
+    for (const uid of ids) checkFeats(uid);
+  }
+  // Vérification complète de temps en temps (renommée, avatars, soutiens…), à l'ouverture de /me.
+  function touchFeats(userId) {
+    const t = Date.now();
+    if (t - (featChecked.get(userId) || 0) < 60_000) return;
+    featChecked.set(userId, t);
+    checkFeats(userId);
+  }
+  const markFeats = (userId) => featsDirty.add(userId);
+  // Exploits de bataille : siège brisé, victoire improbable, Overdrive, appel à l'aide suivi d'une victoire.
+  function battleFeats(b, success, winner, chance, t) {
+    const atk = q.sideActors.all(b.id, 'attack').map((r) => r.user_id);
+    const def = q.sideActors.all(b.id, 'defense').map((r) => r.user_id);
+    const winners = success ? atk : def;
+    if (!success && atk.length > def.length) for (const uid of def) st(uid, 'siege_breaks');
+    if (success && chance < 0.25) for (const uid of atk) st(uid, 'underdog_wins');
+    for (const uid of winners) if (overdriveOf(uid, t)) st(uid, 'overdrive_wins');
+    for (const { user_id: uid } of q.fvRallies.all(b.id)) if (effFaction(uid) === winner) st(uid, 'rally_wins');
+  }
+
+  // ------------------------------------------------------------ Strike down!
+  // Après une bataille, un vainqueur (attaque ou défense, qui a agi) peut frapper un vaincu resté en repli sur le territoire :
+  // -hp.strikeDown PV (plus l'effet strikeDown, Cavalier archer), une fois par cible. À 0 PV, la cible est mise hors de combat.
+  function strikeTargets(userId, t) {
+    if (!hpOn()) return { battle: null, list: [] };
+    const ps = q.state.get(userId);
+    if (!ps || ps.status !== 'alive' || !ps.territory) return { battle: null, list: [] };
+    const b = q.lastResolvedAt.get(ps.territory);
+    if (!b) return { battle: null, list: [] };
+    const won = b.success ? 'attack' : 'defense';
+    const lost = b.success ? 'defense' : 'attack';
+    if (!q.onSide.get(b.id, userId, won)) return { battle: b, list: [] };
+    const loser = b.success ? b.defender : b.attacker;
+    const mine = effFaction(userId);
+    const list = q.retreatingHere.all(ps.territory, t).filter((r) => r.user_id !== userId && effFaction(r.user_id) !== mine
+      && (q.onSide.get(b.id, r.user_id, lost) || effFaction(r.user_id) === loser) && !q.struck.get(b.id, userId, r.user_id));
+    return { battle: b, list };
+  }
+  const strikeDamage = (userId) => (Number(HP.strikeDown) || 0) + fx.sumOf(effectsOfUser(userId), 'strikeDown', 'hp');
+
   // Distinction (titre et avatar exclusif), une par campagne et par type.
   function award(userId, id) {
     const d = DISTINCTIONS.get(id);
@@ -948,6 +1086,11 @@ module.exports = function createCampaign(ctx) {
     const s = settle(ps, t);
     if (s.actions < 1) throw new HttpError(409, 'no_actions');
     metric('actions_spent', 1);
+    if (quietHour(t)) st(ps.user_id, 'night_actions');
+    if (ctx.statOf && ctx.setStat) {
+      const day = Math.floor((t + zoneOffset(t, C.boss.quietHours?.timezone || 'Europe/Paris')) / 86_400_000);
+      if (ctx.statOf(ps.user_id, 'last_day') !== day) { ctx.setStat(ps.user_id, 'last_day', day); st(ps.user_id, 'days_played'); }
+    }
     q.setActions.run(s.actions - 1, s.actions >= s.max ? t : s.at, ps.user_id);
     const turn = Math.floor(t / TURN_MS);
     if (C.cadenceGold > 0 && ps.bonus_turn !== turn) {
@@ -967,7 +1110,7 @@ module.exports = function createCampaign(ctx) {
   const HP = {
     enabled: false, start: 'season', max: { base: 30 }, sturdy: { classes: [], bonus: 0 }, frail: { classes: [], bonus: 0 },
     loss: {}, malus: [], regen: { perHour: 2, alliedPerHour: 4, overdriveFactor: 1 }, koReturnPct: 50, heal: {}, selfFactor: 0.5, healXp: 0,
-    vial: { gold: 150, hp: 8, perDay: 3 }, generals: { sortieMinPct: 50, healBelowPct: 70 },
+    vial: { gold: 150, hp: 8, perDay: 3 }, strikeDown: 3, generals: { sortieMinPct: 50, healBelowPct: 70 },
     ...(C.hp || {}),
   };
   function hpOn() {
@@ -1003,7 +1146,13 @@ module.exports = function createCampaign(ctx) {
     const cur = ptsOf(row.hp_pts, max);
     return { cur, max, frac: cur / max };
   }
-  const storePlayerHp = (uid, cur, max) => q.setHpPts.run(cur >= max ? null : Math.max(0, Math.round(cur)), uid);
+  const GRAVE_PCT = Math.min(...(HP.malus || []).map((m) => m.below), 25);
+  const storePlayerHp = (uid, cur, max) => {
+    q.setHpPts.run(cur >= max ? null : Math.max(0, Math.round(cur)), uid);
+    if (!ctx.statOf || !ctx.setStat) return;
+    if (cur > 0 && (cur / max) * 100 < GRAVE_PCT) { if (!ctx.statOf(uid, 'wound_flag')) ctx.setStat(uid, 'wound_flag', 1); }
+    else if (cur >= max && ctx.statOf(uid, 'wound_flag')) { ctx.setStat(uid, 'wound_flag', 0); st(uid, 'wounds_survived'); }
+  };
   const storeGenHp = (row, cur, max) => { const v = cur >= max ? null : Math.max(0, Math.round(cur)); q.setGenHpPts.run(v, row.gid); row.hp_pts = v; };
   const hpPct = (h) => Math.ceil(h.frac * 100);
   // Malus de puissance selon les PV restants (le seuil le plus bas atteint l'emporte).
@@ -1663,6 +1812,7 @@ module.exports = function createCampaign(ctx) {
       grant(uid, gain.gold, gain.xp, 'general');
       cm(uid, 'general');
       notify(uid, 'general_defeated', { general: CH.immaculate, ...paid });
+      st(uid, 'immaculate_slain');
     }
     journal('immaculate_fell', { faction: by || null }, t);
     for (const c of q.chars.all()) notify(c.user_id, 'immaculate_fell', { faction: by || null });
@@ -1707,6 +1857,11 @@ module.exports = function createCampaign(ctx) {
       grant(uid, gain.gold, gain.xp, 'general');
       cm(uid, 'general');
       notify(uid, 'general_defeated', { general: row.gid, ...paid });
+    }
+    for (const uid of foes) {
+      if (isLord(row.gid)) st(uid, 'lords_slain');
+      if (row.faction === CH.faction && row.gid !== CH.lord && row.gid !== CH.immaculate) st(uid, 'knights_slain');
+      if (row.gid === G.serpents.finalBoss) st(uid, 'epimenides_slain');
     }
     if (row.gid === CH.immaculate) return null; // l'Immaculée ne tombe qu'à son dernier assaut repoussé
     if (row.gid === CH.lord && b.territory === CH.seat && ownersMap().get(CH.seat) !== CH.faction) return awaken(winner, t);
@@ -2061,6 +2216,7 @@ module.exports = function createCampaign(ctx) {
       }
       for (const uid of atk) streak(uid, 'atk_streak', true);
       if (atk.length === 1 && ctx.countStat) ctx.countStat(atk[0], 'solo_attacks');
+      battleFeats(b, true, b.attacker, chance, t);
       for (const { user_id: uid } of q.sideActors.all(b.id, 'defense')) streak(uid, 'def_streak', false);
       // Dernier territoire d'une faction : ceux qui l'ont défendu reçoivent la distinction « Dernier rempart ».
       if (b.defender && PLAYABLE.has(b.defender) && !perks(b.defender).neverOut) {
@@ -2110,6 +2266,7 @@ module.exports = function createCampaign(ctx) {
       const def = q.sideActors.all(b.id, 'defense').map((r) => r.user_id);
       for (const uid of def) { streak(uid, 'def_streak', true); cm(uid, 'defense'); }
       if (def.length === 1 && ctx.countStat) ctx.countStat(def[0], 'solo_defenses');
+      battleFeats(b, false, guard || b.defender, chance, t);
       const reward = { gold: C.defenseRewards.gold * scale, xp: C.defenseRewards.xp * scale };
       for (const { user_id: uid } of q.sideUsers.all(b.id, 'defense')) {
         const rbd = relBonuses(uid);
@@ -2421,6 +2578,7 @@ module.exports = function createCampaign(ctx) {
     try {
       currentCampaign();
       for (const b of q.dueBattles.all(t)) resolveBattle(b, t);
+      flushFeats();
       if (phase(t) === 'break') { checkEnd(t); return; } // pause entre deux campagnes : plus rien ne bouge
       for (const { user_id: uid, retreat_penalty: snipe, fall_mult: mult } of q.retreatDue.all(t)) woundPlayer(uid, mult || 1, snipe || 0, t);
       q.dropGarrison.run('', t);
@@ -2546,6 +2704,12 @@ module.exports = function createCampaign(ctx) {
       exile: exileInfo(userId),
       // Alliés tombés qui demandent qu'on paie leur retour.
       fallen: side ? q.fallen.all(side, userId).map((r) => ({ id: r.user_id, pseudo: r.pseudo, cost: Math.round(reviveCost(side) * r.fall_mult) })) : [],
+      // Vaincus en repli que je peux frapper (Strike down!).
+      strikes: (() => {
+        const { list } = strikeTargets(userId, t);
+        const dmg = strikeDamage(userId);
+        return list.map((r) => ({ pseudo: r.pseudo, avatar: r.avatar, faction: effFaction(r.user_id), class: r.class, level: renown(r.xp).level, hp: hpPct(playerHp(r.user_id) || { frac: 1 }), until: r.retreat_until, damage: dmg }));
+      })(),
       // Généraux vaincus que ma faction peut épargner ou faire mourir.
       verdicts: q.verdicts.all().filter((v) => q.verdictVoter.get(v.battle_id, userId, v.winner)).map((v) => {
         const g = q.general.get(v.gid);
@@ -3193,6 +3357,7 @@ module.exports = function createCampaign(ctx) {
         if (!pay(user.id, price, 'build')) throw new HttpError(409, 'not_enough_gold');
         bonus = spend(ps, t);
         q.buildSet.run(here, use, level + 1);
+        if (level + 1 >= C.build.maxLevel) st(user.id, 'max_builds');
         homeXp(); // Monica
         score(user.id, C.ranking.gather);
         onEvent(user.id, 'build');
@@ -3212,6 +3377,7 @@ module.exports = function createCampaign(ctx) {
           battle ? null : t + C.battleTurns * TURN_MS, 'hire', 0);
         score(user.id, C.ranking.combat);
         if (side === 'attack') onEvent(user.id, 'battalion');
+        st(user.id, 'hires');
       } else if (action === 'heal') {
         // Soigner (classes de soin) : 1 action, un allié présent sur le même territoire (joueur ou général), ou soi-même à moitié.
         if (!hpOn()) throw new HttpError(409, 'invalid_action');
@@ -3230,14 +3396,14 @@ module.exports = function createCampaign(ctx) {
           const gh = genHpOf(g);
           if (gh.cur >= gh.max) throw new HttpError(409, 'hp_full');
           bonus = spend(ps, t);
-          heal = { name: GEN.get(g.gid).name, hp: healGeneral(g, amount) };
+          heal = { name: GEN.get(g.gid).name, hp: healGeneral(g, amount), low: gh.cur / gh.max <= 0.25 };
         } else {
           const other = q.hpHere.all(here, side).find((r) => r.pseudo === target && r.user_id !== user.id);
           if (!other) throw new HttpError(409, 'heal_target');
           const oh = playerHp(other.user_id);
           if (!oh || oh.cur >= oh.max) throw new HttpError(409, 'hp_full');
           bonus = spend(ps, t);
-          heal = { name: other.pseudo, hp: healPlayer(other.user_id, amount + pairHeal(user.id, other.user_id)) };
+          heal = { name: other.pseudo, hp: healPlayer(other.user_id, amount + pairHeal(user.id, other.user_id)), low: oh.cur / oh.max <= 0.25 };
           notify(other.user_id, 'healed_by', { pseudo: ch.pseudo, hp: heal.hp });
         }
         if (!heal.self && HP.healXp) grant(user.id, 0, HP.healXp, 'heal');
@@ -3246,6 +3412,7 @@ module.exports = function createCampaign(ctx) {
         metric('heals', 1);
         q.tickDebuff.run(user.id);
         relFx.push({ kind: 'healed', name: heal.name, hp: heal.hp });
+        if (!heal.self) { st(user.id, 'hp_healed', heal.hp); if (heal.low) st(user.id, 'rescues'); }
       } else if (action === 'vial') {
         // Fiole : de l'or contre quelques PV, sans action, quelques fois par jour.
         if (!hpOn()) throw new HttpError(409, 'invalid_action');
@@ -3370,6 +3537,30 @@ module.exports = function createCampaign(ctx) {
     },
 
     // Verdict sur un général vaincu : épargné (il rejoint ma faction) ou mort. Réservé à ceux qui ont combattu pour les vainqueurs.
+    'POST /api/strike': async (req, res) => {
+      const { target } = await readJson(req);
+      const { user, ps, ch, t } = actor(req);
+      mustBeAlive(ps);
+      const { battle, list } = strikeTargets(user.id, t);
+      const tg = list.find((r) => r.pseudo === target);
+      if (!battle || !tg) throw new HttpError(409, 'strike_target');
+      if (q.addStrike.run(battle.id, user.id, tg.user_id, t).changes !== 1) throw new HttpError(409, 'strike_target');
+      const dmg = strikeDamage(user.id);
+      const h = playerHp(tg.user_id);
+      const ko = h.cur - dmg <= 0;
+      if (!ko) storePlayerHp(tg.user_id, h.cur - dmg, h.max);
+      notify(tg.user_id, 'struck_down', { pseudo: ch.pseudo, hp: Math.min(dmg, h.cur), territory: ps.territory, ko });
+      if (ko) {
+        storePlayerHp(tg.user_id, 0, h.max);
+        // Mis hors de combat comme un repli manqué : retour payant (x2 après une attaque ratée), actions vidées, gains réduits.
+        woundPlayer(tg.user_id, tg.fall_mult || 1, tg.retreat_penalty || 0, t, true);
+        journal('struck_down', { pseudo: ch.pseudo, target: tg.pseudo, territory: ps.territory, faction: effFaction(user.id) }, t);
+      }
+      metric('strikes', 1);
+      st(user.id, 'strikes'); // distinction Coupe-gorge
+      reply(res, user, { strike: { target: tg.pseudo, hp: Math.min(dmg, h.cur), ko } });
+    },
+
     'POST /api/general/verdict': async (req, res) => {
       const { general, spare } = await readJson(req);
       const { user, t } = actor(req);
@@ -3416,7 +3607,7 @@ module.exports = function createCampaign(ctx) {
       send(res, 200, {
         type: 'player', pseudo: ch.pseudo, formerPseudo: ch.former_pseudo || null, avatar: ch.avatar, faction: ch.faction, exile: ps?.exile_faction || null, territory: ps?.territory || null, class: ch.class, path: fx.pathOf(ch),
         level: renown(ch.xp).level, birthday: ch.birthday, score: sc, rank: sc > 0 ? q.betterScores.get(cid, sc).n + 1 : null,
-        distinctions: distinctionsOf(ch.user_id), status: ps?.status || null, me: ch.user_id === user.id, mods: modsOf(ch.user_id), others: playerOthers(ch.user_id),
+        distinctions: distinctionsOf(ch.user_id), feats: featsOf(ch.user_id), status: ps?.status || null, me: ch.user_id === user.id, mods: modsOf(ch.user_id), others: playerOthers(ch.user_id),
         hp: hpOn() && ps && ps.status !== 'dead' ? (({ hp, max, pct }) => ({ hp, max, pct }))(hpOfPlayer(ch.user_id)) : null,
         closest: closestOfPlayer(ch.user_id),
         relation: ch.user_id !== user.id && q.char.get(user.id) ? (() => { const n = pairPoints(user.id, ch.user_id); return { points: n, level: relLevel(n) }; })() : null,
@@ -3542,5 +3733,5 @@ module.exports = function createCampaign(ctx) {
     try { return JSON.parse(r.data); } catch { return null; }
   }
 
-  return { routes, tick, giveActions, onLevelUp, rewardActions, phaseNow: () => phase(Date.now()), missionState, missionsClaimable, claimMission, playerPayload, mapPayload, ensurePlayer, TURN_MS, fallenState, distinctionsOf, rewardMods, exileMult, resultFor, giftStates };
+  return { featsOf, featProgress, checkFeats, markFeats, touchFeats, routes, tick, giveActions, onLevelUp, rewardActions, phaseNow: () => phase(Date.now()), missionState, missionsClaimable, claimMission, playerPayload, mapPayload, ensurePlayer, TURN_MS, fallenState, distinctionsOf, rewardMods, exileMult, resultFor, giftStates };
 };

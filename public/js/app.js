@@ -83,6 +83,54 @@ const numKey = (key, id) => (isPlural(id) && hasText(`${key}.pl`) ? `${key}.pl` 
 const klass = (id) => state.config.classes.find((c) => c.id === id) || (state.config.npcClasses || []).find((c) => c.id === id);
 // Généraux : personnages non joueurs (config « generals »), avec leur portrait.
 const generalName = (id) => (state.config.generals?.roster || []).find((g) => g.id === id)?.name || id;
+// Distinctions à paliers (config « feats ») et distinctions classiques : libellés, pastilles cliquables et mini-fenêtre.
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+const featDef = (id) => (state.config.feats || []).find((f) => f.id === id);
+const distDef = (id) => (state.config.distinctions || []).find((d) => d.id === id);
+const featLabel = (id, tier) => { const f = featDef(id); return f ? loc(f.name) + (f.tiers.length > 1 && tier ? ' ' + ROMAN[tier] : '') : id; };
+const featText = (f, i) => loc(f.description).replace('{n}', fmtNum(f.tiers[i]));
+function featPill(x) {
+  const f = featDef(x.id);
+  return f ? `<button type="button" class="pill feat-pill t${f.tiers.length > 1 ? x.tier : 3}" data-feat="${esc(x.id)}">${f.icon || ''} ${esc(featLabel(x.id, x.tier))}</button>` : '';
+}
+const distPill = (x) => { const d = distDef(x.id); return d ? `<button type="button" class="pill feat-pill dist" data-dist="${esc(x.id)}">${esc(loc(d.name))}${x.count > 1 ? ` \u00D7${x.count}` : ''}</button>` : ''; };
+// owner : paliers connus du joueur affiché ; progress : valeur actuelle (seulement pour soi).
+function showFeat({ feat, dist, tier = 0, progress = null }) {
+  document.getElementById('feat-overlay')?.remove();
+  let body;
+  if (dist) {
+    const d = distDef(dist);
+    if (!d) return;
+    body = `<div class="feat-head"><span class="feat-icon">\u{1F396}\uFE0F</span><h3>${esc(loc(d.name))}</h3></div><p>${esc(loc(d.description))}</p>`;
+  } else {
+    const f = featDef(feat);
+    if (!f) return;
+    const multi = f.tiers.length > 1;
+    const steps = multi ? `<ul class="feat-tiers">${f.tiers.map((n, i) => `<li class="${tier > i ? 'done' : ''}"><b>${ROMAN[i + 1]}</b><span>${esc(featText(f, i))}</span>${tier > i ? '<i>\u2713</i>' : ''}</li>`).join('')}</ul>` : `<p>${esc(featText(f, 0))}</p>`;
+    const next = f.tiers[tier];
+    const prog = progress === null ? '' : next === undefined ? `<p class="feat-prog done">${esc(t('feats.maxed'))}</p>`
+      : `<div class="feat-prog"><span class="odds-bar"><i style="width:${Math.min(100, Math.round((progress / next) * 100))}%"></i></span><small>${esc(t('feats.progress', { v: fmtNum(Math.min(progress, next)), n: fmtNum(next) }))}</small></div>`;
+    body = `<div class="feat-head"><span class="feat-icon">${f.icon || ''}</span><h3>${esc(loc(f.name))}</h3>${tier ? `<span class="pill feat-pill t${multi ? tier : 3}">${esc(multi ? t('feats.tier', { n: ROMAN[tier] }) : t('feats.got'))}</span>` : `<span class="pill">${esc(t('feats.locked'))}</span>`}</div>${steps}${prog}`;
+  }
+  const overlay = document.createElement('div');
+  overlay.id = 'feat-overlay';
+  overlay.className = 'overlay';
+  overlay.innerHTML = `<div class="modal feat-modal" role="dialog" aria-modal="true">${body}<button type="button" class="btn" data-close>${esc(t('common.close'))}</button></div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('[data-close]').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+// Clic sur une pastille de distinction, où qu'elle soit (profil, menu) : paliers lus sur la pastille ou dans mon suivi.
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-feat], [data-dist]');
+  if (!el) return;
+  e.stopPropagation();
+  if (el.dataset.dist) return showFeat({ dist: el.dataset.dist });
+  const id = el.dataset.feat;
+  const mine = el.closest('[data-feats-mine]');
+  const tier = Number(el.dataset.tier ?? (mine ? (state.me?.feats || []).find((x) => x.id === id)?.tier : null) ?? (el.className.match(/\bt(\d)\b/)?.[1] || 0)) || 0;
+  showFeat({ feat: id, tier, progress: mine && state.featProgress ? state.featProgress[id] ?? 0 : null });
+}, true);
 const occImg = (o) => (o.general ? esc(o.avatar) : avatarUrl(o.avatar));
 const className = (id) => loc(klass(id)?.name) || id;
 // Carte de faction : drapeau de la maison, drapeau de sa nation en fondu à l'arrière-plan, et le seigneur en pied à droite.
@@ -539,7 +587,7 @@ function drawTopbar() {
 
 // Met à jour le joueur (ressources, pastilles) à partir d'une réponse de l'API.
 function setMe(me) {
-  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable, player: me.player, distinctions: me.distinctions || [], stats: me.stats || {}, patch: me.patch || null, result: me.result || null, tutorial: me.tutorial || null };
+  state.me = { user: me.user, character: me.character, unread: me.unread, claimable: me.claimable, player: me.player, distinctions: me.distinctions || [], feats: me.feats || [], stats: me.stats || {}, patch: me.patch || null, result: me.result || null, tutorial: me.tutorial || null };
   syncClock(me.player);
   showResult();
   maybeGameOver();
@@ -972,7 +1020,13 @@ async function renderMap() {
           <p class="small">${withTimer('camp.verdictHint', {}, vd.until)}</p>
           <div class="row"><button type="button" class="btn compact" data-verdict="${esc(vd.id)}" data-spare="1">${esc(t('camp.spare'))}</button>
             <button type="button" class="btn compact ghost" data-verdict="${esc(vd.id)}" data-spare="0">${esc(t('camp.execute'))}</button></div></div></div>`).join('');
-    box.innerHTML = `${banner}${phaseHtml}<div class="strips">${odHtml}${churchHtml}${lordHtml}${objHtml}</div>${pingHtml}${verdicts ? `<section class="verdicts"><h3>${esc(t('camp.verdictTitle'))}</h3>${verdicts}</section>` : ''}
+    // Strike down! : vaincus en repli sur mon territoire, même présentation que les généraux à épargner.
+    const strikes = (state.map?.strikes || []).map((sd) => `<div class="verdict strike">
+        <img src="${avatarUrl(sd.avatar)}" alt="">
+        <div><strong>${esc(sd.pseudo)}</strong> <small>${flag(sd.faction)}${esc(className(sd.class))} · ${esc(t('menu.playerRenown', { level: sd.level }))}</small>
+          <p class="small">${withTimer('camp.strikeHint', { hp: sd.hp }, sd.until)}</p>
+          <div class="row"><button type="button" class="btn compact danger" data-strike="${esc(sd.pseudo)}">${esc(t('camp.strike', { n: sd.damage }))}</button></div></div></div>`).join('');
+    box.innerHTML = `${banner}${phaseHtml}<div class="strips">${odHtml}${churchHtml}${lordHtml}${objHtml}</div>${pingHtml}${strikes ? `<section class="verdicts strikes"><h3>${esc(t('camp.strikeTitle'))}</h3>${strikes}</section>` : ''}${verdicts ? `<section class="verdicts"><h3>${esc(t('camp.verdictTitle'))}</h3>${verdicts}</section>` : ''}
       <div class="terr-head"><h3>${esc(loc(tr.name))}</h3>${here ? `<span class="pill">${esc(t('camp.you'))}</span>` : ''}</div>
       <p class="muted small">${owner
     ? `${esc(t('map.owned'))} ${flag(owner.id)}<span style="color:${esc(owner.color)}">${esc(loc(owner.name))}</span>`
@@ -999,6 +1053,19 @@ async function renderMap() {
     box.querySelectorAll('[data-goto]').forEach((el) => el.addEventListener('click', () => select(el.dataset.goto, true)));
     box.querySelector('.build-box')?.addEventListener('toggle', (e) => { buildOpen = e.currentTarget.open ? tr.id : null; });
     box.querySelector('[data-build-menu]')?.addEventListener('click', showBuildMenu);
+    box.querySelectorAll('[data-strike]').forEach((el) => el.addEventListener('click', async () => {
+      box.querySelectorAll('[data-strike]').forEach((x) => { x.disabled = true; });
+      try {
+        const res = await api('/strike', { target: el.dataset.strike });
+        setMe(res);
+        setMap(res.map);
+        flash(t(res.strike.ko ? 'flash.strikeKo' : 'flash.strike', { name: res.strike.target, hp: res.strike.hp }));
+      } catch (err) {
+        if (err.status === 401) return sessionLost();
+        flash(err.message, 'error');
+      }
+      if (state.tab === 'map' && inner.isConnected) refresh();
+    }));
     box.querySelectorAll('[data-verdict]').forEach((el) => el.addEventListener('click', async () => {
       box.querySelectorAll('[data-verdict]').forEach((x) => { x.disabled = true; });
       actionError = '';
@@ -1130,10 +1197,9 @@ async function renderMenu() {
     const rk = state.map?.ranking;
     const pk = state.map?.perks;
     // Titres gagnés (distinctions), avec leur nombre quand on les a obtenus plusieurs fois.
-    const dist = (state.me.distinctions || []).map((d) => {
-      const def = (state.config.distinctions || []).find((x) => x.id === d.id);
-      return def ? esc(loc(def.name)) + (d.count > 1 ? ` ×${d.count}` : '') : null;
-    }).filter(Boolean);
+    const dist = (state.me.distinctions || []).map(distPill).filter(Boolean);
+    const myFeats = [...(state.me.feats || [])].sort((a, b) => b.tier - a.tier);
+    const featsTotal = (state.config.feats || []).length;
     const playable = state.config.factions.filter((x) => !x.npc && (!x.secret || x.id === ch.faction || points[x.id] > 0));
     // Factions non jouables ou secrète : affichées seulement si elles tiennent un territoire ou ont des joueurs.
     const shownFactions = state.config.factions.filter((x) => (!x.secret && !x.npc) || x.id === ch.faction || counts[x.id] > 0
@@ -1165,7 +1231,7 @@ async function renderMenu() {
           <dt>${esc(t('menu.birthday'))}</dt><dd>${esc(fmtDate(ch.birthday))}</dd>
           <dt>${esc(t('menu.gold'))}</dt><dd>${fmtNum(ch.gold)}</dd>
           <dt>${esc(t('menu.renown'))}</dt><dd>${esc(t('menu.renownValue', ch.renown))}</dd>
-          ${dist.length ? `<dt>${esc(t('menu.distinctions'))}</dt><dd>${dist.join(', ')}</dd>` : ''}
+
           <dt>${esc(t('menu.email'))}</dt><dd>${esc(state.me.user.email)}</dd>
         </dl>
         <div class="row">
@@ -1174,6 +1240,11 @@ async function renderMenu() {
           <button class="btn ghost" type="button" data-menu-rename>${esc(t('rename.open', { gold: fmtNum(state.config.player?.renameGold ?? 750) }))}</button>
         </div>
       </section>
+      <details class="menu-fold" data-fold="feats" data-feats-mine ${state.menuFold?.feats ? 'open' : ''}><summary><span>\u{1F3C6} ${esc(t('feats.title', { got: myFeats.length, total: featsTotal }))}</span></summary>
+        <div class="fold-body">
+          ${dist.length ? `<div class="pf-dists">${dist.join('')}</div>` : ''}
+          <div class="feat-grid" data-feat-grid><p class="muted small">${esc(t('common.loading'))}</p></div>
+        </div></details>
 
       <section class="card">
         <h2>${esc(t('menu.effects'))}</h2>
@@ -1249,6 +1320,30 @@ async function renderMenu() {
       <button class="btn danger" type="button" data-logout>${esc(t('common.logout'))}</button>`;
     view.querySelector('[data-logout]').addEventListener('click', logout);
     view.querySelectorAll('.menu-fold').forEach((d) => d.addEventListener('toggle', () => { state.menuFold = { ...state.menuFold, [d.dataset.fold]: d.open }; }));
+    // Distinctions : toutes, avec mon palier et ma progression vers le suivant (chargées à l'ouverture du dépliant).
+    const featFold = view.querySelector('[data-fold="feats"]');
+    const fillFeats = async () => {
+      const grid = featFold.querySelector('[data-feat-grid]');
+      try {
+        const r = await api('/feats');
+        state.featProgress = r.progress;
+        state.me.feats = r.feats;
+      } catch { grid.innerHTML = ''; return; }
+      const have = new Map((state.me.feats || []).map((x) => [x.id, x.tier]));
+      const list = [...(state.config.feats || [])].sort((a, b) => (have.get(b.id) || 0) - (have.get(a.id) || 0));
+      grid.innerHTML = list.map((f) => {
+        const tier = have.get(f.id) || 0;
+        const next = f.tiers[tier];
+        const v = state.featProgress[f.id] || 0;
+        const pct = next === undefined ? 100 : Math.min(100, Math.round((v / next) * 100));
+        return `<button type="button" class="feat-tile ${tier ? `got t${f.tiers.length > 1 ? tier : 3}` : 'locked'}" data-feat="${esc(f.id)}" data-tier="${tier}">
+          <span class="feat-icon">${f.icon || ''}</span><span class="feat-name">${esc(featLabel(f.id, tier) || loc(f.name))}</span>
+          <span class="odds-bar"><i style="width:${pct}%"></i></span><small>${next === undefined ? esc(t('feats.maxed')) : `${fmtNum(Math.min(v, next))} / ${fmtNum(next)}`}</small></button>`;
+      }).join('');
+      featFold.querySelector('summary span').textContent = `\u{1F3C6} ${t('feats.title', { got: have.size, total: list.length })}`;
+    };
+    if (featFold.open) fillFeats();
+    featFold.addEventListener('toggle', () => { if (featFold.open) fillFeats(); });
     view.querySelector('[data-rules]').addEventListener('click', () => go('rules'));
     view.querySelector('[data-patches]').addEventListener('click', () => go('patches'));
     view.querySelector('[data-install]').addEventListener('click', () => go('install'));
@@ -1295,6 +1390,7 @@ function notifText(n) {
   if (n.type === 'player_gift' && p.kind) p.kind = t(`prel.kind.${p.kind}`);
   if (n.type === 'general_order') p.order = t(`order.kind.${n.params.kind}`);
   if (p.distinction) p.distinction = loc((state.config.distinctions || []).find((x) => x.id === p.distinction)?.name) || p.distinction;
+  if (n.type === 'feat' && p.feat) p.feat = `${featDef(n.params.feat)?.icon || ''} ${featLabel(n.params.feat, n.params.tier)}`.trim();
   for (const k of ['territory', 'home']) if (p[k]) p[k] = loc(state.config.map.territories.find((x) => x.id === p[k])?.name) || p[k];
   for (const k of ['gold', 'xp', 'points', 'rank']) if (typeof p[k] === 'number') p[k] = fmtNum(p[k]);
   if (n.type === 'general_order') return { title: t('notif.general_order.title', p), body: t(`notif.general_order.${n.params.outcome}`, p) };
@@ -1921,7 +2017,7 @@ async function showProfile(target) {
   const img = d.type === 'general' ? esc(d.avatar) : avatarUrl(d.avatar);
   const row = (k, v) => (v === null || v === undefined || v === '' ? '' : `<div class="pf-row"><span>${esc(k)}</span><b>${v}</b></div>`);
   const statusTxt = d.type === 'general' ? t(`profile.status.${d.status}`) : '';
-  const dists = (d.distinctions || []).map((x) => { const def = (state.config.distinctions || []).find((y) => y.id === x.id); return def ? `<span class="pill">${esc(loc(def.name))}${x.count > 1 ? ` \u00D7${x.count}` : ''}</span>` : ''; }).join('');
+  const dists = [...(d.distinctions || []).map(distPill), ...[...(d.feats || [])].sort((a, b) => b.tier - a.tier).map((x) => featPill(x).replace('data-feat=', `data-tier="${x.tier}" data-feat=`))].join('');
   const overlay = document.createElement('div');
   overlay.id = 'profile-overlay';
   overlay.className = 'overlay';

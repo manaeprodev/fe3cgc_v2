@@ -579,6 +579,7 @@ function grant(userId, gold, xp, source = 'other') {
   if (xp > 0) { metric('xp_in', xp); metric(`xp_in:${source}`, xp); }
   const before = renown(ch.xp).level;
   q.addResources.run(gold, xp, userId);
+  if (gold > 0) q.addEvent.run(userId, 'gold_earned', gold); // distinction Trésorier
   const after = renown(ch.xp + xp).level;
   // Prime de renommée : levelUpGold × nouveau niveau, pour chaque niveau franchi (réduite pour un exilé, comme tous ses gains).
   const per = Number(process.env.LEVEL_UP_GOLD ?? config.player?.levelUpGold) || 0; // LEVEL_UP_GOLD : tests
@@ -661,6 +662,7 @@ function mePayload(user) {
     result: ch ? campaign.resultFor(user.id) : null,
     // Distinctions gagnées (titres), avec leur nombre.
     distinctions: ch ? campaign.distinctionsOf(user.id) : [],
+    feats: ch ? campaign.featsOf(user.id) : [],
     // Compteurs durables (par exemple les attaques des Serpents repoussées), pour les conditions de classe.
     stats: ch ? Object.fromEntries(q.events.all(user.id).map((r) => [r.event, r.count])) : {},
   };
@@ -699,6 +701,7 @@ const unlockAvatar = (userId, file, source) => {
 function statAdd(userId, key, n = 1) {
   if (n > 0) q.addEvent.run(userId, key, n);
   specialState(userId);
+  try { campaign.markFeats(userId); } catch { /* moteur pas encore prêt */ } // distinctions à paliers
 }
 // Missions spéciales : chacune débloque un avatar quand son compteur atteint l'objectif (déblocage automatique).
 function specialState(userId) {
@@ -846,7 +849,17 @@ const routes = {
   'GET /api/me': async (req, res) => {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
+    if (q.character.get(user.id)) campaign.touchFeats(user.id);
     send(res, 200, mePayload(user));
+  },
+
+  // Distinctions à paliers : celles obtenues et la progression de chacune (pour soi).
+  'GET /api/feats': async (req, res) => {
+    const user = currentUser(req);
+    if (!user) throw new HttpError(401, 'unauthorized');
+    if (!q.character.get(user.id)) throw new HttpError(409, 'no_character');
+    campaign.checkFeats(user.id);
+    send(res, 200, { feats: campaign.featsOf(user.id), progress: campaign.featProgress(user.id) });
   },
 
   'GET /api/avatars': async (req, res) => send(res, 200, { avatars: avatarList(currentUser(req)?.id) }),

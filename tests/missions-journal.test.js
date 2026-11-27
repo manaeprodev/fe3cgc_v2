@@ -194,10 +194,10 @@ const mission = async (n, id) => (await clients[n]('/missions')).d.campaignMissi
     r = await clients.Rouge1('/act', { action: 'attack' });
     check('Rouge1 lance une attaque', r.s === 200, JSON.stringify(r.d.error));
     let j = (await clients.Rouge2('/journal')).d.events;
-    const started = j.find((e) => e.type === 'battle_started');
+    const started = j.find((e) => e.type === 'battle_started' && e.params.territory === 'duval');
     check('un allié peut soutenir cette attaque', started && started.react.map((x) => x.k).join() === 'support' && !('actor' in started.params), JSON.stringify(started));
-    check('l\'auteur de l\'attaque ne peut pas se soutenir lui-même', (await clients.Rouge1('/journal')).d.events.find((e) => e.type === 'battle_started').react.length === 0);
-    check('un ennemi ne peut pas soutenir', (await clients.Bleu1('/journal')).d.events.find((e) => e.type === 'battle_started').react.length === 0);
+    check('l\'auteur de l\'attaque ne peut pas se soutenir lui-même', (await clients.Rouge1('/journal')).d.events.find((e) => e.type === 'battle_started' && e.params.territory === 'duval').react.length === 0);
+    check('un ennemi ne peut pas soutenir', (await clients.Bleu1('/journal')).d.events.find((e) => e.type === 'battle_started' && e.params.territory === 'duval').react.length === 0);
     r = await clients.Rouge2('/journal/react', { event: started.id, kind: 'support' });
     check('soutenir : +10 or pour l\'allié à l\'origine de l\'action', r.s === 200 && r.d.flash.gold === 10 && (await me('Rouge1')).character.gold === 10, JSON.stringify(r.d.flash));
     check('il est prévenu', (await clients.Rouge1('/notifications')).d.notifications.some((n) => n.type === 'supported'));
@@ -206,6 +206,7 @@ const mission = async (n, id) => (await clients[n]('/missions')).d.campaignMissi
     r = await clients.Rouge2('/journal/react', { event: started.id, kind: 'cheer' });
     check('et pas une autre réaction que celle qui est permise', r.s === 409);
     // Appel à l'aide
+    withDb((d) => d.exec('UPDATE generals SET move_turn = 999999999999, actions = 0')); // généraux figés : seule l'aide change les chances
     const chance0 = terrOf((await clients.Rouge1('/map')).d, 'duval').battle.chance;
     r = await clients.Rouge1('/rally', {});
     j = (await clients.Rouge2('/journal')).d.events;
@@ -229,7 +230,7 @@ const mission = async (n, id) => (await clients[n]('/missions')).d.campaignMissi
     const done = (await clients.Rouge2('/journal')).d.events.find((e) => e.type === 'territory_taken' && e.params.territory === 'duval');
     check('la réaction disparaît ensuite', done.react.length === 0);
     // Soutien impossible une fois la bataille terminée
-    check('l\'attaque terminée ne se soutient plus', (await clients.Rouge2('/journal')).d.events.find((e) => e.type === 'battle_started').react.length === 0);
+    check('l\'attaque terminée ne se soutient plus', (await clients.Rouge2('/journal')).d.events.find((e) => e.type === 'battle_started' && e.params.territory === 'duval').react.length === 0);
 
     // ---------- 4. Game over : données fournies à l'app
     console.log('# Game over');

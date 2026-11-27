@@ -137,10 +137,11 @@ function battle(territory, attacker, defender, contribs, endsIn = 600000) {
 
     console.log('# Overdrive');
     await stop();
-    // Avant le démarrage : les Cerfs n'ont plus que 3 territoires (minoritaires) quand l'Overdrive commence.
+    // Avant le démarrage : les Cerfs n'ont plus que 9 territoires (minoritaires) quand l'Overdrive commence ; les Lions restent
+    // sous la moitié de la carte (pas de coalition).
     resetMap();
     withDb((d) => d.exec('DELETE FROM relations'));
-    withDb((d) => { const ids = d.prepare("SELECT id FROM territories WHERE faction = 'jaune'").all().map((x) => x.id); for (const id of ids.slice(3)) d.prepare("UPDATE territories SET faction = 'bleue' WHERE id = ?").run(id); });
+    withDb((d) => { const ids = d.prepare("SELECT id FROM territories WHERE faction = 'jaune'").all().map((x) => x.id); for (const id of ids.slice(9)) d.prepare("UPDATE territories SET faction = 'bleue' WHERE id = ?").run(id); });
     await start({ TEST_END_AT: String(Date.now() + 10 * 3_600_000), OVERDRIVE_HOURS: '24' });
     m = (await C.Rouge1('/map')).d;
     check('24 h avant la clôture : Overdrive pour les Aigles', m.overdrive && m.overdrive.level === 'base' && m.player.maxActions === 10, JSON.stringify([m.overdrive, m.player.maxActions]));
@@ -168,6 +169,8 @@ function battle(territory, attacker, defender, contribs, endsIn = 600000) {
     check('Overdrive+ : récolte 40 + 20 or, 10 + 2 renommée', r.s === 200 && r.d.character.gold === 60 && r.d.character.xp === 12, JSON.stringify([r.d.error, r.d.character?.gold, r.d.character?.xp]));
     pr = await C.Rouge1('/profile?pseudo=Jaune1');
     check('l\'Overdrive+ apparaît dans la liste des bonus', pr.d.mods.some((x) => x.type === 'overdrive' && x.level === 'plus'));
+    // Les Lions tiennent maintenant plus de la moitié de la carte : coalition, les Aigles passent aussi en Overdrive+.
+    check('coalition contre les Lions : Overdrive+ pour les Aigles', (await C.Rouge1('/map')).d.overdrive?.level === 'plus');
     // Un exilé n'a pas d'Overdrive.
     set('Bleu1', "UPDATE player_state SET exile_faction = 'rouge' WHERE user_id = ?");
     check('un exilé n\'a pas d\'Overdrive', (await C.Bleu1('/map')).d.overdrive === null);

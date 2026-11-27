@@ -631,7 +631,23 @@ const statOf = (userId, event) => q.events.all(userId).find((r) => r.event === e
 
 // Dernière mise à jour publiée (la première de la liste « patches » de game.json).
 // Dernière note de mise à jour ; « rev » la fait relire (et rouvre la popup des mises à jour majeures) quand on la complète.
-const LATEST_PATCH = (() => { const p = (config.patches || [])[0]; return p ? (p.rev ? `${p.id}#${p.rev}` : p.id) : null; })();
+// Patch le plus récent annoncé aux joueurs : « id#rev ». Une nouvelle révision fait réapparaître la fenêtre.
+// fromNextCampaign : le patch n'est annoncé qu'à la campagne suivante. La campagne en cours au premier démarrage est gardée
+// dans app_meta ; d'ici là, le patch précédent reste « le plus récent » (pas de fenêtre), puis elle s'ouvre pour tout le monde.
+db.exec('CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT)');
+function latestPatch() {
+  const list = config.patches || [];
+  const tag = (p) => (p ? (p.rev ? `${p.id}#${p.rev}` : p.id) : null);
+  const p = list[0];
+  if (!p) return null;
+  if (p.fromNextCampaign) {
+    const key = `patch_anchor:${p.id}`;
+    let anchor = db.prepare('SELECT value FROM app_meta WHERE key = ?').get(key)?.value;
+    if (anchor === undefined) { anchor = String(campaign.campaignId()); db.prepare('INSERT OR IGNORE INTO app_meta (key, value) VALUES (?, ?)').run(key, anchor); }
+    if (campaign.campaignId() <= Number(anchor)) return tag(list[1]);
+  }
+  return tag(p);
+}
 
 // Tutoriel de la première heure : chaque étape est faite quand l'événement correspondant a été constaté au moins une fois.
 function tutorialState(userId) {
@@ -653,7 +669,7 @@ function mePayload(user) {
     unread: q.unread.get(user.id).n,
     claimable,
     // Mise à jour la plus récente et celle que le joueur a lue en dernier (différentes : pastille sur « Mises à jour »).
-    patch: { latest: LATEST_PATCH, seen: q.patchSeen.get(user.id)?.patch_seen || null },
+    patch: { latest: latestPatch(), seen: q.patchSeen.get(user.id)?.patch_seen || null },
     // Position, actions disponibles et état du joueur dans la campagne en cours.
     player,
     // Premier pas dans le jeu : étapes à accomplir, et si la récompense est à récupérer (ou déjà prise / masquée).
@@ -764,7 +780,7 @@ const routes = {
     const info = q.insertUser.run(mail, hashPassword(password, salt), salt, now(), now());
     const userId = Number(info.lastInsertRowid);
     // Un nouveau joueur n'a pas à être prévenu des changements passés.
-    if (LATEST_PATCH) q.setPatchSeen.run(LATEST_PATCH, userId);
+    if (latestPatch()) q.setPatchSeen.run(latestPatch(), userId);
     q.logEvent.run(userId, mail, 'register', 1, ip, ua, now());
     // Confirmation par email quand l'envoi est configuré (sinon le compte est validé d'office).
     let verified = 1;
@@ -987,7 +1003,7 @@ const routes = {
     const user = currentUser(req);
     if (!user) throw new HttpError(401, 'unauthorized');
     await readJson(req);
-    if (LATEST_PATCH) q.setPatchSeen.run(LATEST_PATCH, user.id);
+    if (latestPatch()) q.setPatchSeen.run(latestPatch(), user.id);
     send(res, 200, mePayload(user));
   },
 
@@ -1030,7 +1046,7 @@ const routes = {
     const id = Number(db.prepare('INSERT INTO bug_reports (user_id, pseudo, message, created_at) VALUES (?, ?, ?, ?)').run(user.id, ch?.pseudo || null, text, now()).lastInsertRowid);
     const to = process.env.BUG_REPORT_TO;
     if (to && mailer.configured()) {
-      const body = `Signalement de bug n° ${id}\nJoueur : ${ch?.pseudo || '(sans personnage)'}${ch ? ` (${ch.faction})` : ''}\nDate : ${now()}\nVersion : ${LATEST_PATCH || '?'}\n\n${text}`;
+      const body = `Signalement de bug n° ${id}\nJoueur : ${ch?.pseudo || '(sans personnage)'}${ch ? ` (${ch.faction})` : ''}\nDate : ${now()}\nVersion : ${latestPatch() || '?'}\n\n${text}`;
       mailer.send({ to, subject: `[Three Crowns] Bug signalé par ${ch?.pseudo || 'un joueur'}`, text: body })
         .then(() => db.prepare('UPDATE bug_reports SET emailed = 1 WHERE id = ?').run(id))
         .catch((e) => console.error('mail', e.message));

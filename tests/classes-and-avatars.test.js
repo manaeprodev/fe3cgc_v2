@@ -124,8 +124,8 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     await powerCase('Épéiste : +7 % d\'attaque', { Rouge1: P(['myrmidon'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.07, 2);
     await powerCase('Soldat : +7 % de défense, rien en attaque', { Rouge1: P(['soldier'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge,
       [['Rouge1', 'attack', 1], ['Bleu1', 'defense', 1]], 1, 3.07);
-    await powerCase('Combattant : +1 % par action consécutive', { Rouge1: P(['fighter'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1, 0], ['Rouge1', 'attack', 1, 5]], 2.1, 2);
-    await powerCase('Combattant : plafonné à +20 %', { Rouge1: P(['fighter'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1, 50]], 1.2, 2);
+    await powerCase('Combattant : +1 % par action consécutive', { Rouge1: P(['fighter'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1, 0], ['Rouge1', 'attack', 1, 5]], 2.05, 2);
+    await powerCase('Combattant : plafonné à +10 %', { Rouge1: P(['fighter'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1, 50]], 1.1, 2);
     await powerCase('Moine : +2 % aux alliés d\'un territoire voisin', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(['monk'], { at: 'duval' }) }, rouge, [['Rouge1', 'attack', 1]], 1.04, 2);
     await powerCase('Moine : rien s\'il est trop loin', { Rouge1: P(['soldier'], { at: 'rowe' }), Rouge2: P(['monk'], { at: 'hresvelg' }) }, rouge, [['Rouge1', 'attack', 1]], 1.0, 2);
     await powerCase('Mage : +5 % aux Épéistes sur place (plus Moine et bonus propre)', { Rouge1: P(['myrmidon'], { at: 'rowe' }), Rouge2: P(['monk', 'mage'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.16, 2);
@@ -144,10 +144,10 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     await powerCase('Filou en infériorité numérique : +10 %', { Rouge1: P(filou, { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }), Bleu2: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.29, 2);
     await powerCase('Filou à égalité : pas de bonus', { Rouge1: P(filou, { at: 'rowe' }), Rouge2: P(['soldier'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }), Bleu2: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.19, 2);
     const darkMage = ['monk', 'mage', 'dark-mage'];
-    await powerCase('Mage noir : ×2,5 sans Moine chez les alliés ni chez les ennemis', { Rouge1: P(darkMage, { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 2.85, 2);
-    await powerCase('Mage noir : ×2 si un ennemi a Moine', { Rouge1: P(darkMage, { at: 'rowe' }), Bleu1: P(['monk', 'priest'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 2.28, 2);
+    await powerCase('Mage noir : ×1,6 sans Moine chez les alliés ni chez les ennemis', { Rouge1: P(darkMage, { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.82, 2);
+    await powerCase('Mage noir : ×1,4 si un ennemi a Moine', { Rouge1: P(darkMage, { at: 'rowe' }), Bleu1: P(['monk', 'priest'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.6, 2);
     await powerCase('Mage noir : pas de bonus si un allié a Moine', { Rouge1: P(darkMage, { at: 'rowe' }), Rouge2: P(['monk'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.18, 2);
-    await powerCase('Mage noir : ×2 quand il n\'y a aucun ennemi', { Rouge1: P(darkMage, { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 2.28, 2);
+    await powerCase('Mage noir : ×1,4 quand il n\'y a aucun ennemi', { Rouge1: P(darkMage, { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1]], 1.6, 2);
     await powerCase('Enchanteur : -10 % de pouvoir aux ennemis Épéiste, Soldat ou Combattant',
       { Rouge1: P(['monk', 'mage', 'warlock'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe' }) }, rouge, [['Rouge1', 'attack', 1], ['Bleu1', 'defense', 1]], 1.14, 2.97);
     await powerCase('Archer : -30 % de défense aux ennemis volants',
@@ -161,8 +161,8 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
       { Rouge1: P(['fighter', 'brawler'], { at: 'rowe' }), Rouge2: P(['fighter', 'brawler', 'grappler'], { at: 'rowe' }), Bleu1: P(['monk', 'priest'], { at: 'rowe' }) }, rouge,
       [['Rouge1', 'attack', 1], ['Bleu1', 'defense', 1]], 1, 2.44);
     const warMaster = ['fighter', 'brawler', 'grappler', 'war-master'];
-    await powerCase('Maître de guerre : +50 % si sa renommée égale ou dépasse celle de l\'ennemi',
-      { Rouge1: P(warMaster, { at: 'rowe', level: 10 }), Bleu1: P(['soldier'], { at: 'rowe', level: 5 }) }, rouge, [['Rouge1', 'attack', 1]], 1.5, 2);
+    await powerCase('Maître de guerre : +25 % si sa renommée égale ou dépasse celle de l\'ennemi',
+      { Rouge1: P(warMaster, { at: 'rowe', level: 10 }), Bleu1: P(['soldier'], { at: 'rowe', level: 5 }) }, rouge, [['Rouge1', 'attack', 1]], 1.25, 2);
     await powerCase('Maître de guerre : rien face à un ennemi plus renommé',
       { Rouge1: P(warMaster, { at: 'rowe', level: 10 }), Bleu1: P(['soldier'], { at: 'rowe', level: 12 }) }, rouge, [['Rouge1', 'attack', 1]], 1.0, 2);
     await powerCase('Maître de guerre : rien sans ennemi', { Rouge1: P(warMaster, { at: 'rowe', level: 10 }) }, rouge, [['Rouge1', 'attack', 1]], 1.0, 2);
@@ -180,8 +180,8 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     const g = async (n) => { const c = (await me(n)).character; return `${c.gold} or, ${c.xp} xp`; };
     check('Mercenaire : +10 % d\'or (165)', (await g('Rouge1')) === '165 or, 60 xp', await g('Rouge1'));
     check('Cavalier : +10 % de renommée (66)', (await g('Rouge2')) === '150 or, 66 xp', await g('Rouge2'));
-    check('Brigand : +30 % d\'or sur une attaque réussie (195)', (await g('Rouge3')) === '195 or, 60 xp', await g('Rouge3'));
-    check('Guerrier : cumule le Brigand et gagne +25 de renommée (85)', (await g('Rouge4')) === '195 or, 85 xp', await g('Rouge4'));
+    check('Brigand : +15 % d\'or sur une attaque réussie (173)', (await g('Rouge3')) === '173 or, 60 xp', await g('Rouge3'));
+    check('Guerrier : cumule le Brigand et gagne +15 de renommée (75)', (await g('Rouge4')) === '173 or, 75 xp', await g('Rouge4'));
 
     await resolveCase({ Rouge1: P(['myrmidon', 'thief'], { at: 'rowe' }), Bleu1: P(['soldier'], { at: 'rowe', gold: 100 }), Bleu2: P(['soldier'], { at: 'rowe', gold: 20 }) },
       rouge, [['Rouge1', 'attack', 1], ['Bleu1', 'defense', 1]]);
@@ -231,7 +231,7 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     wins(300);
     insertBattle(rouge, [['Rouge1', 'attack', 1]]);
     pb = (await clients.Rouge1('/map')).d.territories.find((t) => t.id === 'rowe').battle.power;
-    check('Paladin noir : plafonné à +50 % (302 victoires)', near(pb.attack, 1 + 0.5 + 0.03), String(pb.attack));
+    check('Paladin noir : plafonné à +30 % (302 victoires)', near(pb.attack, 1 + 0.3 + 0.03), String(pb.attack));
     resetAll();
     withDb((d) => d.exec("UPDATE territories SET faction = 'bleue' WHERE id = 'rowe'"));
     applyPlayers({ Rouge1: P(dk, { at: 'arundel' }), Rouge2: P(['soldier'], { at: 'arundel' }) });
@@ -298,8 +298,11 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     for (const n of ['Rouge2', 'Rouge3', 'Rouge4', 'Rouge5']) lim[n] = (await me(n)).player;
     check('réserve : 8 (Soldat), 9 (Chevalier wyverne), 10 (Lord wyverne par lui), 9 (Lord wyverne par le Guerrier)',
       lim.Rouge4.maxActions === 8 && lim.Rouge2.maxActions === 9 && lim.Rouge3.maxActions === 10 && lim.Rouge5.maxActions === 9, JSON.stringify(Object.values(lim).map((p) => p.maxActions)));
-    check('recharge : 8 min (1,6 s) et 7 min (1,4 s) contre 10 min (2 s)', lim.Rouge2.actions === 1 && lim.Rouge3.actions === 1 && lim.Rouge5.actions === 1 && lim.Rouge4.actions === 0,
+    check('recharge à 1,7 s : 8 min (1,6 s) oui, 9 min (1,8 s) et 10 min (2 s) pas encore', lim.Rouge3.actions === 1 && lim.Rouge5.actions === 1 && lim.Rouge2.actions === 0 && lim.Rouge4.actions === 0,
       JSON.stringify(Object.values(lim).map((p) => p.actions)));
+    await sleep(150);
+    const lim2 = { Rouge2: (await me('Rouge2')).player, Rouge4: (await me('Rouge4')).player };
+    check('recharge à 1,85 s : 9 min (1,8 s) oui, 10 min (2 s) pas encore', lim2.Rouge2.actions === 1 && lim2.Rouge4.actions === 0, JSON.stringify([lim2.Rouge2.actions, lim2.Rouge4.actions]));
 
     // ---------- 6. Téléportation (Évêque noir)
     console.log('# Téléportation');
@@ -361,7 +364,7 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     const hk = (await me('Bleu1')).character;
     const wr = (await me('Bleu2')).character;
     check('Chevalier sacré : 60 + 200 or et 25 + 80 de renommée en repoussant les Serpents', hk.gold === 260 && hk.xp === 105, `${hk.gold} or, ${hk.xp} xp`);
-    check('Guerrier : +25 de renommée même en défense (le bonus du Brigand ne vaut que pour une conquête)', wr.gold === 60 && wr.xp === 50, `${wr.gold} or, ${wr.xp} xp`);
+    check('Guerrier : +15 de renommée même en défense (le bonus du Brigand ne vaut que pour une conquête)', wr.gold === 60 && wr.xp === 40, `${wr.gold} or, ${wr.xp} xp`);
     check('les attaques des Serpents repoussées sont comptées', (await me('Bleu1')).stats.serpents_repelled === 1 && (await me('Bleu2')).stats.serpents_repelled === 1);
 
     // ---------- 8b. Contre-attaque : insaisissable et bonus d'attaque (les attaques échouent toujours ici)
@@ -404,7 +407,9 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
     // ---------- 8c. Notes de mise à jour : pastille tant que la dernière n'est pas lue
     console.log('# Mises à jour');
     const patches = require(path.join(process.cwd(), 'public', 'config', 'game.json')).patches;
-    const latest = patches[0].rev ? `${patches[0].id}#${patches[0].rev}` : patches[0].id; // « rev » : note complétée, à relire
+    // « rev » : note complétée, à relire ; « fromNextCampaign » : annoncé à la campagne suivante (d'ici là, le précédent).
+    const tagOf = (p) => (p.rev ? `${p.id}#${p.rev}` : p.id);
+    const latest = patches[0].fromNextCampaign ? tagOf(patches[1]) : tagOf(patches[0]);
     check('le patch le plus récent est annoncé au joueur', (await me('Rouge1')).patch.latest === latest);
     check('un nouveau compte n\'a pas de pastille', (await me('Rouge1')).patch.seen === latest);
     withDb((d) => d.exec('UPDATE users SET patch_seen = NULL'));
@@ -631,10 +636,10 @@ const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) co
       return out;
     };
     let mv = await moves({ TEST_MOVE_ROLL: '0.29' });
-    check('tirage à 29 % : Chevalier pégase (30 %) et Chevalier faucon (50 %) se déplacent gratuitement, pas le Soldat',
+    check('tirage à 29 % : Chevalier pégase (30 %) et Chevalier faucon (35 %) se déplacent gratuitement, pas le Soldat',
       mv.Rouge1 === 'payant' && mv.Rouge2 === 'gratuit' && mv.Rouge4 === 'gratuit', JSON.stringify(mv));
-    mv = await moves({ TEST_MOVE_ROLL: '0.84' });
-    check('tirage à 84 % : seul le Chevalier faucon qui a le Chevalier pégase (30 + 50 + 5 = 85 %) est gratuit',
+    mv = await moves({ TEST_MOVE_ROLL: '0.69' });
+    check('tirage à 69 % : seul le Chevalier faucon qui a le Chevalier pégase (30 + 35 + 5 = 70 %) est gratuit',
       mv.Rouge2 === 'payant' && mv.Rouge3 === 'gratuit' && mv.Rouge4 === 'payant', JSON.stringify(mv));
   } catch (e) {
     failures += 1;

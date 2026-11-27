@@ -335,10 +335,10 @@ const setGenHp = (g, frac) => run('UPDATE generals SET hp_pts = ? WHERE gid = ?'
     await fight(['Rouge1', 'Rouge2'], []);
     check('Paladin : il perd 5 - 2 = 3 PV', near(hpOf('Rouge1'), 0.5 - 3 / maxOf('paladin')), String(hpOf('Rouge1') * maxOf('paladin')));
     check('Paladin : son allié aussi (3 PV)', near(hpOf('Rouge2'), 0.5 - 3 / maxOf('monk')), String(hpOf('Rouge2') * maxOf('monk')));
-    // Guerrier : +5 PV après une victoire (5 perdus, 5 regagnés).
+    // Guerrier : +3 PV après une victoire (5 perdus, 3 regagnés).
     setClass('Rouge1', ['fighter', 'warrior']);
     await fight(['Rouge1'], []);
-    check('Guerrier : regagne 5 PV après la victoire', near(hpOf('Rouge1'), 0.5), String(hpOf('Rouge1') * maxOf('warrior')));
+    check('Guerrier : regagne 3 PV après la victoire', near(hpOf('Rouge1'), 0.5 - 2 / maxOf('warrior')), String(hpOf('Rouge1') * maxOf('warrior')));
     // Archer d'élite : les ennemis vaincus perdent 3 PV de plus.
     setClass('Rouge1', ['soldier', 'archer', 'sniper']);
     await fight(['Rouge1'], ['Bleu1']);

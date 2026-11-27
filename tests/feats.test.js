@@ -135,6 +135,16 @@ const maxOf = (cls) => GAME.campaign.hp.max[GAME.classes.find((c) => c.id === cl
       && row('SELECT coalesce(sum(deaths), 0) AS n FROM campaign_scores WHERE user_id = ?', uid('Bleu2')).n === deaths0 + 1);
     check('… notification et journal', (await notes('Bleu2')).some((x) => x.type === 'fallen_hp') && row("SELECT 1 FROM world_events WHERE type = 'struck_down'") !== undefined);
     check('Coupe-gorge : 2 frappes comptées pour Rouge1', ev('Rouge1', 'strikes') === 2 && (await C.Rouge1('/feats')).d.progress.cutthroat === 2);
+    console.log('# Fenêtre du patch à la campagne suivante');
+    const P = GAME.patches[0];
+    const prevTag = GAME.patches[1].rev ? `${GAME.patches[1].id}#${GAME.patches[1].rev}` : GAME.patches[1].id;
+    let m1 = (await C.Rouge1('/me')).d;
+    check('campagne en cours : révision actuelle, déjà lue par un nouveau compte', P.fromNextCampaign && m1.patch.latest === prevTag && m1.patch.seen === m1.patch.latest, JSON.stringify(m1.patch));
+    withDb((d) => { d.prepare('UPDATE campaigns SET ended_at = ? WHERE ended_at IS NULL').run(new Date().toISOString()); d.prepare('INSERT INTO campaigns (started_at) VALUES (?)').run(new Date().toISOString()); });
+    m1 = (await C.Rouge1('/me')).d;
+    check('nouvelle campagne : le patch ' + P.id + ' s\'annonce à tout le monde (avec le rappel du précédent)', m1.patch.latest === P.id && m1.patch.seen !== m1.patch.latest && !!P.recap, JSON.stringify(m1.patch));
+    await C.Rouge1('/patch/seen', {});
+    check('une fois relue, elle ne revient plus', (await C.Rouge1('/me')).d.patch.seen === P.id);
     // Sans PV (HP_ON=0), pas de Strike down!.
     await stop();
     await start({ HP_ON: '0' });

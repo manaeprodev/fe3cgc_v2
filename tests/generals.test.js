@@ -115,6 +115,7 @@ async function resolveCase(players, battle, rows, stat, wait = 3300) {
 const me = async (n) => { const r = await clients[n]('/me'); if (r.s !== 200) console.log('me', n, r.s, JSON.stringify(r.d)); return r.d; };
 
 
+const GAME = require(path.join(process.cwd(), 'public', 'config', 'game.json'));
 const ROSTER = require(path.join(process.cwd(), 'public', 'config', 'game.json')).generals.roster;
 // Remet les généraux à leur poste (vivants, sur leur territoire d'origine, dans leur faction d'origine) et efface leurs batailles.
 function resetGen() {
@@ -164,10 +165,34 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
     await restart({ GEN_ATTACK_CHANCE: '0' });
     map = (await clients.Rouge1('/map')).d;
     const lv = (pseudo) => terrOf(map, 'hresvelg').occupants.find((o) => o.pseudo === pseudo).level;
-    check('moyenne 10 : coef 2 → 10, coef 1 → 8 (7,5 arrondi), coef 0,5 → 6', lv('Edelgard') === 10 && lv('Hubert') === 8 && lv('Dorothea') === 6, [lv('Edelgard'), lv('Hubert'), lv('Dorothea')].join('/'));
+    // Formule : base = médiane de tous les actifs × 0,7 + médiane de la faction × 0,3 ; × guerre (territoires) ; × nombre (joueurs actifs).
+    const LV = GAME.generals.level;
+    const lvClamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+    const heldNow = (m) => { const h = { rouge: 0, bleue: 0, jaune: 0 }; for (const t of m.territories) if (!t.annex && h[t.faction] !== undefined) h[t.faction] += 1; return h; };
+    const warOf = (h, f) => { const avg = (h.rouge + h.bleue + h.jaune) / 3; return lvClamp(1 + LV.war.weight * (1 - h[f] / avg), LV.war.min, LV.war.max); };
+    const numOf = (n) => lvClamp(Math.sqrt(4.5 / n), LV.numbers.min, LV.numbers.max); // 7 Aigles et 2 Lions actifs : 4,5 en moyenne
+    const expect = (base, f, n, coef, h) => Math.max(LV.min, Math.round(base * warOf(h, f) * numOf(n) * (LV.base + LV.perCoef * coef)));
+    const h0 = heldNow(map);
+    check('Aigles (médiane 10, la plus haute) : base 10, freinés par leur nombre (7 actifs contre 4,5 en moyenne) ; coef 2, 1 et 0,5',
+      lv('Edelgard') === expect(10, 'rouge', 7, 2, h0) && lv('Hubert') === expect(10, 'rouge', 7, 1, h0) && lv('Dorothea') === expect(10, 'rouge', 7, 0.5, h0),
+      [lv('Edelgard'), lv('Hubert'), lv('Dorothea'), expect(10, 'rouge', 7, 2, h0)].join('/'));
     check('un indépendant suit la moyenne de tous les joueurs (coef 2 : ×1)', (() => { const l = terrOf(map, 'brigid').occupants[0].level; return l >= 1 && l <= 10; })());
     const annette = terrOf(map, 'dominic').occupants.find((o) => o.pseudo === 'Annette');
-    check('equilibrage : les Lions (mediane 0) sont en retard sur la moyenne (5) : leurs generaux sont releves de 70 % de l ecart, Annette (coef 2) niveau 4', annette && annette.level === 4, String(annette?.level));
+    check('Lions (médiane 0, 2 actifs) : base 7 (médiane générale 10 pour 70 %), relevés par leur petit nombre', annette && annette.level === expect(7, 'bleue', 2, 2, h0) && annette.level > 7, String(annette?.level));
+    // Le cours de la guerre : les Aigles prennent presque toutes les terres des Lions ; leurs généraux baissent, ceux des Lions montent.
+    const lionsLand = map.territories.filter((t) => t.faction === 'bleue' && !t.annex).map((t) => t.id);
+    const keep = new Set(['blaiddyd', 'dominic']);
+    withDb((d) => { const up = d.prepare("UPDATE territories SET faction = 'rouge' WHERE id = ?"); for (const id of lionsLand) if (!keep.has(id)) up.run(id); });
+    await restart({ GEN_ATTACK_CHANCE: '0' });
+    const map2 = (await clients.Rouge1('/map')).d;
+    const h1 = heldNow(map2);
+    const ed2 = terrOf(map2, 'hresvelg').occupants.find((o) => o.pseudo === 'Edelgard').level;
+    const an2 = terrOf(map2, 'dominic').occupants.find((o) => o.pseudo === 'Annette')?.level;
+    check('faction dominante : ses généraux baissent', ed2 === expect(10, 'rouge', 7, 2, h1) && ed2 < lv('Edelgard'), [lv('Edelgard'), ed2].join(' → '));
+    check('faction qui perd la guerre : ses généraux montent', an2 === expect(7, 'bleue', 2, 2, h1) && an2 > annette.level, [annette.level, an2].join(' → '));
+    withDb((d) => { const up = d.prepare("UPDATE territories SET faction = 'bleue' WHERE id = ?"); for (const id of lionsLand) up.run(id); });
+    await restart({ GEN_ATTACK_CHANCE: '0' });
+    map = (await clients.Rouge1('/map')).d;
 
     // ---------- 4. Défense du territoire d'origine, vaincus, épargnés
     console.log('# Défense, verdict');
@@ -194,7 +219,8 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
     check('épargné, Ashe rejoint les Aigles de jais', v.s === 200 && gen('ashe').faction === 'rouge' && gen('ashe').status === 'alive' && gen('ashe').spared === 1 && !row('SELECT 1 FROM general_verdicts'), JSON.stringify(gen('ashe')));
     map = (await clients.Rouge1('/map')).d;
     check('il reste sur son territoire d\'origine, conquis, dans sa nouvelle faction', terrOf(map, 'rowe').occupants.some((o) => o.pseudo === 'Ashe' && o.faction === 'rouge'));
-    // Il aime toujours son territoire : attaqué par les Lions, il le défend pour les Aigles ; vaincu une seconde fois, il meurt.
+    // Il aime toujours son territoire : attaqué par les Lions, il le défend pour les Aigles. Vaincu par sa faction d'origine,
+    // il peut être épargné une seconde fois (et la rejoint) ; vaincu ensuite par une autre faction, il meurt.
     withDb((d) => d.exec('DELETE FROM battles; DELETE FROM contributions; DELETE FROM general_contribs'));
     applyPlayers({ Bleu1: P(['soldier'], { at: 'rowe' }) });
     insertBattle({ territory: 'rowe', attacker: 'bleue', defender: 'rouge' }, [['Bleu1', 'attack', 1]], 1500);
@@ -202,7 +228,16 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
     check('épargné, Ashe défend quand même Rowe', row("SELECT * FROM general_contribs WHERE gid = 'ashe'")?.side === 'defense');
     await sleep(3300);
     await clients.Rouge1('/map');
-    check('vaincu une deuxième fois, il meurt (pas de nouveau verdict)', gen('ashe').status === 'dead' && !row('SELECT 1 FROM general_verdicts'));
+    check('vaincu une deuxième fois par sa faction d\'origine (les Lions) : seconde grâce possible', gen('ashe').status === 'captive' && row('SELECT winner FROM general_verdicts WHERE gid = ?', 'ashe')?.winner === 'bleue', JSON.stringify(gen('ashe')));
+    v = await clients.Bleu1('/general/verdict', { general: 'ashe', spare: true });
+    check('épargné une seconde fois, Ashe revient chez les Lions', v.s === 200 && gen('ashe').faction === 'bleue' && gen('ashe').status === 'alive' && gen('ashe').spared === 2, JSON.stringify(gen('ashe')));
+    withDb((d) => d.exec('DELETE FROM battles; DELETE FROM contributions; DELETE FROM general_contribs'));
+    applyPlayers({ Rouge1: P(['soldier'], { at: 'rowe' }) });
+    insertBattle({ territory: 'rowe', attacker: 'rouge', defender: 'bleue' }, [['Rouge1', 'attack', 1]], 1500);
+    await clients.Rouge1('/map');
+    await sleep(3300);
+    await clients.Rouge1('/map');
+    check('vaincu une troisième fois (par les Aigles), il meurt sans verdict', gen('ashe').status === 'dead' && !row('SELECT 1 FROM general_verdicts'), JSON.stringify(gen('ashe')));
     check('les vainqueurs de ce second combat sont récompensés', (await noteTypes('Bleu1')).includes('general_defeated'));
 
     // Non épargnable : Felix et Rodrigue (Fraldarius) meurent sur-le-champ.
@@ -256,6 +291,16 @@ const noteTypes = async (n) => (await clients[n]('/notifications')).d.notificati
     check('Petra, épargnable par les Aigles, attend leur verdict', gen('petra').status === 'captive');
     v = await clients.Rouge1('/general/verdict', { general: 'petra', spare: true });
     check('épargnée, elle rejoint les Aigles de jais', gen('petra').faction === 'rouge' && gen('petra').spared === 1);
+    // Exception : les Aigles de jais peuvent toujours épargner Petra, même déjà épargnée (ici par les Lions, deux fois).
+    withDb((d) => d.exec("DELETE FROM battles; DELETE FROM contributions; DELETE FROM general_contribs; UPDATE generals SET faction = 'bleue', spared = 2, status = 'alive', territory = 'brigid' WHERE gid = 'petra'; UPDATE territories SET faction = 'bleue' WHERE id = 'brigid'"));
+    insertBattle({ territory: 'brigid', attacker: 'rouge', defender: 'bleue' }, [['Rouge1', 'attack', 1]], 1500);
+    await clients.Rouge1('/map');
+    await sleep(3300);
+    await clients.Rouge1('/map');
+    check('Petra, déjà épargnée deux fois, peut encore l\'être par les Aigles', gen('petra').status === 'captive' && row('SELECT winner FROM general_verdicts WHERE gid = ?', 'petra')?.winner === 'rouge', JSON.stringify(gen('petra')));
+    v = await clients.Rouge1('/general/verdict', { general: 'petra', spare: true });
+    check('… et revient aux Aigles', gen('petra').faction === 'rouge' && gen('petra').status === 'alive', JSON.stringify(gen('petra')));
+    withDb((d) => d.exec("UPDATE territories SET faction = NULL WHERE id = 'brigid'"));
 
     // La défense réussie d'un général : il survit, sans verdict.
     await restart({ GEN_ATTACK_CHANCE: '0', TEST_ROLL: '0.999' });

@@ -66,8 +66,8 @@
         "en": "Campaign"
       },
       "text": {
-        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 8 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance. Pour combattre, il faut rester sur place : quitter le territoire annule tes actions d'attaque ou de défense en cours, sans rembourser ton énergie (l'app te demande confirmation). Impossible donc de peser sur plusieurs batailles à la fois.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide. Quand une force écrase l'autre (4 contre 1 ou plus), il n'y a pas de tirage : victoire ou défaite certaine. L'écran de bataille affiche tes chances, ton camp et la force des deux côtés.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 heures pour se replier gratuitement sur un territoire allié, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue, les attaquants restés sur place doivent eux aussi se replier dans les 6 heures, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue contre une autre faction jouable, le territoire devient insaisissable pendant 4 heures et sa faction gagne +25 % de puissance d'attaque sur les territoires ennemis voisins (contre-attaque). Les Serpents des Ténèbres et l'Église de Seiros ne déclenchent pas cet effet.\n\nMis hors de combat, tu n'es pas privé de jeu mais puni : tu es renvoyé à ta capitale (ou sur un de tes territoires si elle est tombée), tu perds 100 or (le double après une attaque ratée), ton stock d'actions est vidé et tes gains sont réduits pendant tes 10 prochaines actions.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager un bataillon en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nSur ton territoire, hors bataille, tu peux construire (1 action et de l'or) : forteresse (+20 % de défense par niveau), marché (+30 % d'or récolté) ou académie (+30 % d'expérience récoltée). Une spécialité par territoire, 3 niveaux (800, 1 600 puis 3 200 or) ; la conquête détruit les constructions.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nHors jeu, tu peux prendre les armes comme Exilé sous la bannière d'une autre faction jusqu'à la fin de la campagne, mais avec 50 % de ressources en moins sur tous tes gains (or, renommée et énergie, missions comprises), et sans aucun des avantages de ta faction d'adoption (capacité du seigneur, bonus de faction). Les factions qui dominent la carte refusent les exilés, sauf les Loups de cendre ; l'Église de Seiros en accueille tant qu'elle tient Garreg-Mach. Un exilé ne rapporte aucun point à une faction, ni à l'ancienne ni à celle qu'il rejoint : il garde ses gains personnels, plus une prime d'or en fin de campagne s'il s'est battu. Si ta faction est déjà tombée quand tu rejoins la campagne, tu peux t'exiler tout de suite. Ta série de missions du jour est gelée, et des missions d'exil te sont réservées. Ceux qui ont combattu avant la chute de leur faction reçoivent une prime d'or et la distinction Vétéran ; le dernier défenseur gagne le titre de Dernier rempart.",
-        "en": "You gain 1 action every 10 minutes, up to 8 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance. To fight you must stay on site: leaving the territory cancels your ongoing attack or defence actions, with no energy refund (the app asks you to confirm). So you cannot weigh on several battles at once.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides. When one force crushes the other (4 to 1 or more), there is no draw: certain victory or defeat. The battle screen shows your odds, your side and both sides' strength.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 hours to retreat for free to an allied territory, otherwise they are knocked out.\n\nIf the attack fails, the attackers who stayed on site must also retreat within 6 hours, otherwise they are knocked out.\n\nIf the attack fails against another playable faction, the territory becomes untouchable for 4 hours and its faction gets +25% attack power against neighbouring enemy territories (counter-attack). Those Who Slither In The Dark and The Church of Seiros do not trigger this effect.\n\nKnocked out, you are not barred from playing but you are punished: you are sent back to your capital (or to one of your territories if it has fallen), you lose 100 gold (double after a failed attack), your action stock is emptied and your gains are reduced for your next 10 actions.\n\nWith no action left, you can still weigh on a battle with your gold: hire a battalion when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nOn your territory, outside battle, you can build (1 action and gold): fortress (+20% defence per level), market (+30% gold gathered) or academy (+30% experience gathered). One speciality per territory, 3 levels (800, 1,600 then 3,200 gold); conquest destroys constructions.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nWhen out, you can take up arms as an Exile under another faction's banner until the end of the campaign, but with 50% fewer resources on all your gains (gold, renown and energy, missions included), and without any of your adopted faction's advantages (lord's ability, faction bonuses). Factions that dominate the map refuse exiles, except the Ashen Wolves; the Church of Seiros takes them in as long as it holds Garreg-Mach. An Exile earns no points for any faction, neither the old one nor the one joined: they keep their personal gains, plus a gold bonus at the end of the campaign if they fought. If your faction has already fallen when you join the campaign, you can go into exile right away. Your daily mission streak is frozen, and exile missions are reserved for you. Those who fought before their faction fell receive a gold bonus and the Battle-Scarred distinction; the last defender earns the Last Stand title."
+        "fr": "Tu gagnes 1 action toutes les 10 minutes, jusqu'à 8 en réserve.\n\nSe déplacer vers un territoire voisin coûte 1 action. Tu ne peux entrer sur un territoire qui n'est pas à ta faction que s'il touche un territoire de ta faction.\n\nSur un territoire allié : Défendre renforce sa défense, Récolter rapporte de l'or et de l'expérience.\n\nSur un territoire ennemi ou neutre : Attaquer lance une bataille de 6 tours (1 heure). Pendant ce temps, chaque action Attaquer ou Défendre dépensée sur place fait pencher la balance. Pour combattre, il faut rester sur place : quitter le territoire annule tes actions d'attaque ou de défense en cours, sans rembourser ton énergie (l'app te demande confirmation). Impossible donc de peser sur plusieurs batailles à la fois.\n\nÀ la fin, les chances de l'attaque dépendent du nombre de combattants, de leur classe, de leur renommée et de l'importance du territoire, puis le sort décide. Quand une force écrase l'autre (4 contre 1 ou plus), il n'y a pas de tirage : victoire ou défaite certaine. L'écran de bataille affiche tes chances, ton camp et la force des deux côtés.\n\nSi l'attaque réussit, le territoire change de camp et les attaquants sont récompensés. Les défenseurs présents ont 6 heures pour se replier gratuitement sur un territoire allié, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue, les attaquants restés sur place doivent eux aussi se replier dans les 6 heures, sinon ils sont mis hors de combat.\n\nSi l'attaque échoue contre une autre faction jouable, le territoire devient insaisissable pendant 4 heures et sa faction gagne +25 % de puissance d'attaque sur les territoires ennemis voisins (contre-attaque). Les Serpents des Ténèbres et l'Église de Seiros ne déclenchent pas cet effet.\n\nMis hors de combat, tu n'es pas privé de jeu mais puni : tu es renvoyé à ta capitale (ou sur un de tes territoires si elle est tombée), tu perds 100 or (le double après une attaque ratée), ton stock d'actions est vidé et tes gains sont réduits pendant tes 10 prochaines actions.\n\nSans action, tu peux encore peser sur une bataille avec ton or : engager un bataillon en attaque ou fortifier en défense (300 or, 2 fois par bataille). Tu peux aussi appeler ta faction à l'aide une fois par bataille.\n\nSur ton territoire, hors bataille, tu peux construire (1 action et de l'or) : forteresse (+20 % de défense par niveau), marché (+30 % d'or récolté) ou académie (+30 % d'expérience récoltée). Une spécialité par territoire, 3 niveaux (800, 1 600 puis 3 200 or) ; la conquête détruit les constructions.\n\nLa première action de chaque tranche de 10 minutes rapporte 10 or de bonus.\n\nUne faction qui perd son dernier territoire est hors jeu jusqu'à la fin de la campagne.\n\nHors jeu, tu peux prendre les armes comme Exilé sous la bannière d'une autre faction jusqu'à la fin de la campagne, mais avec 50 % de ressources en moins sur tous tes gains (or, renommée et énergie, missions comprises), et sans aucun des avantages de ta faction d'adoption (capacité du seigneur, bonus de faction). Les factions qui dominent la carte refusent les exilés, sauf les Loups de cendre ; l'Église de Seiros en accueille tant qu'elle tient Garreg-Mach. Un exilé ne rapporte aucun point à une faction, ni à l'ancienne ni à celle qu'il rejoint : il garde ses gains personnels, plus une prime d'or en fin de campagne s'il s'est battu. Si ta faction est déjà tombée quand tu rejoins la campagne, tu peux t'exiler tout de suite. Ta série de missions du jour est gelée, et des missions d'exil te sont réservées. Ceux qui ont combattu avant la chute de leur faction reçoivent une prime d'or et la distinction Vétéran ; le dernier défenseur gagne le titre de Dernier rempart.\n\nRetour en force. Une faction qui perd la guerre n'est pas condamnée :\n- Force du désespoir : une faction à capitale qui tient moins de 60 % des territoires de la moyenne gagne +2 % de puissance par territoire sous la moyenne (maximum +25 %), et ses combattants perdent 3 PV de moins en défaite.\n- Faction en tête : celle qui tient le plus de territoires, au moins 20 % de plus que la moyenne.\n- Lignes de ravitaillement : les territoires de la faction en tête situés à plus de 3 cases de tout territoire où elle a un joueur ont -15 % de défense.\n- Prime sur le leader : battre la faction en tête (prendre un de ses territoires ou repousser son attaque) rapporte +50 % d'or et de renommée, et chaque territoire qui lui est pris vaut 20 points de faction en fin de campagne.\n- Coalition : contre une faction qui tient plus de la moitié de la carte, toutes les autres peuvent entrer sur les territoires les unes des autres et les défendre, et profitent de l'Overdrive+.\n- Renforts : les généraux d'une faction en perdition sortent plus souvent et vont défendre les territoires voisins attaqués. Un général venu en renfort qui perd ce combat se replie aussitôt sur son territoire d'origine, PV restaurés.\n\nFatigue : au-delà de 2 attaques menées en 3 heures, chaque nouvelle attaque fait perdre 1 PV de plus (jusqu'à 6) à la fin de la bataille.",
+        "en": "You gain 1 action every 10 minutes, up to 8 in reserve.\n\nMoving to a neighbouring territory costs 1 action. You can only enter a territory that is not your faction's if it touches one of your faction's territories.\n\nOn an allied territory: Defend strengthens its defence, Gather earns gold and experience.\n\nOn an enemy or neutral territory: Attack starts a 6-turn battle (1 hour). Meanwhile, every Attack or Defend action spent there tips the balance. To fight you must stay on site: leaving the territory cancels your ongoing attack or defence actions, with no energy refund (the app asks you to confirm). So you cannot weigh on several battles at once.\n\nAt the end, the attack's odds depend on the number of fighters, their class, their renown and the territory's importance, then fate decides. When one force crushes the other (4 to 1 or more), there is no draw: certain victory or defeat. The battle screen shows your odds, your side and both sides' strength.\n\nIf the attack succeeds, the territory changes sides and the attackers are rewarded. Defenders on site have 6 hours to retreat for free to an allied territory, otherwise they are knocked out.\n\nIf the attack fails, the attackers who stayed on site must also retreat within 6 hours, otherwise they are knocked out.\n\nIf the attack fails against another playable faction, the territory becomes untouchable for 4 hours and its faction gets +25% attack power against neighbouring enemy territories (counter-attack). Those Who Slither In The Dark and The Church of Seiros do not trigger this effect.\n\nKnocked out, you are not barred from playing but you are punished: you are sent back to your capital (or to one of your territories if it has fallen), you lose 100 gold (double after a failed attack), your action stock is emptied and your gains are reduced for your next 10 actions.\n\nWith no action left, you can still weigh on a battle with your gold: hire a battalion when attacking or fortify when defending (300 gold, twice per battle). You can also call your faction for help once per battle.\n\nOn your territory, outside battle, you can build (1 action and gold): fortress (+20% defence per level), market (+30% gold gathered) or academy (+30% experience gathered). One speciality per territory, 3 levels (800, 1,600 then 3,200 gold); conquest destroys constructions.\n\nThe first action of each 10-minute slot earns a 10 gold bonus.\n\nA faction that loses its last territory is out until the end of the campaign.\n\nWhen out, you can take up arms as an Exile under another faction's banner until the end of the campaign, but with 50% fewer resources on all your gains (gold, renown and energy, missions included), and without any of your adopted faction's advantages (lord's ability, faction bonuses). Factions that dominate the map refuse exiles, except the Ashen Wolves; the Church of Seiros takes them in as long as it holds Garreg-Mach. An Exile earns no points for any faction, neither the old one nor the one joined: they keep their personal gains, plus a gold bonus at the end of the campaign if they fought. If your faction has already fallen when you join the campaign, you can go into exile right away. Your daily mission streak is frozen, and exile missions are reserved for you. Those who fought before their faction fell receive a gold bonus and the Battle-Scarred distinction; the last defender earns the Last Stand title.\n\nComeback. A faction losing the war is not doomed:\n- Strength of despair: a capital faction holding less than 60% of the average number of territories gains +2% power per territory below the average (maximum +25%), and its fighters lose 3 fewer HP in defeat.\n- Leading faction: the one holding the most territories, at least 20% above the average.\n- Supply lines: territories of the leading faction more than 3 steps from any territory where it has a player have -15% defence.\n- Bounty on the leader: beating the leading faction (taking one of its territories or repelling its attack) earns +50% gold and renown, and each territory taken from it is worth 20 faction points at the end of the campaign.\n- Coalition: against a faction holding more than half the map, all the others can enter and defend each other's territories, and get Overdrive+.\n- Reinforcements: generals of a losing faction sortie more often and defend neighbouring territories under attack. A general who came as reinforcement and loses that fight falls back to their home at once, HP restored.\n\nFatigue: beyond 2 attacks led in 3 hours, each new attack costs 1 more HP (up to 6) at the end of the battle."
       }
     },
     {
@@ -76,8 +76,8 @@
         "en": "Generals"
       },
       "text": {
-        "fr": "Les généraux sont des personnages du jeu, dirigés par l'ordinateur. Chacun se tient sur son territoire d'origine au début de la campagne et le défend coûte que coûte quand il est attaqué, s'il lui reste assez d'actions. Ils ont 4 actions au maximum (au lieu de 8), une classe avec ses bonus et un niveau de renommée calculé d'après la médiane des joueurs actifs de leur faction (relevé pour une faction en retard, et qui évolue en douceur), selon leur puissance et leur importance. Les Loups de cendre défendent tous Garreg-Mach ; quelques généraux sont indépendants et défendent leur propre territoire.\n\nUne fois un premier territoire conquis sur la carte, les généraux peuvent aussi partir en sortie contre un territoire ennemi voisin, et n'attaquent qu'une fois par bataille.\n\nUn général n'a qu'une vie par campagne : battu en attaque comme en défense, ou si son territoire d'origine est conquis, il meurt et disparaît de la carte (sauf s'il est épargné, voir plus bas). Ceux qui l'ont vaincu reçoivent de l'or et de la renommée en plus, selon son importance.\n\nCertains généraux peuvent être épargnés, seulement par certaines factions, et une seule fois. Les vainqueurs ont alors 1 heure pour décider : l'épargner (il rejoint leur faction, mais défend toujours son territoire d'origine) ou le faire mourir. Sans décision, il meurt. Un général déjà épargné qui est battu à nouveau meurt.\n\nLes seigneurs (Edelgard, Dimitri, Claude) ne quittent jamais leur capitale tant qu'ils la tiennent et la défendent toujours, même sans action. Ils ne peuvent pas mourir tant qu'il reste un autre général sous leur bannière : vaincus, ils se replient auprès des leurs. S'ils perdent leur capitale, ils ordonnent sa reprise et tous les généraux de la faction marchent sur elle. Yuri ne peut mourir que s'il est le dernier général des Loups de cendre (les autres morts ou passés à une autre faction) : vaincu avant cela, il est renvoyé à Garreg-Mach.\n\nL'Église de Seiros a ses généraux : Rhea et les chevaliers de Seiros (Seteth, Catherine, Shamir, Gilbert, Alois, Hanneman, Cyril, Flayn). Ils gardent Garreg-Mach, et Rhea, comme un seigneur, ne le quitte jamais et le défend toujours. Croisade : dès qu'une faction tient 45 % des territoires (hors annexes), Rhea lui déclare la croisade. Trois chevaliers au plus sortent de Garreg-Mach et attaquent ses territoires, en commençant par les plus proches. Ils passent partout, et les territoires qu'ils prennent reviennent à l'Église. La croisade est levée quand la faction redescend sous 38 %. Une attaque de croisade repoussée ne coûte qu'un chevalier : un seul tombe (ou peut être épargné s'il en remplit les conditions), les autres battent en retraite vers Garreg-Mach, vivants.\n\nL'Immaculée : si Garreg-Mach tombe, Rhea ne meurt pas, elle s'éveille en l'Immaculée. Elle lance alors des assauts sur Garreg-Mach, un toutes les 4 heures (jamais entre minuit et 6 h), et ravage parfois un territoire voisin. Les chevaliers survivants marchent avec elle. Un seul assaut réussi, et l'Église reprend Garreg-Mach : Rhea retrouve son siège. Repousser 3 assauts abat l'Immaculée pour de bon, et la faction qui tient Garreg-Mach gagne 10 % de points en fin de campagne.\n\nLes généraux indépendants (Petra, Nader, Shadid) défendent toujours leur territoire quand il est attaqué, quel que soit son maître. S'il tombe, ils sont vaincus : ils meurent, sauf si les vainqueurs peuvent les épargner et le font.\n\nLes Serpents des Ténèbres ont aussi leurs généraux : près d'un raid sur deux est mené par l'un d'eux, dont le portrait apparaît sur la carte et sur le territoire attaqué. Epimenides est toujours le dernier à venir. Une fois tombé, les Serpents ne reviennent plus jusqu'à la fin de la campagne, et la faction qui l'a abattu gagne +15 % de points.",
-        "en": "Generals are game characters controlled by the computer. Each one stands on their home territory at the start of the campaign and defends it at all costs when it is attacked, as long as they have enough actions left. They have at most 4 actions (instead of 8), a class with its bonuses and a renown level computed from the median of their faction's active players (raised for a faction lagging behind, and changing gradually), according to their strength and importance. The Ashen Wolves all defend Garreg Mach; a few generals are independent and defend their own territory.\n\nOnce a first territory has been conquered on the map, generals may also sortie against a neighbouring enemy territory, and attack only once per battle.\n\nA general has one life per campaign: beaten, whether attacking or defending, or if their home territory is conquered, they die and vanish from the map (unless spared, see below). Those who defeated them earn extra gold and renown, depending on their importance.\n\nSome generals can be spared, only by certain factions, and only once. The victors then have 1 hour to decide: spare them (they join their faction, but still defend their home territory) or put them to death. With no decision, they die. A general who was already spared and is beaten again dies.\n\nThe lords (Edelgard, Dimitri, Claude) never leave their capital while they hold it and always defend it, even without actions. They cannot die while another general remains under their banner: beaten, they fall back to their own. If they lose their capital, they order it retaken and all the faction's generals march on it. Yuri can only die if he is the last general of the Ashen Wolves (the others dead or gone to another faction): beaten before that, he is sent back to Garreg Mach.\n\nThe Church of Seiros has generals of its own: Rhea and the Knights of Seiros (Seteth, Catherine, Shamir, Gilbert, Alois, Hanneman, Cyril, Flayn). They guard Garreg Mach, and Rhea, like a lord, never leaves it and always defends it. Crusade: as soon as a faction holds 45% of the territories (annexes excluded), Rhea declares a crusade against it. Up to three knights leave Garreg Mach and attack its territories, nearest first. They can pass anywhere, and the territories they take go to the Church. The crusade is lifted when the faction falls back below 38%. A repelled crusade attack costs only one knight: just one falls (or may be spared if eligible), the others retreat to Garreg Mach alive.\n\nThe Immaculate One: if Garreg Mach falls, Rhea does not die, she awakens as the Immaculate One. She then launches assaults on Garreg Mach, one every 4 hours (never between midnight and 6 am), and sometimes ravages a neighbouring territory. The surviving knights march with her. A single successful assault and the Church retakes Garreg Mach: Rhea returns to her seat. Repelling 3 assaults slays the Immaculate One for good, and the faction holding Garreg Mach gains 10% more points at the end of the campaign.\n\nIndependent generals (Petra, Nader, Shadid) always defend their territory when it is attacked, whoever its master. If it falls, they are defeated: they die, unless the winners can spare them and do so.\n\nThose Who Slither in the Dark have generals too: nearly one raid in two is led by one of them, whose portrait shows on the map and on the territory under attack. Epimenides always comes last. Once fallen, the Serpents do not return until the end of the campaign, and the faction that slew them gains +15% points."
+        "fr": "Les généraux sont des personnages du jeu, dirigés par l'ordinateur. Chacun se tient sur son territoire d'origine au début de la campagne et le défend coûte que coûte quand il est attaqué, s'il lui reste assez d'actions. Ils ont 4 actions au maximum (au lieu de 8), une classe avec ses bonus et un niveau de renommée qui suit le cours de la guerre : il part de la renommée de tous les joueurs actifs, puis monte pour une faction qui tient moins de territoires ou a moins de joueurs actifs que les autres, et baisse pour celle qui domine (il évolue en douceur, et change quand un général change de camp), selon leur puissance et leur importance. Les Loups de cendre défendent tous Garreg-Mach ; quelques généraux sont indépendants et défendent leur propre territoire.\n\nUne fois un premier territoire conquis sur la carte, les généraux peuvent aussi partir en sortie contre un territoire ennemi voisin, et n'attaquent qu'une fois par bataille.\n\nUn général n'a qu'une vie par campagne : battu en attaque comme en défense, ou si son territoire d'origine est conquis, il meurt et disparaît de la carte (sauf s'il est épargné, voir plus bas). Ceux qui l'ont vaincu reçoivent de l'or et de la renommée en plus, selon son importance.\n\nCertains généraux peuvent être épargnés, seulement par certaines factions, et une seule fois. Les vainqueurs ont alors 1 heure pour décider : l'épargner (il rejoint leur faction, mais défend toujours son territoire d'origine) ou le faire mourir. Sans décision, il meurt. Un général déjà épargné qui est battu à nouveau meurt, sauf si c'est sa faction d'origine qui le bat : elle peut l'épargner une seconde fois et le récupérer. Exception : les Aigles de jais peuvent toujours épargner Petra.\n\nLes seigneurs (Edelgard, Dimitri, Claude) ne quittent jamais leur capitale tant qu'ils la tiennent et la défendent toujours, même sans action. Ils ne peuvent pas mourir tant qu'il reste un autre général sous leur bannière : vaincus, ils se replient auprès des leurs. S'ils perdent leur capitale, ils ordonnent sa reprise et tous les généraux de la faction marchent sur elle. Yuri ne peut mourir que s'il est le dernier général des Loups de cendre (les autres morts ou passés à une autre faction) : vaincu avant cela, il est renvoyé à Garreg-Mach.\n\nL'Église de Seiros a ses généraux : Rhea et les chevaliers de Seiros (Seteth, Catherine, Shamir, Gilbert, Alois, Hanneman, Cyril, Flayn). Ils gardent Garreg-Mach, et Rhea, comme un seigneur, ne le quitte jamais et le défend toujours. Croisade : dès qu'une faction tient 45 % des territoires (hors annexes), Rhea lui déclare la croisade. Trois chevaliers au plus sortent de Garreg-Mach et attaquent ses territoires, en commençant par les plus proches. Ils passent partout, et les territoires qu'ils prennent reviennent à l'Église. La croisade est levée quand la faction redescend sous 38 %. Une attaque de croisade repoussée ne coûte qu'un chevalier : un seul tombe (ou peut être épargné s'il en remplit les conditions), les autres battent en retraite vers Garreg-Mach, vivants.\n\nL'Immaculée : si Garreg-Mach tombe, Rhea ne meurt pas, elle s'éveille en l'Immaculée. Elle lance alors des assauts sur Garreg-Mach, un toutes les 4 heures (jamais entre minuit et 6 h), et ravage parfois un territoire voisin. Les chevaliers survivants marchent avec elle. Un seul assaut réussi, et l'Église reprend Garreg-Mach : Rhea retrouve son siège. Repousser 3 assauts abat l'Immaculée pour de bon, et la faction qui tient Garreg-Mach gagne 10 % de points en fin de campagne.\n\nLes généraux indépendants (Petra, Nader, Shadid) défendent toujours leur territoire quand il est attaqué, quel que soit son maître. S'il tombe, ils sont vaincus : ils meurent, sauf si les vainqueurs peuvent les épargner et le font.\n\nLes Serpents des Ténèbres ont aussi leurs généraux : près d'un raid sur deux est mené par l'un d'eux, dont le portrait apparaît sur la carte et sur le territoire attaqué. Epimenides est toujours le dernier à venir. Une fois tombé, les Serpents ne reviennent plus jusqu'à la fin de la campagne, et la faction qui l'a abattu gagne +15 % de points.",
+        "en": "Generals are game characters controlled by the computer. Each one stands on their home territory at the start of the campaign and defends it at all costs when it is attacked, as long as they have enough actions left. They have at most 4 actions (instead of 8), a class with its bonuses and a renown level that follows the course of the war: it starts from the renown of all active players, then rises for a faction holding fewer territories or with fewer active players than the others, and drops for the one dominating (it changes gradually, and when a general changes sides), according to their strength and importance. The Ashen Wolves all defend Garreg Mach; a few generals are independent and defend their own territory.\n\nOnce a first territory has been conquered on the map, generals may also sortie against a neighbouring enemy territory, and attack only once per battle.\n\nA general has one life per campaign: beaten, whether attacking or defending, or if their home territory is conquered, they die and vanish from the map (unless spared, see below). Those who defeated them earn extra gold and renown, depending on their importance.\n\nSome generals can be spared, only by certain factions, and only once. The victors then have 1 hour to decide: spare them (they join their faction, but still defend their home territory) or put them to death. With no decision, they die. A general who was already spared and is beaten again dies, unless their home faction beats them: it may spare them a second time and take them back. Exception: the Black Eagles can always spare Petra.\n\nThe lords (Edelgard, Dimitri, Claude) never leave their capital while they hold it and always defend it, even without actions. They cannot die while another general remains under their banner: beaten, they fall back to their own. If they lose their capital, they order it retaken and all the faction's generals march on it. Yuri can only die if he is the last general of the Ashen Wolves (the others dead or gone to another faction): beaten before that, he is sent back to Garreg Mach.\n\nThe Church of Seiros has generals of its own: Rhea and the Knights of Seiros (Seteth, Catherine, Shamir, Gilbert, Alois, Hanneman, Cyril, Flayn). They guard Garreg Mach, and Rhea, like a lord, never leaves it and always defends it. Crusade: as soon as a faction holds 45% of the territories (annexes excluded), Rhea declares a crusade against it. Up to three knights leave Garreg Mach and attack its territories, nearest first. They can pass anywhere, and the territories they take go to the Church. The crusade is lifted when the faction falls back below 38%. A repelled crusade attack costs only one knight: just one falls (or may be spared if eligible), the others retreat to Garreg Mach alive.\n\nThe Immaculate One: if Garreg Mach falls, Rhea does not die, she awakens as the Immaculate One. She then launches assaults on Garreg Mach, one every 4 hours (never between midnight and 6 am), and sometimes ravages a neighbouring territory. The surviving knights march with her. A single successful assault and the Church retakes Garreg Mach: Rhea returns to her seat. Repelling 3 assaults slays the Immaculate One for good, and the faction holding Garreg Mach gains 10% more points at the end of the campaign.\n\nIndependent generals (Petra, Nader, Shadid) always defend their territory when it is attacked, whoever its master. If it falls, they are defeated: they die, unless the winners can spare them and do so.\n\nThose Who Slither in the Dark have generals too: nearly one raid in two is led by one of them, whose portrait shows on the map and on the territory under attack. Epimenides always comes last. Once fallen, the Serpents do not return until the end of the campaign, and the faction that slew them gains +15% points."
       }
     },
     {
@@ -324,13 +324,13 @@
       "effects": [
         {
           "kind": "streak",
-          "pct": 2,
-          "max": 20
+          "pct": 1,
+          "max": 10
         }
       ],
       "effectText": {
-        "fr": "Les actions de combat consécutives sur le même territoire augmentent à chaque fois de +2 % (maximum +20 %).",
-        "en": "Consecutive combat actions on the same territory each add +2% (maximum +20%)."
+        "fr": "Les actions de combat consécutives sur le même territoire augmentent à chaque fois de +1 % (maximum +10 %).",
+        "en": "Consecutive combat actions on the same territory each add +1% (maximum +10%)."
       }
     },
     {
@@ -507,12 +507,12 @@
       "effects": [
         {
           "kind": "conquestGold",
-          "pct": 30
+          "pct": 15
         }
       ],
       "effectText": {
-        "fr": "Gagne +30 % d'or quand une attaque réussit.",
-        "en": "Earns +30% gold when an attack succeeds."
+        "fr": "Gagne +15 % d'or quand une attaque réussit.",
+        "en": "Earns +15% gold when an attack succeeds."
       }
     },
     {
@@ -765,12 +765,12 @@
         {
           "kind": "actionStock",
           "plus": 1,
-          "regenMinutes": 8
+          "regenMinutes": 9
         }
       ],
       "effectText": {
-        "fr": "Gagne un stock d'action supplémentaire et les actions se rechargent en 8 minutes au lieu de 10.",
-        "en": "Gains an extra action slot, and actions recharge in 8 minutes instead of 10."
+        "fr": "Gagne un stock d'action supplémentaire et les actions se rechargent en 9 minutes au lieu de 10.",
+        "en": "Gains an extra action slot, and actions recharge in 9 minutes instead of 10."
       }
     },
     {
@@ -818,16 +818,16 @@
       "effects": [
         {
           "kind": "renownPerWin",
-          "xp": 25
+          "xp": 15
         },
         {
           "kind": "hpOnWin",
-          "pts": 5
+          "pts": 3
         }
       ],
       "effectText": {
-        "fr": "Gagne +25 de renommée supplémentaire à chaque bataille remportée. Second souffle : regagne 5 PV après chaque victoire.",
-        "en": "Earns +25 extra renown for each battle won. Second wind: regains 5 HP after each victory."
+        "fr": "Gagne +15 de renommée supplémentaire à chaque bataille remportée. Second souffle : regagne 3 PV après chaque victoire.",
+        "en": "Earns +15 extra renown for each battle won. Second wind: regains 3 HP after each victory."
       }
     },
     {
@@ -945,13 +945,13 @@
       "effects": [
         {
           "kind": "darkMage",
-          "factor": 2,
-          "freeFactor": 2.5
+          "factor": 1.4,
+          "freeFactor": 1.6
         }
       ],
       "effectText": {
-        "fr": "Double la puissance d'attaque ou de défense s'il n'y a aucun autre allié ayant {c:monk} dans son arbre de classes sur le territoire ; multipliée par 2,5 si aucun ennemi n'en a non plus.",
-        "en": "Doubles attack or defence power if no other ally with {c:monk} in their class tree is on the territory; multiplied by 2.5 if no enemy has it either."
+        "fr": "Multiplie par 1,4 la puissance d'attaque ou de défense s'il n'y a aucun autre allié ayant {c:monk} dans son arbre de classes sur le territoire ; par 1,6 si aucun ennemi n'en a non plus.",
+        "en": "Multiplies attack or defence power by 1.4 if no other ally with {c:monk} in their class tree is on the territory; by 1.6 if no enemy has it either."
       }
     },
     {
@@ -1096,7 +1096,7 @@
       "effects": [
         {
           "kind": "freeMove",
-          "pct": 50,
+          "pct": 35,
           "bonusIfLineage": {
             "class": "pegasus-knight",
             "pct": 5
@@ -1104,8 +1104,8 @@
         }
       ],
       "effectText": {
-        "fr": "50 % de chances de ne pas consommer d'action lors des déplacements. Avec {c:pegasus-knight} dans son arbre de classes, les bonus s'additionnent et gagnent 5 % de plus : 85 % au total.",
-        "en": "50% chance of not spending an action when moving. With {c:pegasus-knight} in its class tree, the bonuses add up and gain 5% more: 85% in total."
+        "fr": "35 % de chances de ne pas consommer d'action lors des déplacements. Avec {c:pegasus-knight} dans son arbre de classes, les bonus s'additionnent et gagnent 5 % de plus : 70 % au total.",
+        "en": "35% chance of not spending an action when moving. With {c:pegasus-knight} in its class tree, the bonuses add up and gain 5% more: 70% in total."
       }
     },
     {
@@ -1129,12 +1129,12 @@
         {
           "kind": "actionStock",
           "plus": 1,
-          "regenMinutes": 7
+          "regenMinutes": 8
         }
       ],
       "effectText": {
-        "fr": "Gagne un stock d'action supplémentaire et les actions se rechargent en 7 minutes au lieu de 8 ou 10.",
-        "en": "Gains an extra action slot, and actions recharge in 7 minutes instead of 8 or 10."
+        "fr": "Gagne un stock d'action supplémentaire et les actions se rechargent en 8 minutes au lieu de 9 ou 10.",
+        "en": "Gains an extra action slot, and actions recharge in 8 minutes instead of 9 or 10."
       }
     },
     {
@@ -1225,12 +1225,12 @@
       "effects": [
         {
           "kind": "warMaster",
-          "pct": 50
+          "pct": 25
         }
       ],
       "effectText": {
-        "fr": "Gagne +50 % de puissance d'attaque ou de défense si son niveau de renommée est supérieur ou égal à celui de l'ennemi au plus haut niveau.",
-        "en": "Gains +50% attack or defence power if its renown level is greater than or equal to that of the highest-level enemy."
+        "fr": "Gagne +25 % de puissance d'attaque ou de défense si son niveau de renommée est supérieur ou égal à celui de l'ennemi au plus haut niveau.",
+        "en": "Gains +25% attack or defence power if its renown level is greater than or equal to that of the highest-level enemy."
       }
     },
     {
@@ -1350,15 +1350,15 @@
         {
           "kind": "conquests",
           "pct": 1,
-          "max": 50
+          "max": 30
         },
         {
           "kind": "enemyMove"
         }
       ],
       "effectText": {
-        "fr": "+1 % de pouvoir d'attaque ou de défense par territoire pris ou défense réussie de sa faction dans la campagne en cours (maximum +50 %). Une fois par bataille, rejoint sans dépenser d'action le territoire ennemi voisin où sa faction attaque.",
-        "en": "+1% attack or defence power for each territory taken or successful defence by its faction in the current campaign (maximum +50%). Once per battle, joins without spending an action the neighbouring enemy territory where its faction is attacking."
+        "fr": "+1 % de pouvoir d'attaque ou de défense par territoire pris ou défense réussie de sa faction dans la campagne en cours (maximum +30 %). Une fois par bataille, rejoint sans dépenser d'action le territoire ennemi voisin où sa faction attaque.",
+        "en": "+1% attack or defence power for each territory taken or successful defence by its faction in the current campaign (maximum +30%). Once per battle, joins without spending an action the neighbouring enemy territory where its faction is attacking."
       }
     },
     {
@@ -2707,7 +2707,37 @@
         "sortieMinPct": 50,
         "healBelowPct": 70
       },
-      "strikeDown": 3
+      "strikeDown": 3,
+      "fatigue": {
+        "windowHours": 3,
+        "free": 2,
+        "perBattle": 1,
+        "max": 6
+      }
+    },
+    "comeback": {
+      "leadPct": 20,
+      "desperation": {
+        "belowPct": 60,
+        "perTerritory": 2,
+        "max": 25,
+        "hpLessLoss": 3
+      },
+      "supply": {
+        "distance": 3,
+        "defensePct": 15
+      },
+      "bounty": {
+        "rewardPct": 50,
+        "points": 20
+      },
+      "coalition": {
+        "mapPct": 50
+      },
+      "reinforce": {
+        "sortieFactor": 2,
+        "extraSorties": 2
+      }
     }
   },
   "daily": {
@@ -2895,6 +2925,154 @@
     }
   ],
   "patches": [
+    {
+      "id": "2.1",
+      "date": "2026-11-27",
+      "title": {
+        "fr": "Patch 2.1",
+        "en": "Patch 2.1"
+      },
+      "intro": {
+        "fr": "Rendre la guerre réversible : une faction qui domine la carte ne doit plus écraser les autres sans réponse. Les généraux suivent le cours de la guerre, les factions perdantes ont de quoi se relever, et quelques classes trop fortes sont rééquilibrées.",
+        "en": "Making the war reversible: a faction dominating the map should no longer crush the others unanswered. Generals follow the course of the war, losing factions have the means to rise again, and a few overpowered classes are rebalanced."
+      },
+      "image": {
+        "fr": "assets/update_assets/2_0.fr.webp",
+        "en": "assets/update_assets/2_0.en.webp"
+      },
+      "major": true,
+      "fromNextCampaign": true,
+      "sections": [
+        {
+          "title": {
+            "fr": "Équilibrage des classes",
+            "en": "Class balance"
+          },
+          "items": [
+            {
+              "fr": "Mage noir : ×1,4 (×1,6 sans ennemi de la lignée Moine) au lieu de ×2 (×2,5). Hérité par l'Évêque noir et la Gremory passée par Mage noir.",
+              "en": "Dark Mage: ×1.4 (×1.6 with no enemy of the Monk lineage) instead of ×2 (×2.5). Inherited by the Dark Bishop and a Gremory who was a Dark Mage."
+            },
+            {
+              "fr": "Maître de guerre : +25 % au lieu de +50 %.",
+              "en": "War Master: +25% instead of +50%."
+            },
+            {
+              "fr": "Cavalier wyvern : recharge en 9 minutes au lieu de 8. Chevalier wyvern : 8 minutes au lieu de 7 (toujours +1 action de stock chacun).",
+              "en": "Wyvern Rider: recharge in 9 minutes instead of 8. Wyvern Knight: 8 minutes instead of 7 (still +1 action slot each)."
+            },
+            {
+              "fr": "Chevalier noir : bonus de conquêtes plafonné à +30 % au lieu de +50 %.",
+              "en": "Dark Knight: conquest bonus capped at +30% instead of +50%."
+            },
+            {
+              "fr": "Chevalier faucon : 35 % de déplacements gratuits, 70 % au total avec le Chevalier pégase (au lieu de 50 % et 85 %).",
+              "en": "Falcon Knight: 35% free moves, 70% in total with the Pegasus Knight (instead of 50% and 85%)."
+            },
+            {
+              "fr": "Combattant : +1 % par action de combat consécutive, maximum +10 % (au lieu de +2 % et +20 %).",
+              "en": "Fighter: +1% per consecutive combat action, maximum +10% (instead of +2% and +20%)."
+            },
+            {
+              "fr": "Brigand : +15 % d'or quand une attaque réussit (au lieu de +30 %).",
+              "en": "Brigand: +15% gold when an attack succeeds (instead of +30%)."
+            },
+            {
+              "fr": "Guerrier : +15 de renommée par victoire (au lieu de +25), et regagne 3 PV après une victoire (au lieu de 5).",
+              "en": "Warrior: +15 renown per victory (instead of +25), and regains 3 HP after a victory (instead of 5)."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Généraux : renverser la guerre",
+            "en": "Generals: turning the war"
+          },
+          "items": [
+            {
+              "fr": "La renommée des généraux suit désormais le cours de la guerre : elle part de celle de tous les joueurs actifs, monte pour une faction qui perd des territoires ou a peu de joueurs actifs, et baisse pour la faction qui domine. Une faction pleine de joueurs avancés n'a plus des généraux plus forts que les autres.",
+              "en": "Generals' renown now follows the course of the war: it starts from all active players, rises for a faction losing territories or with few active players, and drops for the dominant faction. A faction full of advanced players no longer has stronger generals than the others."
+            },
+            {
+              "fr": "Un général déjà épargné peut l'être une seconde fois par sa faction d'origine, qui le récupère.",
+              "en": "A general already spared can be spared a second time by their home faction, which takes them back."
+            },
+            {
+              "fr": "Les Aigles de jais peuvent toujours épargner Petra.",
+              "en": "The Black Eagles can always spare Petra."
+            }
+          ]
+        },
+        {
+          "title": {
+            "fr": "Retour en force",
+            "en": "Comeback"
+          },
+          "items": [
+            {
+              "fr": "Force du désespoir : une faction qui perd nettement la guerre gagne jusqu'à +25 % de puissance et perd moins de PV en défaite.",
+              "en": "Strength of despair: a faction clearly losing the war gains up to +25% power and loses fewer HP in defeat."
+            },
+            {
+              "fr": "Lignes de ravitaillement : les territoires de la faction en tête loin de ses joueurs ont -15 % de défense.",
+              "en": "Supply lines: territories of the leading faction far from its players have -15% defence."
+            },
+            {
+              "fr": "Prime sur le leader : battre la faction en tête rapporte +50 % d'or et de renommée, et des points de faction.",
+              "en": "Bounty on the leader: beating the leading faction earns +50% gold and renown, and faction points."
+            },
+            {
+              "fr": "Coalition : contre une faction qui tient plus de la moitié de la carte, les autres défendent les territoires les unes des autres et profitent de l'Overdrive+.",
+              "en": "Coalition: against a faction holding more than half the map, the others defend each other's territories and get Overdrive+."
+            },
+            {
+              "fr": "Renforts : les généraux d'une faction en perdition sortent plus souvent et défendent les territoires voisins ; vaincus en renfort, ils se replient chez eux, soignés.",
+              "en": "Reinforcements: generals of a losing faction sortie more often and defend neighbouring territories; beaten as reinforcements, they fall back home, healed."
+            },
+            {
+              "fr": "Fatigue : au-delà de 2 attaques en 3 heures, chaque attaque coûte de plus en plus de PV.",
+              "en": "Fatigue: beyond 2 attacks in 3 hours, each attack costs more and more HP."
+            }
+          ]
+        }
+      ],
+      "recap": {
+        "title": {
+          "fr": "Rappel : le patch 2.0",
+          "en": "Reminder: patch 2.0"
+        },
+        "items": [
+          {
+            "fr": "Soutiens entre joueurs et ordres aux généraux.",
+            "en": "Supports between players and orders to generals."
+          },
+          {
+            "fr": "Points de vie : soins, régénération, classes robustes ou fragiles, et Strike down! sur les vaincus en repli.",
+            "en": "Hit points: heals, regeneration, sturdy or frail classes, and Strike down! on defeated foes retreating."
+          },
+          {
+            "fr": "Chaque niveau de renommée : prime d'or, actions rechargées et +1 PV max.",
+            "en": "Every renown level: gold bonus, actions refilled and +1 max HP."
+          },
+          {
+            "fr": "Constructions visibles sur la carte et menu Construire.",
+            "en": "Buildings shown on the map and a Build menu."
+          },
+          {
+            "fr": "Serpents des Ténèbres plus menaçants (généraux visibles, -3 % de points par attaque non repoussée) ; croisade repoussée moins meurtrière.",
+            "en": "More threatening Serpents (visible generals, -3% points per unrepelled attack); a repelled crusade is less deadly."
+          },
+          {
+            "fr": "47 distinctions à paliers, à suivre dans le menu.",
+            "en": "47 tiered distinctions, tracked in the menu."
+          },
+          {
+            "fr": "Changement de pseudo (750 or) et bilan de fin de campagne avec Sothis.",
+            "en": "Name change (750 gold) and an end-of-campaign summary with Sothis."
+          }
+        ]
+      }
+    },
     {
       "id": "2.0",
       "date": "2026-11-24",
@@ -3869,8 +4047,17 @@
       "base": 0.5,
       "perCoef": 0.25,
       "activeDays": 7,
-      "balance": 0.7,
-      "smoothing": 0.15
+      "smoothing": 0.15,
+      "own": 0.3,
+      "war": {
+        "weight": 0.6,
+        "min": 0.6,
+        "max": 1.6
+      },
+      "numbers": {
+        "min": 0.8,
+        "max": 1.4
+      }
     },
     "reward": {
       "gold": 120,
@@ -4444,7 +4631,10 @@
           "bleue",
           "jaune"
         ],
-        "avatar": "assets/characters/black_eagles/petra.webp"
+        "avatar": "assets/characters/black_eagles/petra.webp",
+        "alwaysSpare": [
+          "rouge"
+        ]
       },
       {
         "id": "nader",

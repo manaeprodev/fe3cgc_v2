@@ -1040,6 +1040,7 @@ async function renderMap() {
   }).join('')}</div>` : ''}
       ${b ? battleHtml(b, st) : ''}
       ${shielded ? `<p class="small note">${withTimer('camp.untouchable', {}, st.untouchableUntil)}</p>` : ''}
+      ${st.supplyCut ? `<p class="small note">${esc(t('camp.supplyCut', { pct: state.config.campaign?.comeback?.supply?.defensePct ?? 15 }))}</p>` : ''}
       ${st.counter && !shielded ? `<p class="small note">${esc(t('camp.counter', { pct: st.counterPct || counterBonus }))}</p>` : ''}
       ${p.rewardDebuff > 0 ? `<p class="small note">${esc(t('camp.rewardDebuff', { n: p.rewardDebuff }))}</p>` : ''}
       ${actions ? `<div class="row act-row">${actions}</div>` : ''}
@@ -1979,7 +1980,7 @@ function modText(m) {
   switch (m.type) {
     case 'class': return `${className(m.class)} : ${effectText(klass(m.class))}`;
     case 'support': return `${generalName(m.general)} (${m.level}) : ${t(`relb.${m.kind}`, { v: fmtNum(m.base ?? m.value), w: fmtNum(m.extra || 0), hp: fmtNum(m.hp || 0), name: generalName(m.general), partner: m.partner ? generalName(m.partner) : '', level: m.partnerLevel || '', territory: m.territory ? terrName(m.territory) : '' })}`;
-    case 'perk': return t(`perk.${m.perk}`, { n: m.n, max: m.max, place: m.place ? terrName(m.place) : '' });
+    case 'perk': return t(`perk.${m.perk}`, { n: m.n, max: m.max, hp: m.hp, faction: m.faction ? loc(faction(m.faction)?.name) : '', place: m.place ? terrName(m.place) : '' });
     case 'lord': { const ab = state.config.campaign?.lords?.[m.faction]?.ability; return t('mods.lordActive', { title: loc(ab?.title), effect: loc(ab?.description) }); }
     case 'overdrive': return t(m.level === 'plus' ? 'mods.overdrivePlus' : 'mods.overdrive', m);
     default: return t(`mods.${m.type}`, m);
@@ -2041,6 +2042,8 @@ async function showProfile(target) {
       ${d.type === 'general' ? row(t('profile.statusLabel'), esc(statusTxt)) : ''}
       ${d.type === 'general' && d.home ? row(t('profile.home'), esc(loc(state.config.map.territories.find((x) => x.id === d.home)?.name))) : ''}
       ${d.type === 'general' && (d.spare || []).length && !d.spared ? row(t('profile.spare'), d.spare.map((f) => flag(f)).join(' ')) : ''}
+      ${d.type === 'general' && d.spareAgain ? row(t('profile.spare'), flag(d.spareAgain) + ' ' + esc(t('profile.spareAgain'))) : ''}
+      ${d.type === 'general' && d.spared && (d.alwaysSpare || []).length ? row(t('profile.spare'), d.alwaysSpare.map((f) => flag(f)).join(' ') + ' ' + esc(t('profile.spareAlways'))) : ''}
       ${d.type === 'player' && d.relation ? row(t('prel.withYou'), esc(d.relation.level || t('prel.noLevel'))) : ''}
       ${ordersHtml(d)}
       ${closestHtml(d)}
@@ -2238,6 +2241,8 @@ function showMajorPatch() {
       ${pt.intro ? `<p>${esc(loc(pt.intro))}</p>` : ''}
       ${(pt.sections || []).map((sec) => `<h3>${esc(loc(sec.title))}</h3>
         <ul class="patch-list">${(sec.items || []).map((i) => `<li>${esc(loc(i))}</li>`).join('')}</ul>`).join('')}
+      ${pt.recap ? `<div class="patch-recap"><h3>${esc(loc(pt.recap.title))}</h3>
+        <ul class="patch-list">${(pt.recap.items || []).map((i) => `<li>${esc(loc(i))}</li>`).join('')}</ul></div>` : ''}
     </div>
     <div class="patch-modal-foot"><button type="button" class="btn" data-close>${esc(t('patch.gotIt'))}</button></div></div>`;
   document.body.appendChild(overlay);
